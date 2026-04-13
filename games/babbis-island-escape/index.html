@@ -275,17 +275,51 @@
       box-shadow: 0 6px 20px rgba(58,125,68,0.45);
     }
 
-    /* ── Mobile ──────────────────────────────────────────────── */
-    @media (max-width: 700px) {
+    /* ── Rotate overlay (portrait on small screens) ─────────── */
+    .rotate-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: #1a1a1a;
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 22px; color: white; text-align: center; padding: 40px;
+    }
+    .rotate-icon {
+      font-size: 4rem;
+      animation: tilt-phone 2.4s ease-in-out infinite;
+    }
+    .rotate-overlay p {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.35rem; line-height: 1.45;
+      max-width: 300px; color: white;
+    }
+    @keyframes tilt-phone {
+      0%   { transform: rotate(0deg); }
+      35%  { transform: rotate(90deg); }
+      65%  { transform: rotate(90deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    /* ── Smaller cells on narrow landscape screens ───────────── */
+    @media (max-width: 900px) {
       :root { --cell: 44px; }
-      .game-area { flex-direction: column; align-items: center; }
-      .star-tile { font-size: 1.5rem; margin-top: 0; }
+      .star-tile { font-size: 1.5rem; }
       .cell { border-radius: 6px; font-size: 1.1rem; }
       .modal-card { padding: 30px 24px; }
+    }
+
+    /* ── Show rotate overlay in portrait on small screens ────── */
+    @media (max-width: 900px) and (orientation: portrait) {
+      .rotate-overlay { display: flex; }
     }
   </style>
 </head>
 <body>
+
+  <!-- Portrait-mode rotate prompt (shown via CSS media query) -->
+  <div class="rotate-overlay">
+    <div class="rotate-icon">📱</div>
+    <p>Please rotate your device to landscape to play</p>
+  </div>
 
   <div class="wallpaper">
     <div class="tomato-grid" id="tomatoGrid"></div>
@@ -365,15 +399,19 @@
 
     // ── Map generation (all water 4-connected) ─────────────────────
     function generateMap() {
+      // Always exactly 10 land + 15 water; retry until all 15 water tiles are connected
       while (true) {
-        const map = Array.from({length: ROWS}, () =>
-          Array.from({length: COLS}, () => Math.random() < 0.4 ? 'land' : 'water')
-        );
+        const tiles = Array(10).fill('land').concat(Array(15).fill('water'));
+        for (let i = tiles.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+        }
+        const map = Array.from({length: ROWS}, (_, r) => tiles.slice(r * COLS, r * COLS + COLS));
+        // BFS from first water tile — all 15 must be reachable
         const waters = [];
         for (let r = 0; r < ROWS; r++)
           for (let c = 0; c < COLS; c++)
             if (map[r][c] === 'water') waters.push([r, c]);
-        if (waters.length < 5 || waters.length > 22) continue;
         const seen = Array.from({length: ROWS}, () => Array(COLS).fill(false));
         const q = [waters[0]];
         seen[waters[0][0]][waters[0][1]] = true;
@@ -387,7 +425,7 @@
             }
           }
         }
-        if (cnt === waters.length) return map;
+        if (cnt === 15) return map;
       }
     }
 
