@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Babbi's Island Escape — Godguttengames</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #fdf6e3;
+      --tomato-red: #e8392a;
+      --tomato-green: #3a7d44;
+      --leaf-green: #2d6a35;
+      --dark: #1a1a1a;
+      --card-bg: rgba(255,255,255,0.82);
+      --shadow: 0 8px 32px rgba(0,0,0,0.13);
+      --water: #4aabdb;
+      --water-dark: #2d8ab0;
+      --land: #5ab85a;
+      --land-dark: #389038;
+      --cell: 52px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Nunito', sans-serif;
+      background-color: var(--cream);
+      overflow-x: hidden;
+    }
+
+    /* ── Wallpaper ───────────────────────────────────────────── */
+    .wallpaper {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .tomato-grid {
+      position: absolute;
+      inset: -80px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 72px);
+      grid-auto-rows: 72px;
+      transform: rotate(45deg) scale(1.5);
+      opacity: 0.18;
+      gap: 18px;
+    }
+
+    .tomato {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      user-select: none;
+    }
+
+    /* ── Content ─────────────────────────────────────────────── */
+    .content {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 36px 24px 80px;
+    }
+
+    .back-link {
+      align-self: flex-start;
+      font-family: 'Fredoka One', cursive;
+      color: var(--tomato-green);
+      text-decoration: none;
+      font-size: 1rem;
+      margin-bottom: 20px;
+      opacity: 0.75;
+      transition: opacity 0.15s;
+    }
+    .back-link:hover { opacity: 1; }
+
+    h1 {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1.9rem, 5vw, 3rem);
+      color: var(--tomato-red);
+      text-align: center;
+      margin-bottom: 28px;
+      letter-spacing: 1px;
+      text-shadow: 3px 3px 0 rgba(232,57,42,0.15);
+    }
+
+    /* ── Phase bar ───────────────────────────────────────────── */
+    .phase-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .phase-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .phase-step {
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.95rem;
+      padding: 6px 18px;
+      border-radius: 50px;
+      background: rgba(255,255,255,0.7);
+      border: 2px solid #ddd;
+      color: #bbb;
+      transition: all 0.25s;
+      white-space: nowrap;
+    }
+
+    .phase-step.active {
+      background: var(--tomato-green);
+      border-color: var(--tomato-green);
+      color: white;
+      box-shadow: 0 3px 10px rgba(58,125,68,0.3);
+    }
+
+    .phase-step.done {
+      background: rgba(58,125,68,0.15);
+      border-color: #aacfaa;
+      color: var(--tomato-green);
+      text-decoration: line-through;
+    }
+
+    .phase-hint {
+      font-size: 0.88rem;
+      color: #777;
+      font-weight: 600;
+      min-height: 1.2em;
+      text-align: center;
+    }
+
+    /* ── Game area ───────────────────────────────────────────── */
+    .game-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ── Grid wrapper + label ────────────────────────────────── */
+    .grid-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .grid-label {
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.8rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--tomato-green);
+      opacity: 0.6;
+    }
+
+    /* ── Star tile ───────────────────────────────────────────── */
+    .star-tile {
+      width: var(--cell);
+      height: var(--cell);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      background: var(--card-bg);
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.8);
+      box-shadow: var(--shadow);
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    /* ── Grid table ──────────────────────────────────────────── */
+    .grid-table {
+      border-collapse: separate;
+      border-spacing: 3px;
+    }
+
+    .grid-table th {
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.9rem;
+      color: var(--dark);
+      opacity: 0.6;
+      width: var(--cell);
+      height: 26px;
+      text-align: center;
+      user-select: none;
+    }
+
+    .grid-table th.corner { opacity: 0; pointer-events: none; }
+
+    /* ── Cells ───────────────────────────────────────────────── */
+    .cell {
+      width: var(--cell);
+      height: var(--cell);
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 1.45rem;
+      line-height: 1;
+      transition: transform 0.12s, filter 0.12s;
+      user-select: none;
+      position: relative;
+    }
+
+    .cell.water {
+      background: linear-gradient(135deg, #5bbfe6 0%, var(--water-dark) 100%);
+      box-shadow: inset 0 -3px 5px rgba(0,0,0,0.18);
+    }
+
+    .cell.land {
+      background: linear-gradient(135deg, #72d672 0%, var(--land-dark) 100%);
+      box-shadow: inset 0 -3px 5px rgba(0,0,0,0.18);
+    }
+
+    .cell:hover {
+      transform: scale(1.12);
+      filter: brightness(1.1);
+      z-index: 3;
+    }
+
+    /* inactive = right grid (not player-setup) */
+    .cell.inactive {
+      cursor: default;
+      opacity: 0.72;
+    }
+    .cell.inactive:hover {
+      transform: none;
+      filter: none;
+    }
+
+    /* ── Animations ──────────────────────────────────────────── */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-5px); }
+      50%      { transform: translateX(5px); }
+      75%      { transform: translateX(-3px); }
+    }
+
+    @keyframes pop {
+      0%   { transform: scale(0.4); }
+      65%  { transform: scale(1.25); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .cell.shaking { animation: shake 0.32s ease both; }
+
+    .cell .icon { display: inline-block; animation: pop 0.22s ease both; }
+
+    /* ── Ready button ────────────────────────────────────────── */
+    .ready-btn {
+      margin-top: 36px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.4rem;
+      padding: 14px 52px;
+      background: var(--tomato-green);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(58,125,68,0.35);
+      transition: background 0.18s, transform 0.18s;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease, background 0.18s, box-shadow 0.18s;
+    }
+
+    .ready-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .ready-btn:hover {
+      background: var(--leaf-green);
+      transform: scale(1.05) !important;
+      box-shadow: 0 6px 20px rgba(58,125,68,0.45);
+    }
+
+    /* ── Mobile ──────────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      :root { --cell: 44px; }
+
+      .game-area {
+        flex-direction: column;
+      }
+
+      .star-tile {
+        font-size: 1.5rem;
+      }
+
+      .cell { border-radius: 6px; font-size: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wallpaper">
+    <div class="tomato-grid" id="tomatoGrid"></div>
+  </div>
+
+  <div class="content">
+
+    <a href="../../index.html" class="back-link">← Godguttengames</a>
+
+    <h1>Babbi's Island Escape</h1>
+
+    <div class="phase-wrap">
+      <div class="phase-bar">
+        <div class="phase-step active" id="step-chest">📦 Chest</div>
+        <div class="phase-step"        id="step-key"  >🗝️ Key</div>
+        <div class="phase-step"        id="step-mine" >💣 Mine</div>
+      </div>
+      <div class="phase-hint" id="phaseHint">Place your chest on a land tile (green)</div>
+    </div>
+
+    <div class="game-area">
+
+      <div class="grid-wrap">
+        <div class="grid-label">Your Island</div>
+        <table class="grid-table" id="leftGrid"></table>
+      </div>
+
+      <div class="star-tile">★</div>
+
+      <div class="grid-wrap">
+        <div class="grid-label">Opponent's Island</div>
+        <table class="grid-table" id="rightGrid"></table>
+      </div>
+
+    </div>
+
+    <button class="ready-btn" id="readyBtn">Ready ✓</button>
+
+  </div>
+
+  <script>
+    // ── Wallpaper ─────────────────────────────────────────────────
+    const tomatoGrid = document.getElementById('tomatoGrid');
+    for (let i = 0; i < 300; i++) {
+      const d = document.createElement('div');
+      d.className = 'tomato';
+      d.textContent = '🍅';
+      tomatoGrid.appendChild(d);
+    }
+
+    // ── Map generation (all water 4-connected) ─────────────────────
+    const ROWS = 5, COLS = 5;
+    const ROW_LABELS = ['A', 'B', 'C', 'D', 'E'];
+    const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
+
+    function generateMap() {
+      while (true) {
+        // ~40% land probability
+        const map = Array.from({length: ROWS}, () =>
+          Array.from({length: COLS}, () => Math.random() < 0.4 ? 'land' : 'water')
+        );
+
+        const waters = [];
+        for (let r = 0; r < ROWS; r++)
+          for (let c = 0; c < COLS; c++)
+            if (map[r][c] === 'water') waters.push([r, c]);
+
+        // Reject maps with too little water or too little land
+        if (waters.length < 5 || waters.length > 22) continue;
+
+        // Flood-fill from first water tile to check connectivity
+        const seen = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+        const q = [waters[0]];
+        seen[waters[0][0]][waters[0][1]] = true;
+        let cnt = 1;
+        while (q.length) {
+          const [r, c] = q.shift();
+          for (const [dr, dc] of DIRS) {
+            const nr = r + dr, nc = c + dc;
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !seen[nr][nc] && map[nr][nc] === 'water') {
+              seen[nr][nc] = true;
+              q.push([nr, nc]);
+              cnt++;
+            }
+          }
+        }
+
+        if (cnt === waters.length) return map;
+        // else retry
+      }
+    }
+
+    const leftMap  = generateMap();
+    const rightMap = generateMap();
+
+    // ── Game state ────────────────────────────────────────────────
+    const placed = { chest: null, key: null, mine: null };
+    let phase = 'chest'; // chest → key → mine → done
+
+    const HINTS = {
+      chest: 'Place your chest on a land tile (green)',
+      key:   'Place your key on any tile',
+      mine:  'Place your mine on any unoccupied tile',
+      done:  'All items placed — press Ready when set!',
+    };
+
+    // ── Build grids ───────────────────────────────────────────────
+    //
+    // Layout: columns A–E run vertically (row labels on side).
+    //         "rows" 1–5 run horizontally, numbered outward from the ★.
+    //   Left grid  → numbers shown 5 4 3 2 1 (right = col-1 = nearest star)
+    //   Right grid → numbers shown 1 2 3 4 5 (left  = col-1 = nearest star)
+    //
+    // data-col stores logical index 0–4 where 0 = column-1 (nearest star).
+
+    function buildGrid(tableEl, map, isLeft) {
+      // ── header row ──
+      const hdr = document.createElement('tr');
+      if (isLeft) {
+        hdr.appendChild(mkTh('', 'corner'));          // blank top-left
+        for (let c = 4; c >= 0; c--) hdr.appendChild(mkTh(c + 1));  // 5 4 3 2 1
+      } else {
+        for (let c = 0; c < 5; c++) hdr.appendChild(mkTh(c + 1));   // 1 2 3 4 5
+        hdr.appendChild(mkTh('', 'corner'));          // blank top-right
+      }
+      tableEl.appendChild(hdr);
+
+      // ── data rows ──
+      for (let r = 0; r < ROWS; r++) {
+        const tr = document.createElement('tr');
+        if (isLeft) {
+          tr.appendChild(mkTh(ROW_LABELS[r]));                     // A-E on left
+          for (let c = 4; c >= 0; c--) tr.appendChild(mkCell(map, r, c, isLeft));
+        } else {
+          for (let c = 0; c < 5; c++) tr.appendChild(mkCell(map, r, c, isLeft));
+          tr.appendChild(mkTh(ROW_LABELS[r]));                     // A-E on right
+        }
+        tableEl.appendChild(tr);
+      }
+    }
+
+    function mkTh(text, cls) {
+      const th = document.createElement('th');
+      if (cls) th.className = cls;
+      th.textContent = text;
+      return th;
+    }
+
+    function mkCell(map, r, c, isLeft) {
+      const td = document.createElement('td');
+      td.className = 'cell ' + map[r][c];
+      td.dataset.row = r;
+      td.dataset.col = c;
+      if (isLeft) td.addEventListener('click', onCellClick);
+      else        td.classList.add('inactive');
+      return td;
+    }
+
+    buildGrid(document.getElementById('leftGrid'),  leftMap,  true);
+    buildGrid(document.getElementById('rightGrid'), rightMap, false);
+
+    // ── Cell click handler ────────────────────────────────────────
+    function onCellClick(e) {
+      if (phase === 'done') return;
+      const td  = e.currentTarget;
+      const r   = +td.dataset.row;
+      const c   = +td.dataset.col;
+      const tile = leftMap[r][c];
+
+      if (phase === 'chest') {
+        if (tile !== 'land') { shake(td); return; }
+        clearPlacement('chest');
+        place(td, r, c, 'chest', '📦');
+        phase = 'key';
+
+      } else if (phase === 'key') {
+        if (occupiedBy(r, c)) { shake(td); return; }
+        clearPlacement('key');
+        place(td, r, c, 'key', '🗝️');
+        phase = 'mine';
+
+      } else if (phase === 'mine') {
+        if (occupiedBy(r, c)) { shake(td); return; }
+        clearPlacement('mine');
+        place(td, r, c, 'mine', '💣');
+        phase = 'done';
+        document.getElementById('readyBtn').classList.add('visible');
+      }
+
+      updatePhaseUI();
+    }
+
+    function place(td, r, c, item, icon) {
+      placed[item] = { r, c };
+      td.innerHTML = `<span class="icon">${icon}</span>`;
+    }
+
+    function clearPlacement(item) {
+      if (!placed[item]) return;
+      const { r, c } = placed[item];
+      const el = document.querySelector(`#leftGrid td[data-row="${r}"][data-col="${c}"]`);
+      if (el) el.innerHTML = '';
+      placed[item] = null;
+    }
+
+    function occupiedBy(r, c) {
+      for (const [item, pos] of Object.entries(placed))
+        if (pos && pos.r === r && pos.c === c) return item;
+      return null;
+    }
+
+    function shake(el) {
+      el.classList.remove('shaking');
+      void el.offsetWidth; // force reflow to restart animation
+      el.classList.add('shaking');
+      el.addEventListener('animationend', () => el.classList.remove('shaking'), { once: true });
+    }
+
+    // ── Phase UI ──────────────────────────────────────────────────
+    const STEP_IDS = { chest: 'step-chest', key: 'step-key', mine: 'step-mine' };
+    const STEPS    = ['chest', 'key', 'mine'];
+
+    function updatePhaseUI() {
+      const curIdx = STEPS.indexOf(phase);
+      STEPS.forEach((s, i) => {
+        const el = document.getElementById(STEP_IDS[s]);
+        el.className = 'phase-step';
+        if (phase === 'done' || i < curIdx) el.classList.add('done');
+        else if (i === curIdx)              el.classList.add('active');
+      });
+      document.getElementById('phaseHint').textContent = HINTS[phase] ?? '';
+    }
+
+    // ── Ready button ──────────────────────────────────────────────
+    document.getElementById('readyBtn').addEventListener('click', () => {
+      alert('⚓ Setting sail… Stage 2 coming soon!');
+    });
+  </script>
+
+</body>
+</html>
