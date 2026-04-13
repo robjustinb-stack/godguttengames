@@ -115,7 +115,7 @@
     }
     .turn-banner.cpu-turn { background: rgba(232,57,42,0.14); }
 
-    .dice-row { display: flex; align-items: center; gap: 16px; }
+    .dice-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
     .action-btn {
       font-family: 'Fredoka One', cursive; font-size: 1.1rem;
@@ -279,6 +279,10 @@
     .action-btn.dig-btn { background: #7a5230; }
     .action-btn.dig-btn:hover:not(:disabled) { background: #5d3d22; }
 
+    /* ── Ask Question button ─────────────────────────────────── */
+    .action-btn.ask-btn { background: #5b3da8; }
+    .action-btn.ask-btn:hover:not(:disabled) { background: #432d7e; }
+
     /* ── Message bar ─────────────────────────────────────────── */
     .message-bar {
       font-family: 'Fredoka One', cursive;
@@ -292,7 +296,7 @@
       transform: translateY(-6px);
       transition: opacity 0.25s, transform 0.25s;
       pointer-events: none;
-      max-width: 400px;
+      max-width: 440px;
       text-align: center;
     }
     .message-bar.visible { opacity: 1; transform: translateY(0); }
@@ -326,6 +330,125 @@
       animation: pop 0.25s ease both;
     }
     .inv-empty { color: #ccc; font-size: 0.85rem; }
+
+    /* ── Ask Question modal ──────────────────────────────────── */
+    .ask-overlay, .cpuq-overlay, .endgame-overlay {
+      position: fixed; inset: 0; z-index: 150;
+      background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .ask-overlay.hidden, .cpuq-overlay.hidden, .endgame-overlay.hidden {
+      display: none;
+    }
+
+    .ask-modal {
+      background: var(--cream); border-radius: 20px;
+      padding: 36px 40px;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.4);
+      text-align: center; max-width: 420px; width: 92%;
+      animation: fadeUp 0.3s ease both;
+    }
+    .ask-modal h2 {
+      font-family: 'Fredoka One', cursive; font-size: 1.7rem;
+      color: #5b3da8; margin-bottom: 8px;
+    }
+    .ask-modal .sub { color: #777; font-size: 0.88rem; margin-bottom: 16px; }
+
+    .ask-modal textarea {
+      width: 100%; padding: 10px 14px;
+      border-radius: 10px; border: 2px solid #ddd;
+      font-family: 'Nunito', sans-serif; font-size: 0.95rem;
+      resize: vertical; min-height: 72px; margin-bottom: 14px;
+    }
+    .ask-modal textarea:focus { outline: none; border-color: #5b3da8; }
+
+    .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 4px; }
+
+    .cpu-answer-box {
+      margin-top: 16px; padding: 14px 22px;
+      border-radius: 14px; background: rgba(91,61,168,0.1);
+      border: 2px solid #c4b4f0;
+      font-family: 'Fredoka One', cursive; font-size: 1.25rem;
+      color: var(--dark); animation: fadeUp 0.3s ease both;
+    }
+
+    /* ── CPU question overlay ────────────────────────────────── */
+    .cpuq-modal {
+      background: var(--cream); border-radius: 20px;
+      padding: 36px 40px;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.4);
+      text-align: center; max-width: 420px; width: 92%;
+      animation: fadeUp 0.3s ease both;
+    }
+    .cpuq-modal h2 {
+      font-family: 'Fredoka One', cursive; font-size: 1.7rem;
+      color: var(--tomato-red); margin-bottom: 12px;
+    }
+    .cpuq-modal .question-text {
+      font-family: 'Fredoka One', cursive; font-size: 1.15rem;
+      color: var(--dark); margin-bottom: 8px;
+    }
+    .cpuq-modal .lie-status {
+      font-size: 0.8rem; color: #aaa; margin-bottom: 16px; min-height: 1.2em;
+    }
+
+    .answer-btns {
+      display: flex; align-items: center; gap: 10px;
+      justify-content: center; flex-wrap: wrap;
+    }
+
+    .lie-btn {
+      font-family: 'Fredoka One', cursive; font-size: 1rem;
+      padding: 9px 20px; border-radius: 50px;
+      border: 2px solid #9b3fde;
+      cursor: pointer; color: #9b3fde; background: transparent;
+      transition: all 0.15s;
+    }
+    .lie-btn:hover:not(:disabled) { background: rgba(155,63,222,0.1); }
+    .lie-btn.active { background: #9b3fde; color: white; }
+    .lie-btn:disabled { opacity: 0.35; cursor: default; }
+
+    /* ── Q&A Log ─────────────────────────────────────────────── */
+    .qa-log {
+      margin-top: 28px; width: 100%; max-width: 560px;
+      background: var(--card-bg); border-radius: 16px;
+      box-shadow: var(--shadow); padding: 18px 22px;
+    }
+    .qa-log-title {
+      font-family: 'Fredoka One', cursive; font-size: 0.95rem;
+      color: var(--tomato-green); letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 12px;
+    }
+    .qa-entry { margin-bottom: 12px; }
+    .qa-who { font-size: 0.76rem; color: #aaa; margin-bottom: 2px; }
+    .qa-q { font-weight: 700; color: #444; font-size: 0.88rem; }
+    .qa-ans-row { margin-top: 2px; }
+    .qa-a {
+      display: inline-block; margin-left: 4px;
+      font-family: 'Fredoka One', cursive; font-size: 0.9rem;
+      padding: 1px 10px; border-radius: 50px;
+    }
+    .qa-a.yes { background: rgba(58,125,68,0.15); color: var(--tomato-green); }
+    .qa-a.no  { background: rgba(232,57,42,0.12); color: var(--tomato-red); }
+    .qa-lied  { font-size: 0.74rem; color: #9b3fde; margin-left: 6px; }
+
+    /* ── Endgame overlay ─────────────────────────────────────── */
+    .endgame-card {
+      background: var(--cream); border-radius: 24px;
+      padding: 52px 56px; text-align: center;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.4);
+      animation: fadeUp 0.4s ease both;
+      max-width: 380px; width: 90%;
+    }
+    .endgame-icon { font-size: 4.5rem; margin-bottom: 10px; }
+    .endgame-card h2 {
+      font-family: 'Fredoka One', cursive; font-size: 2.2rem;
+      margin-bottom: 10px;
+    }
+    .endgame-card p { color: #666; font-size: 1rem; margin-bottom: 28px; }
+    .endgame-card h2.win  { color: var(--tomato-green); }
+    .endgame-card h2.loss { color: var(--tomato-red); }
 
     /* ── Rotate overlay (portrait on small screens) ─────────── */
     .rotate-overlay {
@@ -400,6 +523,7 @@
         <button class="action-btn" id="rollBtn">🎲 Roll Dice</button>
         <span class="dice-face" id="diceFace"></span>
         <button class="action-btn dig-btn hidden" id="digBtn">⛏️ Dig / Fish</button>
+        <button class="action-btn ask-btn hidden" id="askBtn">❓ Ask Question</button>
       </div>
       <button class="action-btn end-btn" id="endTurnBtn" disabled>End Turn ➜</button>
       <div class="message-bar" id="messageBar"></div>
@@ -428,6 +552,12 @@
 
     <button class="ready-btn" id="readyBtn">Ready ✓</button>
 
+    <!-- Q&A Log -->
+    <div class="qa-log hidden" id="qaLog">
+      <div class="qa-log-title">📋 Q&amp;A Log</div>
+      <div id="qaLogItems"></div>
+    </div>
+
     <!-- Difficulty overlay -->
     <div class="diff-overlay hidden" id="diffOverlay">
       <div class="modal-card">
@@ -438,6 +568,47 @@
           <button class="diff-btn medium" id="medBtn" >⚔️ Medium</button>
           <button class="diff-btn hard"   id="hardBtn">💀 Hard</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Ask Question overlay (player → CPU) -->
+    <div class="ask-overlay hidden" id="askOverlay">
+      <div class="ask-modal">
+        <h2>❓ Ask a Question</h2>
+        <p class="sub" id="askInfo">Type a yes/no question about the hidden items. The CPU will answer.</p>
+        <textarea id="questionInput" placeholder="e.g. Is the key on a water tile?"></textarea>
+        <div id="cpuAnswerBox" class="cpu-answer-box hidden"></div>
+        <div class="modal-btns" style="margin-top:14px">
+          <button class="action-btn" id="cancelAskBtn" style="background:#999">Cancel</button>
+          <button class="action-btn ask-btn" id="submitAskBtn">Ask ❓</button>
+        </div>
+        <div class="modal-btns" style="margin-top:10px">
+          <button class="action-btn end-btn hidden" id="closeAskBtn">Close &amp; End Turn</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CPU question overlay (CPU → player) -->
+    <div class="cpuq-overlay hidden" id="cpuqOverlay">
+      <div class="cpuq-modal">
+        <h2>🔴 CPU asks you…</h2>
+        <div class="question-text" id="cpuqText"></div>
+        <div class="lie-status" id="cpuqLieStatus"></div>
+        <div class="answer-btns">
+          <button class="lie-btn" id="lieBtn">🤫 LIE</button>
+          <button class="action-btn" id="ansYesBtn">YES</button>
+          <button class="action-btn end-btn" id="ansNoBtn">NO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endgame overlay -->
+    <div class="endgame-overlay hidden" id="endgameOverlay">
+      <div class="endgame-card">
+        <div class="endgame-icon" id="endgameIcon">🎉</div>
+        <h2 id="endgameTitle" class="win">You Escaped!</h2>
+        <p id="endgameMsg">Congratulations! You found the manual and reached the star!</p>
+        <button class="action-btn" id="playAgainBtn">Play Again</button>
       </div>
     </div>
 
@@ -514,8 +685,18 @@
     const cpuPlaced  = { chest: null, key: null, mine: null };
     // Player's collected items
     let inventory    = { key: false, manual: false };
+    // CPU's collected items
+    const cpuInventory = { key: false, manual: false };
     let skipNextTurn = false;
+    let cpuSkipNext  = false;
     let messageTimer = null;
+    let gameOver     = false;
+    // Q&A state
+    let cpuLiesLeft    = 1;   // CPU has one lie when answering player's questions
+    let playerLiesLeft = 1;   // Player has one lie when answering CPU's questions
+    let lieActive      = false;
+    const qLog         = [];  // [{who, question, answer, lied}]
+    let pendingCpuQuestion = null; // {text, trueAnswer, pinpoints, type, target}
 
     const HINTS = {
       chest: 'Place your chest on a land tile (green)',
@@ -560,7 +741,6 @@
       td.className = 'cell ' + map[r][c];
       td.dataset.row = r;
       td.dataset.col = c;
-      // Both grids get click listeners; handler branches on gamePhase + which grid
       td.addEventListener('click', onCellClick);
       if (!isLeft) td.classList.add('inactive');
       return td;
@@ -715,10 +895,20 @@
       cpuPlaced.key   = items.key;
       cpuPlaced.mine  = items.mine;
 
-      // Reset inventory
+      // Reset inventory and state
       inventory.key    = false;
       inventory.manual = false;
-      skipNextTurn     = false;
+      cpuInventory.key    = false;
+      cpuInventory.manual = false;
+      skipNextTurn  = false;
+      cpuSkipNext   = false;
+      gameOver      = false;
+      cpuLiesLeft   = 1;
+      playerLiesLeft = 1;
+      lieActive     = false;
+      qLog.length   = 0;
+      pendingCpuQuestion = null;
+
       updateInventoryUI();
       document.getElementById('inventoryBar').classList.remove('hidden');
 
@@ -733,6 +923,7 @@
 
       renderGrids();
       document.getElementById('gameHud').classList.remove('hidden');
+      renderQaLog();
       updateHud();
     }
 
@@ -789,9 +980,7 @@
       document.querySelectorAll('#rightGrid td.cell').forEach(td => {
         const r = +td.dataset.row, c = +td.dataset.col;
         const parts = [];
-        // Boat always rendered at its water tile
         if (playerBoat && playerBoat.r===r && playerBoat.c===c) parts.push('⛵');
-        // Pawn rendered at its position (coincides with boat when aboard)
         if (playerPawn && playerPawn.r===r && playerPawn.c===c) parts.push('🔵');
         td.innerHTML = parts.length
           ? `<span class="icon" style="font-size:${parts.length>1?'0.85rem':'1.35rem'}">${parts.join('')}</span>`
@@ -801,18 +990,20 @@
 
     // ── HUD ───────────────────────────────────────────────────────
     function updateHud() {
+      if (gameOver) return;
       const banner  = document.getElementById('turnBanner');
       const rollBtn = document.getElementById('rollBtn');
       const endBtn  = document.getElementById('endTurnBtn');
       const diceEl  = document.getElementById('diceFace');
       const digBtn  = document.getElementById('digBtn');
+      const askBtn  = document.getElementById('askBtn');
 
       if (currentTurn === 'player') {
         banner.classList.remove('cpu-turn');
         rollBtn.disabled = (moveState !== 'idle');
         endBtn.disabled  = (moveState === 'idle');
-        // Dig/Fish only available before rolling
         digBtn.classList.toggle('hidden', moveState !== 'idle');
+        askBtn.classList.toggle('hidden', moveState !== 'idle');
         if (moveState === 'idle') {
           banner.textContent = '🔵 Your Turn';
           diceEl.textContent = '';
@@ -826,6 +1017,7 @@
         rollBtn.disabled = true;
         endBtn.disabled  = true;
         digBtn.classList.add('hidden');
+        askBtn.classList.add('hidden');
         diceEl.textContent = '';
       }
     }
@@ -839,16 +1031,12 @@
         if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
         const tile = map[nr][nc];
         if (!inBoat) {
-          // On land: walk to adjacent land tile
           if (tile === 'land') moves.push({r: nr, c: nc});
-          // Board boat if it's adjacent
           if (boat && nr === boat.r && nc === boat.c) moves.push({r: nr, c: nc});
         } else {
-          // In boat: sail to adjacent water, or disembark to adjacent land
           if (tile === 'water' || tile === 'land') moves.push({r: nr, c: nc});
         }
       }
-      // Deduplicate (boat tile might match twice if also land — shouldn't happen, but safe)
       const seen = new Set();
       return moves.filter(({r, c}) => {
         const k = `${r},${c}`;
@@ -925,11 +1113,346 @@
       showMessage(msg);
       updateInventoryUI();
 
-      // Digging uses up the turn
       currentTurn = 'cpu';
       updateHud();
       setTimeout(cpuTurn, 1600);
     }
+
+    // ── Ask Question (player → CPU) ───────────────────────────────
+    document.getElementById('askBtn').addEventListener('click', () => {
+      if (currentTurn !== 'player' || moveState !== 'idle') return;
+      document.getElementById('questionInput').value = '';
+      document.getElementById('questionInput').disabled = false;
+      document.getElementById('cpuAnswerBox').classList.add('hidden');
+      document.getElementById('submitAskBtn').classList.remove('hidden');
+      document.getElementById('cancelAskBtn').classList.remove('hidden');
+      document.getElementById('closeAskBtn').classList.add('hidden');
+      document.getElementById('askInfo').textContent = cpuLiesLeft > 0
+        ? 'Type a yes/no question. The CPU will answer — it still has its one lie.'
+        : 'Type a yes/no question. The CPU has used its lie — answers are now truthful.';
+      document.getElementById('askOverlay').classList.remove('hidden');
+    });
+
+    document.getElementById('cancelAskBtn').addEventListener('click', () => {
+      document.getElementById('askOverlay').classList.add('hidden');
+    });
+
+    document.getElementById('submitAskBtn').addEventListener('click', () => {
+      const qText = document.getElementById('questionInput').value.trim();
+      if (!qText) return;
+
+      // CPU generates a random answer; may use its lie once
+      let rawAnswer = Math.random() < 0.5;
+      let lied = false;
+      if (cpuLiesLeft > 0 && Math.random() < 0.42) {
+        rawAnswer = !rawAnswer;
+        lied = true;
+        cpuLiesLeft = 0;
+      }
+
+      const answerText = rawAnswer ? 'YES' : 'NO';
+      qLog.push({ who: 'player', question: qText, answer: answerText, lied: false });
+      renderQaLog();
+
+      const box = document.getElementById('cpuAnswerBox');
+      box.textContent = `🔴 CPU says: ${answerText}${lied ? ' (used its lie!)' : ''}`;
+      box.classList.remove('hidden');
+
+      document.getElementById('submitAskBtn').classList.add('hidden');
+      document.getElementById('cancelAskBtn').classList.add('hidden');
+      document.getElementById('questionInput').disabled = true;
+      document.getElementById('closeAskBtn').classList.remove('hidden');
+    });
+
+    document.getElementById('closeAskBtn').addEventListener('click', () => {
+      document.getElementById('questionInput').disabled = false;
+      document.getElementById('askOverlay').classList.add('hidden');
+      currentTurn = 'cpu';
+      updateHud();
+      setTimeout(cpuTurn, 900);
+    });
+
+    // ── CPU question overlay ──────────────────────────────────────
+    function generateCpuQuestion() {
+      // Display col for left grid: displayed col = data-col + 1
+      // (data-col 0 = nearest star = displayed col 1)
+      const dc2d = dc => dc + 1;
+      const rl   = ROW_LABELS;
+
+      const templates = [];
+
+      // Specific tile questions (pinpointing)
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+          templates.push({
+            text: `Is your key on tile ${rl[r]}${dc2d(c)}?`,
+            trueAnswer: () => placed.key.r === r && placed.key.c === c,
+            pinpoints: true, type: 'key-tile', target: {r, c},
+          });
+          templates.push({
+            text: `Is your chest on tile ${rl[r]}${dc2d(c)}?`,
+            trueAnswer: () => placed.chest.r === r && placed.chest.c === c,
+            pinpoints: true, type: 'chest-tile', target: {r, c},
+          });
+        }
+      }
+
+      // Row questions
+      for (let r = 0; r < 5; r++) {
+        templates.push({
+          text: `Is your chest in row ${rl[r]}?`,
+          trueAnswer: () => placed.chest.r === r,
+          pinpoints: false, type: 'chest-row', target: {r},
+        });
+        templates.push({
+          text: `Is your key in row ${rl[r]}?`,
+          trueAnswer: () => placed.key.r === r,
+          pinpoints: false, type: 'key-row', target: {r},
+        });
+      }
+
+      // Column questions
+      for (let c = 0; c < 5; c++) {
+        templates.push({
+          text: `Is your chest in column ${dc2d(c)}?`,
+          trueAnswer: () => placed.chest.c === c,
+          pinpoints: false, type: 'chest-col', target: {c},
+        });
+        templates.push({
+          text: `Is your key in column ${dc2d(c)}?`,
+          trueAnswer: () => placed.key.c === c,
+          pinpoints: false, type: 'key-col', target: {c},
+        });
+      }
+
+      // General questions
+      templates.push(
+        { text: 'Is your key on a water tile?',
+          trueAnswer: () => leftMap[placed.key.r][placed.key.c] === 'water',
+          pinpoints: false, type: 'general', target: null },
+        { text: 'Is your key on a land tile?',
+          trueAnswer: () => leftMap[placed.key.r][placed.key.c] === 'land',
+          pinpoints: false, type: 'general', target: null },
+        { text: 'Is your mine on a water tile?',
+          trueAnswer: () => leftMap[placed.mine.r][placed.mine.c] === 'water',
+          pinpoints: false, type: 'general', target: null },
+        { text: 'Is your chest closer to the star than your key?',
+          trueAnswer: () => placed.chest.c < placed.key.c,
+          pinpoints: false, type: 'general', target: null },
+        { text: 'Is your key in the top half of the island (rows A–C)?',
+          trueAnswer: () => placed.key.r <= 2,
+          pinpoints: false, type: 'general', target: null },
+        { text: 'Is your chest in the bottom half of the island (rows C–E)?',
+          trueAnswer: () => placed.chest.r >= 2,
+          pinpoints: false, type: 'general', target: null },
+        { text: 'Are your key and chest in the same row?',
+          trueAnswer: () => placed.key.r === placed.chest.r,
+          pinpoints: false, type: 'general', target: null },
+        { text: 'Is your key above your chest in the grid?',
+          trueAnswer: () => placed.key.r < placed.chest.r,
+          pinpoints: false, type: 'general', target: null },
+        { text: 'Is your mine closer to the star than your chest?',
+          trueAnswer: () => placed.mine.c < placed.chest.c,
+          pinpoints: false, type: 'general', target: null },
+        { text: 'Is your key and mine in the same column?',
+          trueAnswer: () => placed.key.c === placed.mine.c,
+          pinpoints: false, type: 'general', target: null }
+      );
+
+      // Filter by difficulty
+      let pool;
+      if (difficulty === 'easy') {
+        pool = templates.filter(t => !t.pinpoints);
+      } else if (difficulty === 'medium') {
+        pool = templates;
+      } else {
+        // Hard: prefer pinpoint questions
+        const precise = templates.filter(t => t.pinpoints);
+        pool = Math.random() < 0.65 ? precise : templates.filter(t => !t.pinpoints);
+      }
+
+      // Avoid repeating exact question texts
+      const askedTexts = new Set(qLog.filter(e => e.who === 'cpu').map(e => e.question));
+      const fresh = pool.filter(t => !askedTexts.has(t.text));
+      const finalPool = fresh.length > 0 ? fresh : pool;
+      if (finalPool.length === 0) return null;
+
+      const tmpl = finalPool[Math.floor(Math.random() * finalPool.length)];
+      return {
+        text:        tmpl.text,
+        trueAnswer:  tmpl.trueAnswer(),
+        pinpoints:   tmpl.pinpoints,
+        type:        tmpl.type,
+        target:      tmpl.target,
+      };
+    }
+
+    function showCpuQuestionModal(q) {
+      document.getElementById('cpuqText').textContent = q.text;
+
+      const lieBtn    = document.getElementById('lieBtn');
+      const ansYesBtn = document.getElementById('ansYesBtn');
+      const ansNoBtn  = document.getElementById('ansNoBtn');
+      const statusDiv = document.getElementById('cpuqLieStatus');
+
+      lieActive = false;
+      lieBtn.classList.remove('active');
+
+      // Lie blocked if: this question's true answer would correctly identify key or chest
+      const lieBlocked = q.pinpoints && q.trueAnswer;
+
+      if (playerLiesLeft <= 0) {
+        lieBtn.disabled = true;
+        statusDiv.textContent = 'Your lie is spent — you must answer truthfully.';
+        // Enforce correct answer: disable the wrong button
+        ansYesBtn.disabled = !q.trueAnswer;
+        ansNoBtn.disabled  = q.trueAnswer;
+      } else if (lieBlocked) {
+        lieBtn.disabled = true;
+        statusDiv.textContent = '🚫 Lie unavailable — this answer correctly identifies a key item.';
+        ansYesBtn.disabled = false;
+        ansNoBtn.disabled  = false;
+      } else {
+        lieBtn.disabled = false;
+        statusDiv.textContent = '🤫 You still have 1 lie available.';
+        ansYesBtn.disabled = false;
+        ansNoBtn.disabled  = false;
+      }
+
+      document.getElementById('cpuqOverlay').classList.remove('hidden');
+    }
+
+    document.getElementById('lieBtn').addEventListener('click', () => {
+      if (playerLiesLeft <= 0 || document.getElementById('lieBtn').disabled) return;
+      lieActive = !lieActive;
+      document.getElementById('lieBtn').classList.toggle('active', lieActive);
+    });
+
+    document.getElementById('ansYesBtn').addEventListener('click', () => submitPlayerAnswer(true));
+    document.getElementById('ansNoBtn').addEventListener('click',  () => submitPlayerAnswer(false));
+
+    function submitPlayerAnswer(clickedYes) {
+      let finalAnswer = clickedYes;
+      let lied = false;
+
+      if (lieActive && playerLiesLeft > 0) {
+        finalAnswer = !clickedYes;
+        lied = true;
+        playerLiesLeft = 0;
+      }
+
+      lieActive = false;
+      document.getElementById('lieBtn').classList.remove('active');
+
+      qLog.push({
+        who:      'cpu',
+        question: pendingCpuQuestion.text,
+        answer:   finalAnswer ? 'YES' : 'NO',
+        lied,
+      });
+      renderQaLog();
+
+      pendingCpuQuestion = null;
+      document.getElementById('cpuqOverlay').classList.add('hidden');
+
+      // CPU asked instead of moved — hand back to player
+      setTimeout(() => {
+        if (gameOver) return;
+        currentTurn = 'player';
+        moveState   = 'idle';
+        diceVal     = 0;
+        updateHud();
+      }, 400);
+    }
+
+    // ── Q&A Log ───────────────────────────────────────────────────
+    function renderQaLog() {
+      const log   = document.getElementById('qaLog');
+      const items = document.getElementById('qaLogItems');
+
+      if (qLog.length === 0) {
+        log.classList.add('hidden');
+        return;
+      }
+      log.classList.remove('hidden');
+      items.innerHTML = '';
+
+      qLog.forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'qa-entry';
+
+        const who = document.createElement('div');
+        who.className = 'qa-who';
+        who.textContent = entry.who === 'player' ? '🔵 You asked:' : '🔴 CPU asked:';
+
+        const q = document.createElement('div');
+        q.className = 'qa-q';
+        q.textContent = entry.question;
+
+        const ansRow = document.createElement('div');
+        ansRow.className = 'qa-ans-row';
+        ansRow.appendChild(document.createTextNode('→ '));
+
+        const a = document.createElement('span');
+        a.className = `qa-a ${entry.answer === 'YES' ? 'yes' : 'no'}`;
+        a.textContent = entry.answer;
+        ansRow.appendChild(a);
+
+        if (entry.lied) {
+          const lie = document.createElement('span');
+          lie.className = 'qa-lied';
+          lie.textContent = '(lied)';
+          ansRow.appendChild(lie);
+        }
+
+        div.appendChild(who);
+        div.appendChild(q);
+        div.appendChild(ansRow);
+        items.appendChild(div);
+      });
+    }
+
+    // ── Win / Loss check ─────────────────────────────────────────
+    function checkPlayerWin() {
+      if (inventory.manual && playerPawn && playerPawn.c === 0) {
+        showEndgame(true);
+        return true;
+      }
+      return false;
+    }
+
+    function checkCpuWin() {
+      if (cpuInventory.manual && cpuPawn && cpuPawn.c === 0) {
+        showEndgame(false);
+        return true;
+      }
+      return false;
+    }
+
+    function showEndgame(playerWon) {
+      gameOver = true;
+      clearHighlights();
+      const overlay = document.getElementById('endgameOverlay');
+      const icon    = document.getElementById('endgameIcon');
+      const title   = document.getElementById('endgameTitle');
+      const msg     = document.getElementById('endgameMsg');
+
+      if (playerWon) {
+        icon.textContent  = '🎉';
+        title.textContent = 'You Escaped!';
+        title.className   = 'win';
+        msg.textContent   = 'You found the manual and reached the star. Babbi is free!';
+      } else {
+        icon.textContent  = '😞';
+        title.textContent = 'You Lost!';
+        title.className   = 'loss';
+        msg.textContent   = 'The CPU found its manual and escaped first. Better luck next time!';
+      }
+
+      overlay.classList.remove('hidden');
+    }
+
+    document.getElementById('playAgainBtn').addEventListener('click', () => location.reload());
 
     // ── Message bar ───────────────────────────────────────────────
     function showMessage(text) {
@@ -937,7 +1460,7 @@
       el.textContent = text;
       el.classList.add('visible');
       clearTimeout(messageTimer);
-      messageTimer = setTimeout(() => el.classList.remove('visible'), 3500);
+      messageTimer = setTimeout(() => el.classList.remove('visible'), 3800);
     }
 
     // ── Inventory UI ──────────────────────────────────────────────
@@ -953,26 +1476,22 @@
 
       if (!playerInBoat) {
         if (playerBoat && r === playerBoat.r && c === playerBoat.c) {
-          // Board the boat
           playerInBoat = true;
-          playerPawn   = {r, c}; // pawn is now at the boat's position
+          playerPawn   = {r, c};
         } else {
-          // Walk to adjacent land
           playerPawn = {r, c};
         }
       } else {
         if (tile === 'land') {
-          // Disembark: pawn steps onto land, boat stays at current water tile
           playerPawn   = {r, c};
           playerInBoat = false;
         } else {
-          // Sail: move boat (and pawn) to adjacent water tile
           playerBoat = {r, c};
           playerPawn = {r, c};
         }
       }
 
-      // Mine check — triggers immediately on landing, before remaining steps matter
+      // Mine check
       if (cpuPlaced.mine
           && playerPawn.r === cpuPlaced.mine.r
           && playerPawn.c === cpuPlaced.mine.c) {
@@ -982,6 +1501,14 @@
         renderRight();
         showMessage('💥 Boom! You hit a mine — you\'ll miss your next turn!');
         setTimeout(endPlayerTurn, 1500);
+        return;
+      }
+
+      // Win check (reached star col with manual)
+      if (inventory.manual && playerPawn.c === 0) {
+        clearHighlights();
+        renderRight();
+        showEndgame(true);
         return;
       }
 
@@ -996,7 +1523,6 @@
 
       highlighted = getValidMoves(rightMap, playerPawn, playerBoat, playerInBoat);
       if (highlighted.length === 0) {
-        // Pawn is stuck — end turn automatically
         endPlayerTurn();
       } else {
         applyHighlights(highlighted, 'rightGrid');
@@ -1021,8 +1547,57 @@
       setTimeout(cpuTurn, 900);
     }
 
+    // ── CPU: pick best move on medium/hard ────────────────────────
+    function pickBestCpuMove(moves) {
+      let target = null;
+
+      // Priority: find key → find chest → head to star (col 0)
+      if (!cpuInventory.key && placed.key) {
+        target = placed.key;
+      } else if (!cpuInventory.manual && placed.chest) {
+        target = placed.chest;
+      } else {
+        // Has manual — head toward star (col 0)
+        return moves.reduce((best, t) => (t.c < best.c ? t : best), moves[0]);
+      }
+
+      return moves.reduce((b, t) => {
+        const dt = Math.abs(t.r - target.r) + Math.abs(t.c - target.c);
+        const db = Math.abs(b.r - target.r) + Math.abs(b.c - target.c);
+        return dt < db ? t : b;
+      }, moves[0]);
+    }
+
     // ── CPU turn (moves on leftMap = player's island) ─────────────
     function cpuTurn() {
+      if (gameOver) return;
+
+      // CPU stunned by mine
+      if (cpuSkipNext) {
+        cpuSkipNext = false;
+        showMessage('💨 The CPU is still stunned from your mine — its turn is skipped!');
+        setTimeout(() => {
+          if (gameOver) return;
+          currentTurn = 'player';
+          moveState   = 'idle';
+          diceVal     = 0;
+          updateHud();
+        }, 1800);
+        return;
+      }
+
+      // Chance to ask a question instead of moving
+      const askProb = difficulty === 'easy' ? 0.15 : difficulty === 'medium' ? 0.25 : 0.35;
+      if (Math.random() < askProb) {
+        const q = generateCpuQuestion();
+        if (q) {
+          pendingCpuQuestion = q;
+          showCpuQuestionModal(q);
+          return; // Wait for player to answer; submitPlayerAnswer() resumes flow
+        }
+      }
+
+      // Move
       const roll  = Math.floor(Math.random() * 6) + 1;
       const moves = getReachable(leftMap, cpuPawn, roll);
 
@@ -1031,14 +1606,34 @@
         if (difficulty === 'easy') {
           dest = moves[Math.floor(Math.random() * moves.length)];
         } else {
-          // Medium/Hard: prefer lower col index (closer to star on leftMap)
-          dest = moves.reduce((best, t) => (t.c < best.c ? t : best), moves[0]);
+          dest = pickBestCpuMove(moves);
         }
         cpuPawn = dest;
+
+        // Check item pickup
+        if (placed.key && !cpuInventory.key
+            && placed.key.r === dest.r && placed.key.c === dest.c) {
+          cpuInventory.key = true;
+          showMessage('🔴 CPU found the key on your island!');
+        } else if (placed.chest && cpuInventory.key && !cpuInventory.manual
+                   && placed.chest.r === dest.r && placed.chest.c === dest.c) {
+          cpuInventory.manual = true;
+          showMessage('🔴 CPU retrieved the manual — it\'s heading for the ★!');
+        } else if (placed.mine
+                   && placed.mine.r === dest.r && placed.mine.c === dest.c) {
+          placed.mine = null;
+          cpuSkipNext = true;
+          showMessage('💥 Your mine went off — the CPU will skip its next turn!');
+        }
+
         renderLeft();
+
+        // Check CPU win immediately after move
+        if (checkCpuWin()) return;
       }
 
       setTimeout(() => {
+        if (gameOver) return;
         currentTurn = 'player';
         moveState   = 'idle';
         diceVal     = 0;
@@ -1046,8 +1641,8 @@
           skipNextTurn = false;
           showMessage('💨 Still recovering from the mine blast — skipping your turn.');
           updateHud();
-          // Auto-play the skipped turn after a short pause
           setTimeout(() => {
+            if (gameOver) return;
             currentTurn = 'cpu';
             updateHud();
             setTimeout(cpuTurn, 900);
