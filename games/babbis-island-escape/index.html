@@ -18,495 +18,290 @@
       --land-dark: #389038;
       --cell: 52px;
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { min-height: 100vh; font-family: 'Nunito', sans-serif; background-color: var(--cream); overflow-x: hidden; }
 
-    body {
-      min-height: 100vh;
-      font-family: 'Nunito', sans-serif;
-      background-color: var(--cream);
-      overflow-x: hidden;
-    }
-
-    /* ── Wallpaper ───────────────────────────────────────────── */
     .wallpaper { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
-
     .tomato-grid {
       position: absolute; inset: -80px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, 72px);
-      grid-auto-rows: 72px;
-      transform: rotate(45deg) scale(1.5);
-      opacity: 0.18; gap: 18px;
+      display: grid; grid-template-columns: repeat(auto-fill, 72px); grid-auto-rows: 72px;
+      transform: rotate(45deg) scale(1.5); opacity: 0.18; gap: 18px;
     }
+    .tomato { display: flex; align-items: center; justify-content: center; font-size: 36px; user-select: none; }
 
-    .tomato {
-      display: flex; align-items: center; justify-content: center;
-      font-size: 36px; user-select: none;
-    }
-
-    /* ── Content ─────────────────────────────────────────────── */
     .content {
       position: relative; z-index: 1; min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center;
-      padding: 36px 24px 80px;
+      display: flex; flex-direction: column; align-items: center; padding: 36px 24px 80px;
     }
-
     .back-link {
-      align-self: flex-start;
-      font-family: 'Fredoka One', cursive;
-      color: var(--tomato-green); text-decoration: none;
-      font-size: 1rem; margin-bottom: 20px;
+      align-self: flex-start; font-family: 'Fredoka One', cursive;
+      color: var(--tomato-green); text-decoration: none; font-size: 1rem; margin-bottom: 20px;
       opacity: 0.75; transition: opacity 0.15s;
     }
     .back-link:hover { opacity: 1; }
-
     h1 {
-      font-family: 'Fredoka One', cursive;
-      font-size: clamp(1.9rem, 5vw, 3rem);
-      color: var(--tomato-red); text-align: center;
-      margin-bottom: 28px; letter-spacing: 1px;
+      font-family: 'Fredoka One', cursive; font-size: clamp(1.9rem, 5vw, 3rem);
+      color: var(--tomato-red); text-align: center; margin-bottom: 28px; letter-spacing: 1px;
       text-shadow: 3px 3px 0 rgba(232,57,42,0.15);
     }
-
-    /* ── Utility ─────────────────────────────────────────────── */
     .hidden { display: none !important; }
 
-    /* ── Phase bar ───────────────────────────────────────────── */
-    .phase-wrap {
-      display: flex; flex-direction: column;
-      align-items: center; gap: 10px; margin-bottom: 28px;
-    }
-
+    /* ── Phase bar ── */
+    .phase-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 28px; }
     .phase-bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-
     .phase-step {
-      font-family: 'Fredoka One', cursive; font-size: 0.95rem;
-      padding: 6px 18px; border-radius: 50px;
-      background: rgba(255,255,255,0.7); border: 2px solid #ddd;
+      font-family: 'Fredoka One', cursive; font-size: 0.95rem; padding: 6px 18px;
+      border-radius: 50px; background: rgba(255,255,255,0.7); border: 2px solid #ddd;
       color: #bbb; transition: all 0.25s; white-space: nowrap;
     }
-    .phase-step.active {
-      background: var(--tomato-green); border-color: var(--tomato-green);
-      color: white; box-shadow: 0 3px 10px rgba(58,125,68,0.3);
-    }
-    .phase-step.done {
-      background: rgba(58,125,68,0.15); border-color: #aacfaa;
-      color: var(--tomato-green); text-decoration: line-through;
-    }
+    .phase-step.active { background: var(--tomato-green); border-color: var(--tomato-green); color: white; box-shadow: 0 3px 10px rgba(58,125,68,0.3); }
+    .phase-step.done { background: rgba(58,125,68,0.15); border-color: #aacfaa; color: var(--tomato-green); text-decoration: line-through; }
+    .phase-hint { font-size: 0.88rem; color: #777; font-weight: 600; min-height: 1.2em; text-align: center; }
 
-    .phase-hint {
-      font-size: 0.88rem; color: #777; font-weight: 600;
-      min-height: 1.2em; text-align: center;
-    }
-
-    /* ── Game HUD ────────────────────────────────────────────── */
-    .game-hud {
-      display: flex; flex-direction: column;
-      align-items: center; gap: 14px; margin-bottom: 24px;
-    }
-
+    /* ── Game HUD ── */
+    .game-hud { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 24px; }
     .turn-banner {
-      font-family: 'Fredoka One', cursive; font-size: 1.4rem;
-      padding: 8px 32px; border-radius: 50px;
-      background: var(--card-bg); box-shadow: var(--shadow);
-      color: var(--dark); letter-spacing: 0.5px;
-      transition: background 0.35s;
+      font-family: 'Fredoka One', cursive; font-size: 1.4rem; padding: 8px 32px;
+      border-radius: 50px; background: var(--card-bg); box-shadow: var(--shadow);
+      color: var(--dark); letter-spacing: 0.5px; transition: background 0.35s;
     }
     .turn-banner.cpu-turn { background: rgba(232,57,42,0.14); }
-
     .dice-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
-
     .action-btn {
-      font-family: 'Fredoka One', cursive; font-size: 1.1rem;
-      padding: 10px 28px; border-radius: 50px; border: none;
-      cursor: pointer; background: var(--tomato-green); color: white;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+      font-family: 'Fredoka One', cursive; font-size: 1.1rem; padding: 10px 28px;
+      border-radius: 50px; border: none; cursor: pointer; background: var(--tomato-green);
+      color: white; box-shadow: 0 3px 10px rgba(0,0,0,0.15);
       transition: background 0.15s, transform 0.15s, opacity 0.15s;
     }
     .action-btn:hover:not(:disabled) { background: var(--leaf-green); transform: scale(1.05); }
     .action-btn:disabled { opacity: 0.38; cursor: default; transform: none !important; }
-
     .action-btn.end-btn { background: var(--tomato-red); }
     .action-btn.end-btn:hover:not(:disabled) { background: #c0281a; }
-
-    .dice-face {
-      font-size: 2.6rem; min-width: 2.8rem; text-align: center;
-      transition: transform 0.2s;
-    }
-
-    /* ── Difficulty overlay ──────────────────────────────────── */
-    .diff-overlay {
-      position: fixed; inset: 0; z-index: 100;
-      background: rgba(0,0,0,0.55);
-      display: flex; align-items: center; justify-content: center;
-      backdrop-filter: blur(3px);
-    }
-
-    .modal-card {
-      background: var(--cream); border-radius: 20px;
-      padding: 40px 48px;
-      box-shadow: 0 16px 60px rgba(0,0,0,0.35);
-      text-align: center; max-width: 360px; width: 90%;
-      animation: fadeUp 0.3s ease both;
-    }
-    .modal-card h2 {
-      font-family: 'Fredoka One', cursive; font-size: 1.9rem;
-      color: var(--tomato-red); margin-bottom: 8px;
-    }
-    .modal-card p { color: #666; font-size: 0.95rem; margin-bottom: 24px; }
-
-    .diff-btns { display: flex; flex-direction: column; gap: 12px; }
-
-    .diff-btn {
-      font-family: 'Fredoka One', cursive; font-size: 1.2rem;
-      padding: 14px 32px; border-radius: 50px; border: none;
-      cursor: pointer; color: white;
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .diff-btn:hover { transform: scale(1.06); }
-    .diff-btn.easy   { background: var(--tomato-green); box-shadow: 0 4px 14px rgba(58,125,68,0.35); }
-    .diff-btn.medium { background: var(--tomato-red);   box-shadow: 0 4px 14px rgba(232,57,42,0.35); }
-    .diff-btn.hard   { background: var(--dark);         box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
-
-    /* ── Game area ───────────────────────────────────────────── */
-    .game-area { display: flex; align-items: flex-start; gap: 10px; }
-
-    .grid-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-
-    .grid-label {
-      height: 24px; display: flex; align-items: center; justify-content: center;
-      font-family: 'Fredoka One', cursive; font-size: 0.8rem;
-      letter-spacing: 1.5px; text-transform: uppercase;
-      color: var(--tomato-green); opacity: 0.6;
-    }
-
-    /* ── Star tile ───────────────────────────────────────────── */
-    .star-tile {
-      width: var(--cell); height: var(--cell);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.8rem; background: var(--card-bg);
-      border-radius: 10px; border: 2px solid rgba(255,255,255,0.8);
-      box-shadow: var(--shadow); flex-shrink: 0; user-select: none;
-      margin-top: calc(68px + 2 * var(--cell));
-    }
-
-    /* ── Grid table ──────────────────────────────────────────── */
-    .grid-table { border-collapse: separate; border-spacing: 3px; }
-
-    .grid-table th {
-      font-family: 'Fredoka One', cursive; font-size: 0.9rem;
-      color: var(--dark); opacity: 0.6;
-      width: var(--cell); height: 26px;
-      text-align: center; user-select: none;
-    }
-    .grid-table th.corner { opacity: 0; pointer-events: none; }
-
-    /* ── Cells ───────────────────────────────────────────────── */
-    .cell {
-      width: var(--cell); height: var(--cell);
-      border-radius: 8px; cursor: pointer;
-      text-align: center; vertical-align: middle;
-      font-size: 1.35rem; line-height: 1;
-      transition: transform 0.12s, filter 0.12s;
-      user-select: none; position: relative; overflow: hidden;
-    }
-    .cell.water {
-      background: linear-gradient(135deg, #5bbfe6 0%, var(--water-dark) 100%);
-      box-shadow: inset 0 -3px 5px rgba(0,0,0,0.18);
-    }
-    .cell.land {
-      background: linear-gradient(135deg, #72d672 0%, var(--land-dark) 100%);
-      box-shadow: inset 0 -3px 5px rgba(0,0,0,0.18);
-    }
-    .cell:hover { transform: scale(1.12); filter: brightness(1.1); z-index: 3; }
-
-    .cell.inactive { cursor: default; opacity: 0.75; }
-    .cell.inactive:hover { transform: none; filter: none; }
-
-    /* ── Cell highlights ─────────────────────────────────────── */
-    .cell.highlighted {
-      outline: 3px solid #ffe000;
-      outline-offset: -3px;
-      z-index: 2;
-      cursor: pointer;
-      animation: pulse-bright 0.85s ease-in-out infinite alternate;
-    }
-    @keyframes pulse-bright {
-      from { filter: brightness(1.15); }
-      to   { filter: brightness(1.5); }
-    }
-
-    /* ── Animations ──────────────────────────────────────────── */
-    @keyframes shake {
-      0%,100% { transform: translateX(0); }
-      20%     { transform: translateX(-5px); }
-      50%     { transform: translateX(5px); }
-      75%     { transform: translateX(-3px); }
-    }
-    @keyframes pop {
-      0%   { transform: scale(0.4); }
-      65%  { transform: scale(1.25); }
-      100% { transform: scale(1); }
-    }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .cell.shaking { animation: shake 0.32s ease both; }
-    .cell .icon { display: inline-block; animation: pop 0.22s ease both; }
-
-    /* ── Ready button ────────────────────────────────────────── */
-    .ready-btn {
-      margin-top: 36px;
-      font-family: 'Fredoka One', cursive; font-size: 1.4rem;
-      padding: 14px 52px; background: var(--tomato-green);
-      color: white; border: none; border-radius: 50px; cursor: pointer;
-      box-shadow: 0 4px 14px rgba(58,125,68,0.35);
-      opacity: 0; pointer-events: none; transform: translateY(10px);
-      transition: opacity 0.3s ease, transform 0.3s ease,
-                  background 0.18s, box-shadow 0.18s;
-    }
-    .ready-btn.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .ready-btn:hover {
-      background: var(--leaf-green);
-      transform: scale(1.05) !important;
-      box-shadow: 0 6px 20px rgba(58,125,68,0.45);
-    }
-
-    /* ── Dig button ──────────────────────────────────────────── */
+    .dice-face { font-size: 2.6rem; min-width: 2.8rem; text-align: center; transition: transform 0.2s; }
     .action-btn.dig-btn { background: #7a5230; }
     .action-btn.dig-btn:hover:not(:disabled) { background: #5d3d22; }
-
-    /* ── Ask Question button ─────────────────────────────────── */
     .action-btn.ask-btn { background: #5b3da8; }
     .action-btn.ask-btn:hover:not(:disabled) { background: #432d7e; }
 
-    /* ── Message bar ─────────────────────────────────────────── */
-    .message-bar {
-      font-family: 'Fredoka One', cursive;
-      font-size: 1.05rem;
-      padding: 8px 22px;
-      border-radius: 50px;
-      background: var(--card-bg);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
-      color: var(--dark);
-      opacity: 0;
-      transform: translateY(-6px);
-      transition: opacity 0.25s, transform 0.25s;
-      pointer-events: none;
-      max-width: 440px;
-      text-align: center;
+    /* ── CPU question panel (inline, grid stays visible) ── */
+    .cpu-question-panel {
+      background: rgba(232,57,42,0.07); border: 2px solid rgba(232,57,42,0.22);
+      border-radius: 16px; padding: 16px 28px; text-align: center; max-width: 500px; width: 100%;
     }
-    .message-bar.visible { opacity: 1; transform: translateY(0); }
+    .cpuq-question { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: var(--dark); margin-bottom: 12px; }
+    .cpuq-lie-hint { font-size: 0.78rem; color: #999; margin-top: 8px; min-height: 1em; }
 
-    /* ── Inventory bar ───────────────────────────────────────── */
-    .inventory-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 7px 20px;
-      background: var(--card-bg);
-      border-radius: 50px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      margin-bottom: 18px;
-    }
-    .inv-label {
-      font-size: 0.72rem;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: #aaa;
-      font-weight: 700;
-    }
-    .inv-item {
-      font-family: 'Fredoka One', cursive;
-      font-size: 0.9rem;
-      background: rgba(58,125,68,0.12);
-      border: 1.5px solid #aacfaa;
-      color: var(--tomato-green);
-      padding: 2px 12px;
-      border-radius: 50px;
-      animation: pop 0.25s ease both;
-    }
-    .inv-empty { color: #ccc; font-size: 0.85rem; }
-
-    /* ── Ask Question modal ──────────────────────────────────── */
-    .ask-overlay, .cpuq-overlay, .endgame-overlay {
-      position: fixed; inset: 0; z-index: 150;
-      background: rgba(0,0,0,0.6);
-      display: flex; align-items: center; justify-content: center;
-      backdrop-filter: blur(4px);
-    }
-    .ask-overlay.hidden, .cpuq-overlay.hidden, .endgame-overlay.hidden {
-      display: none;
-    }
-
-    .ask-modal {
-      background: var(--cream); border-radius: 20px;
-      padding: 36px 40px;
-      box-shadow: 0 16px 60px rgba(0,0,0,0.4);
-      text-align: center; max-width: 420px; width: 92%;
-      animation: fadeUp 0.3s ease both;
-    }
-    .ask-modal h2 {
-      font-family: 'Fredoka One', cursive; font-size: 1.7rem;
-      color: #5b3da8; margin-bottom: 8px;
-    }
-    .ask-modal .sub { color: #777; font-size: 0.88rem; margin-bottom: 16px; }
-
-    .ask-modal textarea {
-      width: 100%; padding: 10px 14px;
-      border-radius: 10px; border: 2px solid #ddd;
-      font-family: 'Nunito', sans-serif; font-size: 0.95rem;
-      resize: vertical; min-height: 72px; margin-bottom: 14px;
-    }
-    .ask-modal textarea:focus { outline: none; border-color: #5b3da8; }
-
-    .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 4px; }
-
-    .cpu-answer-box {
-      margin-top: 16px; padding: 14px 22px;
-      border-radius: 14px; background: rgba(91,61,168,0.1);
-      border: 2px solid #c4b4f0;
-      font-family: 'Fredoka One', cursive; font-size: 1.25rem;
-      color: var(--dark); animation: fadeUp 0.3s ease both;
-    }
-
-    /* ── CPU question overlay ────────────────────────────────── */
-    .cpuq-modal {
-      background: var(--cream); border-radius: 20px;
-      padding: 36px 40px;
-      box-shadow: 0 16px 60px rgba(0,0,0,0.4);
-      text-align: center; max-width: 420px; width: 92%;
-      animation: fadeUp 0.3s ease both;
-    }
-    .cpuq-modal h2 {
-      font-family: 'Fredoka One', cursive; font-size: 1.7rem;
-      color: var(--tomato-red); margin-bottom: 12px;
-    }
-    .cpuq-modal .question-text {
-      font-family: 'Fredoka One', cursive; font-size: 1.15rem;
-      color: var(--dark); margin-bottom: 8px;
-    }
-    .cpuq-modal .lie-status {
-      font-size: 0.8rem; color: #aaa; margin-bottom: 16px; min-height: 1.2em;
-    }
-
-    .answer-btns {
-      display: flex; align-items: center; gap: 10px;
-      justify-content: center; flex-wrap: wrap;
-    }
-
+    .answer-btns { display: flex; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .lie-btn {
-      font-family: 'Fredoka One', cursive; font-size: 1rem;
-      padding: 9px 20px; border-radius: 50px;
-      border: 2px solid #9b3fde;
-      cursor: pointer; color: #9b3fde; background: transparent;
-      transition: all 0.15s;
+      font-family: 'Fredoka One', cursive; font-size: 1rem; padding: 9px 20px;
+      border-radius: 50px; border: 2px solid #9b3fde;
+      cursor: pointer; color: #9b3fde; background: transparent; transition: all 0.15s;
     }
     .lie-btn:hover:not(:disabled) { background: rgba(155,63,222,0.1); }
     .lie-btn.active { background: #9b3fde; color: white; }
     .lie-btn:disabled { opacity: 0.35; cursor: default; }
 
-    /* ── Q&A Log ─────────────────────────────────────────────── */
-    .qa-log {
-      margin-top: 28px; width: 100%; max-width: 560px;
-      background: var(--card-bg); border-radius: 16px;
-      box-shadow: var(--shadow); padding: 18px 22px;
+    /* ── Message bar ── */
+    .message-bar {
+      font-family: 'Fredoka One', cursive; font-size: 1.05rem; padding: 8px 22px;
+      border-radius: 50px; background: var(--card-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      color: var(--dark); opacity: 0; transform: translateY(-6px);
+      transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+      max-width: 460px; text-align: center;
     }
-    .qa-log-title {
-      font-family: 'Fredoka One', cursive; font-size: 0.95rem;
-      color: var(--tomato-green); letter-spacing: 1px;
-      text-transform: uppercase; margin-bottom: 12px;
+    .message-bar.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── Inventory bar ── */
+    .inventory-bar {
+      display: flex; align-items: center; gap: 10px; padding: 7px 20px;
+      background: var(--card-bg); border-radius: 50px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 18px;
     }
-    .qa-entry { margin-bottom: 12px; }
-    .qa-who { font-size: 0.76rem; color: #aaa; margin-bottom: 2px; }
-    .qa-q { font-weight: 700; color: #444; font-size: 0.88rem; }
-    .qa-ans-row { margin-top: 2px; }
-    .qa-a {
-      display: inline-block; margin-left: 4px;
+    .inv-label { font-size: 0.72rem; letter-spacing: 1px; text-transform: uppercase; color: #aaa; font-weight: 700; }
+    .inv-item {
       font-family: 'Fredoka One', cursive; font-size: 0.9rem;
-      padding: 1px 10px; border-radius: 50px;
+      background: rgba(58,125,68,0.12); border: 1.5px solid #aacfaa; color: var(--tomato-green);
+      padding: 2px 12px; border-radius: 50px; animation: pop 0.25s ease both;
     }
+    .inv-empty { color: #ccc; font-size: 0.85rem; }
+
+    /* ── Difficulty overlay ── */
+    .diff-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(3px);
+    }
+    .modal-card {
+      background: var(--cream); border-radius: 20px; padding: 40px 48px;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.35); text-align: center; max-width: 360px; width: 90%;
+      animation: fadeUp 0.3s ease both;
+    }
+    .modal-card h2 { font-family: 'Fredoka One', cursive; font-size: 1.9rem; color: var(--tomato-red); margin-bottom: 8px; }
+    .modal-card p { color: #666; font-size: 0.95rem; margin-bottom: 24px; }
+    .diff-btns { display: flex; flex-direction: column; gap: 12px; }
+    .diff-btn { font-family: 'Fredoka One', cursive; font-size: 1.2rem; padding: 14px 32px; border-radius: 50px; border: none; cursor: pointer; color: white; transition: transform 0.15s, box-shadow 0.15s; }
+    .diff-btn:hover { transform: scale(1.06); }
+    .diff-btn.easy   { background: var(--tomato-green); box-shadow: 0 4px 14px rgba(58,125,68,0.35); }
+    .diff-btn.medium { background: var(--tomato-red);   box-shadow: 0 4px 14px rgba(232,57,42,0.35); }
+    .diff-btn.hard   { background: var(--dark);         box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
+
+    /* ── Game area ── */
+    .game-area { display: flex; align-items: flex-start; gap: 10px; }
+    .grid-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .grid-label {
+      height: 24px; display: flex; align-items: center; justify-content: center;
+      font-family: 'Fredoka One', cursive; font-size: 0.8rem;
+      letter-spacing: 1.5px; text-transform: uppercase; color: var(--tomato-green); opacity: 0.6;
+    }
+    .star-tile {
+      width: var(--cell); height: var(--cell); display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; background: var(--card-bg); border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.8); box-shadow: var(--shadow); flex-shrink: 0;
+      user-select: none; margin-top: calc(68px + 2 * var(--cell));
+    }
+    .grid-table { border-collapse: separate; border-spacing: 3px; }
+    .grid-table th { font-family: 'Fredoka One', cursive; font-size: 0.9rem; color: var(--dark); opacity: 0.6; width: var(--cell); height: 26px; text-align: center; user-select: none; }
+    .grid-table th.corner { opacity: 0; pointer-events: none; }
+    .cell { width: var(--cell); height: var(--cell); border-radius: 8px; cursor: pointer; text-align: center; vertical-align: middle; font-size: 1.35rem; line-height: 1; transition: transform 0.12s, filter 0.12s; user-select: none; position: relative; overflow: hidden; }
+    .cell.water { background: linear-gradient(135deg, #5bbfe6 0%, var(--water-dark) 100%); box-shadow: inset 0 -3px 5px rgba(0,0,0,0.18); }
+    .cell.land  { background: linear-gradient(135deg, #72d672 0%, var(--land-dark) 100%);  box-shadow: inset 0 -3px 5px rgba(0,0,0,0.18); }
+    .cell:hover { transform: scale(1.12); filter: brightness(1.1); z-index: 3; }
+    .cell.inactive { cursor: default; opacity: 0.75; }
+    .cell.inactive:hover { transform: none; filter: none; }
+    .cell.highlighted { outline: 3px solid #ffe000; outline-offset: -3px; z-index: 2; cursor: pointer; animation: pulse-bright 0.85s ease-in-out infinite alternate; }
+    @keyframes pulse-bright { from { filter: brightness(1.15); } to { filter: brightness(1.5); } }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 50%{transform:translateX(5px)} 75%{transform:translateX(-3px)} }
+    @keyframes pop { 0%{transform:scale(0.4)} 65%{transform:scale(1.25)} 100%{transform:scale(1)} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+    .cell.shaking { animation: shake 0.32s ease both; }
+    .cell .icon { display: inline-block; animation: pop 0.22s ease both; }
+
+    /* ── Ready button ── */
+    .ready-btn {
+      margin-top: 36px; font-family: 'Fredoka One', cursive; font-size: 1.4rem;
+      padding: 14px 52px; background: var(--tomato-green); color: white; border: none;
+      border-radius: 50px; cursor: pointer; box-shadow: 0 4px 14px rgba(58,125,68,0.35);
+      opacity: 0; pointer-events: none; transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease, background 0.18s, box-shadow 0.18s;
+    }
+    .ready-btn.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .ready-btn:hover { background: var(--leaf-green); transform: scale(1.05) !important; box-shadow: 0 6px 20px rgba(58,125,68,0.45); }
+
+    /* ── Ask Question overlay ── */
+    .ask-overlay {
+      position: fixed; inset: 0; z-index: 150;
+      background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(3px);
+    }
+    .ask-overlay.hidden { display: none; }
+    .ask-modal {
+      background: var(--cream); border-radius: 20px; padding: 32px 36px;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.4); text-align: center; max-width: 440px; width: 92%;
+      animation: fadeUp 0.3s ease both;
+    }
+    .ask-modal h2 { font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: #5b3da8; margin-bottom: 6px; }
+    .ask-modal .sub { color: #777; font-size: 0.85rem; margin-bottom: 14px; }
+
+    /* ── Searchable question picker ── */
+    .question-picker { position: relative; margin-bottom: 8px; text-align: left; }
+    .q-search {
+      width: 100%; padding: 8px 14px; border-radius: 10px; border: 2px solid #ddd;
+      font-family: 'Nunito', sans-serif; font-size: 0.9rem; margin-bottom: 4px;
+    }
+    .q-search:focus { outline: none; border-color: #5b3da8; }
+    .q-list {
+      max-height: 180px; overflow-y: auto; border: 2px solid #e0e0e0;
+      border-radius: 10px; background: white;
+    }
+    .q-option {
+      padding: 7px 12px; cursor: pointer; font-size: 0.88rem;
+      border-bottom: 1px solid #f5f5f5; transition: background 0.1s;
+    }
+    .q-option:last-child { border-bottom: none; }
+    .q-option:hover { background: rgba(91,61,168,0.07); }
+    .q-option.selected { background: rgba(91,61,168,0.14); color: #5b3da8; font-weight: 700; }
+    .q-selected-text { font-size: 0.82rem; color: #5b3da8; min-height: 1.3em; font-style: italic; margin-bottom: 8px; text-align: left; }
+
+    .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 4px; }
+    .cpu-answer-box {
+      margin-top: 14px; padding: 12px 20px; border-radius: 14px;
+      background: rgba(91,61,168,0.1); border: 2px solid #c4b4f0;
+      font-family: 'Fredoka One', cursive; font-size: 1.3rem; color: var(--dark);
+      animation: fadeUp 0.3s ease both;
+    }
+
+    /* ── Game Log ── */
+    .qa-log {
+      margin-top: 28px; width: 100%; max-width: 560px; background: var(--card-bg);
+      border-radius: 16px; box-shadow: var(--shadow); padding: 16px 20px;
+    }
+    .qa-log-title { font-family: 'Fredoka One', cursive; font-size: 0.95rem; color: var(--tomato-green); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+    #qaLogItems { max-height: 240px; overflow-y: auto; }
+    .log-entry { padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 0.85rem; color: #444; }
+    .log-entry:last-child { border-bottom: none; }
+    .log-entry.log-move   { color: #333; }
+    .log-entry.log-dig    { color: #7a5230; }
+    .log-entry.log-mine   { color: var(--tomato-red); font-weight: 700; }
+    .log-entry.log-item   { color: var(--tomato-green); font-weight: 700; }
+    .log-entry.log-skip   { color: #888; font-style: italic; }
+    .qa-entry { padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .qa-entry:last-child { border-bottom: none; }
+    .qa-who { font-size: 0.74rem; color: #aaa; margin-bottom: 1px; }
+    .qa-q   { font-weight: 700; color: #444; font-size: 0.85rem; }
+    .qa-ans-row { margin-top: 2px; }
+    .qa-a { display: inline-block; margin-left: 4px; font-family: 'Fredoka One', cursive; font-size: 0.88rem; padding: 1px 10px; border-radius: 50px; }
     .qa-a.yes { background: rgba(58,125,68,0.15); color: var(--tomato-green); }
     .qa-a.no  { background: rgba(232,57,42,0.12); color: var(--tomato-red); }
-    .qa-lied  { font-size: 0.74rem; color: #9b3fde; margin-left: 6px; }
+    .qa-lied  { font-size: 0.72rem; color: #9b3fde; margin-left: 6px; }
 
-    /* ── Endgame overlay ─────────────────────────────────────── */
+    /* ── Endgame overlay ── */
+    .endgame-overlay {
+      position: fixed; inset: 0; z-index: 150; background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+    }
+    .endgame-overlay.hidden { display: none; }
     .endgame-card {
-      background: var(--cream); border-radius: 24px;
-      padding: 52px 56px; text-align: center;
-      box-shadow: 0 16px 60px rgba(0,0,0,0.4);
-      animation: fadeUp 0.4s ease both;
-      max-width: 380px; width: 90%;
+      background: var(--cream); border-radius: 24px; padding: 52px 56px; text-align: center;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.4); animation: fadeUp 0.4s ease both; max-width: 380px; width: 90%;
     }
     .endgame-icon { font-size: 4.5rem; margin-bottom: 10px; }
-    .endgame-card h2 {
-      font-family: 'Fredoka One', cursive; font-size: 2.2rem;
-      margin-bottom: 10px;
-    }
+    .endgame-card h2 { font-family: 'Fredoka One', cursive; font-size: 2.2rem; margin-bottom: 10px; }
     .endgame-card p { color: #666; font-size: 1rem; margin-bottom: 28px; }
     .endgame-card h2.win  { color: var(--tomato-green); }
     .endgame-card h2.loss { color: var(--tomato-red); }
 
-    /* ── Rotate overlay (portrait on small screens) ─────────── */
+    /* ── Rotate overlay ── */
     .rotate-overlay {
-      display: none;
-      position: fixed; inset: 0; z-index: 200;
-      background: #1a1a1a;
+      display: none; position: fixed; inset: 0; z-index: 200; background: #1a1a1a;
       flex-direction: column; align-items: center; justify-content: center;
       gap: 22px; color: white; text-align: center; padding: 40px;
     }
-    .rotate-icon {
-      font-size: 4rem;
-      animation: tilt-phone 2.4s ease-in-out infinite;
-    }
-    .rotate-overlay p {
-      font-family: 'Fredoka One', cursive;
-      font-size: 1.35rem; line-height: 1.45;
-      max-width: 300px; color: white;
-    }
-    @keyframes tilt-phone {
-      0%   { transform: rotate(0deg); }
-      35%  { transform: rotate(90deg); }
-      65%  { transform: rotate(90deg); }
-      100% { transform: rotate(0deg); }
-    }
+    .rotate-icon { font-size: 4rem; animation: tilt-phone 2.4s ease-in-out infinite; }
+    .rotate-overlay p { font-family: 'Fredoka One', cursive; font-size: 1.35rem; line-height: 1.45; max-width: 300px; color: white; }
+    @keyframes tilt-phone { 0%{transform:rotate(0deg)} 35%{transform:rotate(90deg)} 65%{transform:rotate(90deg)} 100%{transform:rotate(0deg)} }
 
-    /* ── Smaller cells on narrow landscape screens ───────────── */
     @media (max-width: 900px) {
       :root { --cell: 44px; }
       .star-tile { font-size: 1.5rem; }
       .cell { border-radius: 6px; font-size: 1.1rem; }
       .modal-card { padding: 30px 24px; }
     }
-
-    /* ── Show rotate overlay in portrait on small screens ────── */
-    @media (max-width: 900px) and (orientation: portrait) {
-      .rotate-overlay { display: flex; }
-    }
+    @media (max-width: 900px) and (orientation: portrait) { .rotate-overlay { display: flex; } }
   </style>
 </head>
 <body>
 
-  <!-- Portrait-mode rotate prompt (shown via CSS media query) -->
   <div class="rotate-overlay">
     <div class="rotate-icon">📱</div>
     <p>Please rotate your device to landscape to play</p>
   </div>
 
-  <div class="wallpaper">
-    <div class="tomato-grid" id="tomatoGrid"></div>
-  </div>
+  <div class="wallpaper"><div class="tomato-grid" id="tomatoGrid"></div></div>
 
   <div class="content">
-
     <a href="../../index.html" class="back-link">← Godguttengames</a>
-
     <h1>Babbi's Island Escape</h1>
 
-    <!-- Setup phase UI -->
+    <!-- Setup phase -->
     <div class="phase-wrap" id="phaseWrap">
       <div class="phase-bar">
         <div class="phase-step active" id="step-chest">📦 Chest</div>
@@ -516,7 +311,7 @@
       <div class="phase-hint" id="phaseHint">Place your chest on a land tile (green)</div>
     </div>
 
-    <!-- Game HUD (shown during gameplay) -->
+    <!-- Game HUD -->
     <div class="game-hud hidden" id="gameHud">
       <div class="turn-banner" id="turnBanner">🔵 Your Turn</div>
       <div class="dice-row">
@@ -525,11 +320,21 @@
         <button class="action-btn dig-btn hidden" id="digBtn">⛏️ Dig / Fish</button>
         <button class="action-btn ask-btn hidden" id="askBtn">❓ Ask Question</button>
       </div>
+      <!-- CPU question panel (inline so grid remains visible) -->
+      <div class="cpu-question-panel hidden" id="cpuQPanel">
+        <div class="cpuq-question" id="cpuqPanelText"></div>
+        <div class="answer-btns">
+          <button class="lie-btn" id="lieBtn">🤫 LIE</button>
+          <button class="action-btn" id="ansYesBtn">YES</button>
+          <button class="action-btn end-btn" id="ansNoBtn">NO</button>
+        </div>
+        <div class="cpuq-lie-hint" id="cpuqLieHint"></div>
+      </div>
       <button class="action-btn end-btn" id="endTurnBtn" disabled>End Turn ➜</button>
       <div class="message-bar" id="messageBar"></div>
     </div>
 
-    <!-- Inventory (shown during gameplay) -->
+    <!-- Inventory -->
     <div class="inventory-bar hidden" id="inventoryBar">
       <span class="inv-label">Inventory</span>
       <span id="invKey"    class="inv-item hidden">🗝️ Key</span>
@@ -552,9 +357,9 @@
 
     <button class="ready-btn" id="readyBtn">Ready ✓</button>
 
-    <!-- Q&A Log -->
+    <!-- Game Log -->
     <div class="qa-log hidden" id="qaLog">
-      <div class="qa-log-title">📋 Q&amp;A Log</div>
+      <div class="qa-log-title">📋 Game Log</div>
       <div id="qaLogItems"></div>
     </div>
 
@@ -571,33 +376,23 @@
       </div>
     </div>
 
-    <!-- Ask Question overlay (player → CPU) -->
+    <!-- Ask Question overlay -->
     <div class="ask-overlay hidden" id="askOverlay">
       <div class="ask-modal">
         <h2>❓ Ask a Question</h2>
-        <p class="sub" id="askInfo">Type a yes/no question about the hidden items. The CPU will answer.</p>
-        <textarea id="questionInput" placeholder="e.g. Is the key on a water tile?"></textarea>
+        <p class="sub">Select a question about the items hidden on the opponent's island.</p>
+        <div class="question-picker">
+          <input type="text" class="q-search" id="questionSearch" placeholder="Type to filter questions…">
+          <div class="q-list" id="questionDropdown"></div>
+        </div>
+        <div class="q-selected-text" id="selectedQDisplay">No question selected.</div>
         <div id="cpuAnswerBox" class="cpu-answer-box hidden"></div>
         <div class="modal-btns" style="margin-top:14px">
           <button class="action-btn" id="cancelAskBtn" style="background:#999">Cancel</button>
-          <button class="action-btn ask-btn" id="submitAskBtn">Ask ❓</button>
+          <button class="action-btn ask-btn" id="submitAskBtn" disabled>Ask ❓</button>
         </div>
         <div class="modal-btns" style="margin-top:10px">
           <button class="action-btn end-btn hidden" id="closeAskBtn">Close &amp; End Turn</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- CPU question overlay (CPU → player) -->
-    <div class="cpuq-overlay hidden" id="cpuqOverlay">
-      <div class="cpuq-modal">
-        <h2>🔴 CPU asks you…</h2>
-        <div class="question-text" id="cpuqText"></div>
-        <div class="lie-status" id="cpuqLieStatus"></div>
-        <div class="answer-btns">
-          <button class="lie-btn" id="lieBtn">🤫 LIE</button>
-          <button class="action-btn" id="ansYesBtn">YES</button>
-          <button class="action-btn end-btn" id="ansNoBtn">NO</button>
         </div>
       </div>
     </div>
@@ -607,30 +402,31 @@
       <div class="endgame-card">
         <div class="endgame-icon" id="endgameIcon">🎉</div>
         <h2 id="endgameTitle" class="win">You Escaped!</h2>
-        <p id="endgameMsg">Congratulations! You found the manual and reached the star!</p>
+        <p id="endgameMsg">Congratulations!</p>
         <button class="action-btn" id="playAgainBtn">Play Again</button>
       </div>
     </div>
-
   </div>
 
   <script>
-    // ── Wallpaper ─────────────────────────────────────────────────
+    // ── Wallpaper ──────────────────────────────────────────────────
     const tomatoGrid = document.getElementById('tomatoGrid');
     for (let i = 0; i < 300; i++) {
-      const d = document.createElement('div');
-      d.className = 'tomato';
-      d.textContent = '🍅';
+      const d = document.createElement('div'); d.className = 'tomato'; d.textContent = '🍅';
       tomatoGrid.appendChild(d);
     }
 
-    // ── Constants ─────────────────────────────────────────────────
+    // ── Constants ──────────────────────────────────────────────────
     const ROWS = 5, COLS = 5;
-    const ROW_LABELS = ['A', 'B', 'C', 'D', 'E'];
+    const ROW_LABELS = ['A','B','C','D','E'];
     const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
     const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
 
-    // ── Map generation (exactly 10 land + 15 water, all water connected) ──
+    function coordLabel(pos) { return ROW_LABELS[pos.r] + (pos.c + 1); }
+
+    // ── Map generation ─────────────────────────────────────────────
+    // Guarantees: exactly 10 land + 15 water; all water connected;
+    // map[2][0] = 'land' (row C col 1 = star-adjacent); adj water to that tile.
     function generateMap() {
       while (true) {
         const tiles = Array(10).fill('land').concat(Array(15).fill('water'));
@@ -639,14 +435,25 @@
           [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
         }
         const map = Array.from({length: ROWS}, (_, r) => tiles.slice(r * COLS, r * COLS + COLS));
+
+        // Must have land at row C (2), col 0 (star side)
+        if (map[2][0] !== 'land') continue;
+
+        // Must have adjacent water to pawn start tile for boat
+        let hasBoatWater = false;
+        for (const [dr, dc] of DIRS) {
+          const nr = 2+dr, nc = 0+dc;
+          if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && map[nr][nc]==='water') { hasBoatWater = true; break; }
+        }
+        if (!hasBoatWater) continue;
+
+        // All water connected
         const waters = [];
         for (let r = 0; r < ROWS; r++)
           for (let c = 0; c < COLS; c++)
             if (map[r][c] === 'water') waters.push([r, c]);
         const seen = Array.from({length: ROWS}, () => Array(COLS).fill(false));
-        const q = [waters[0]];
-        seen[waters[0][0]][waters[0][1]] = true;
-        let cnt = 1;
+        const q = [waters[0]]; seen[waters[0][0]][waters[0][1]] = true; let cnt = 1;
         while (q.length) {
           const [r, c] = q.shift();
           for (const [dr, dc] of DIRS) {
@@ -663,40 +470,36 @@
     const leftMap  = generateMap();
     const rightMap = generateMap();
 
-    // ── State ─────────────────────────────────────────────────────
-    const placed  = { chest: null, key: null, mine: null };
-    let setupPhase = 'chest'; // chest → key → mine → done
-    let gamePhase  = 'setup'; // 'setup' | 'playing'
+    // ── State ──────────────────────────────────────────────────────
+    const placed = { chest: null, key: null, mine: null };
+    let setupPhase = 'chest';
+    let gamePhase  = 'setup';
 
-    // Gameplay
-    // Player moves on rightMap (opponent's island); CPU moves on leftMap (player's island)
     let difficulty   = 'easy';
-    let currentTurn  = 'player'; // 'player' | 'cpu'
-    let moveState    = 'idle';   // 'idle' | 'moving'
+    let currentTurn  = 'player';
+    let moveState    = 'idle';
     let diceVal      = 0;
     let stepsLeft    = 0;
-    let playerPawn   = null;   // {r,c} on rightMap
-    let playerBoat   = null;   // {r,c} on rightMap
+    let playerPawn   = null;
+    let playerBoat   = null;
     let playerInBoat = false;
-    let cpuPawn      = null;   // {r,c} on leftMap
-    let cpuBoat      = null;   // {r,c} on leftMap
+    let cpuPawn      = null;
+    let cpuBoat      = null;
+    let cpuInBoat    = false;
     let highlighted  = [];
-    // CPU's hidden items on rightMap (auto-placed at game start)
     const cpuPlaced  = { chest: null, key: null, mine: null };
-    // Player's collected items
     let inventory    = { key: false, manual: false };
-    // CPU's collected items
     const cpuInventory = { key: false, manual: false };
     let skipNextTurn = false;
     let cpuSkipNext  = false;
     let messageTimer = null;
     let gameOver     = false;
-    // Q&A state
-    let cpuLiesLeft    = 1;   // CPU has one lie when answering player's questions
-    let playerLiesLeft = 1;   // Player has one lie when answering CPU's questions
-    let lieActive      = false;
-    const qLog         = [];  // [{who, question, answer, lied}]
-    let pendingCpuQuestion = null; // {text, trueAnswer, pinpoints, type, target}
+    let cpuLiesLeft  = 1;
+    let playerLiesLeft = 1;
+    let lieActive    = false;
+    const gameLog    = [];
+    let pendingCpuQuestion = null;
+    let selectedQuestion   = null; // for player ask modal
 
     const HINTS = {
       chest: 'Place your chest on a land tile (green)',
@@ -705,42 +508,29 @@
       done:  'All items placed — press Ready when set!',
     };
 
-    // ── Build grids ───────────────────────────────────────────────
+    // ── Build grids ────────────────────────────────────────────────
     function buildGrid(tableEl, map, isLeft) {
       const hdr = document.createElement('tr');
-      if (isLeft) {
-        hdr.appendChild(mkTh('', 'corner'));
-        for (let c = 4; c >= 0; c--) hdr.appendChild(mkTh(c + 1));
-      } else {
-        for (let c = 0; c < 5; c++) hdr.appendChild(mkTh(c + 1));
-        hdr.appendChild(mkTh('', 'corner'));
-      }
+      if (isLeft) { hdr.appendChild(mkTh('','corner')); for (let c=4;c>=0;c--) hdr.appendChild(mkTh(c+1)); }
+      else        { for (let c=0;c<5;c++) hdr.appendChild(mkTh(c+1)); hdr.appendChild(mkTh('','corner')); }
       tableEl.appendChild(hdr);
       for (let r = 0; r < ROWS; r++) {
         const tr = document.createElement('tr');
         if (isLeft) {
           tr.appendChild(mkTh(ROW_LABELS[r]));
-          for (let c = 4; c >= 0; c--) tr.appendChild(mkCell(map, r, c, true));
+          for (let c=4;c>=0;c--) tr.appendChild(mkCell(map,r,c,true));
         } else {
-          for (let c = 0; c < 5; c++) tr.appendChild(mkCell(map, r, c, false));
+          for (let c=0;c<5;c++) tr.appendChild(mkCell(map,r,c,false));
           tr.appendChild(mkTh(ROW_LABELS[r]));
         }
         tableEl.appendChild(tr);
       }
     }
-
-    function mkTh(text, cls) {
-      const th = document.createElement('th');
-      if (cls) th.className = cls;
-      th.textContent = text;
-      return th;
-    }
-
+    function mkTh(text, cls) { const th=document.createElement('th'); if(cls)th.className=cls; th.textContent=text; return th; }
     function mkCell(map, r, c, isLeft) {
       const td = document.createElement('td');
       td.className = 'cell ' + map[r][c];
-      td.dataset.row = r;
-      td.dataset.col = c;
+      td.dataset.row = r; td.dataset.col = c;
       td.addEventListener('click', onCellClick);
       if (!isLeft) td.classList.add('inactive');
       return td;
@@ -749,254 +539,154 @@
     buildGrid(document.getElementById('leftGrid'),  leftMap,  true);
     buildGrid(document.getElementById('rightGrid'), rightMap, false);
 
-    // ── Cell click (setup + gameplay) ─────────────────────────────
+    // ── Cell click ─────────────────────────────────────────────────
     function onCellClick(e) {
-      const td      = e.currentTarget;
-      const r       = +td.dataset.row;
-      const c       = +td.dataset.col;
+      const td = e.currentTarget;
+      const r = +td.dataset.row, c = +td.dataset.col;
       const onRight = !!td.closest('#rightGrid');
 
-      // ── Gameplay: player moves on rightGrid ──
       if (gamePhase === 'playing') {
-        if (onRight && currentTurn === 'player' && moveState === 'moving'
-            && td.classList.contains('highlighted')) {
+        if (onRight && currentTurn === 'player' && moveState === 'moving' && td.classList.contains('highlighted'))
           doPlayerMove(r, c);
-        }
         return;
       }
 
-      // ── Setup: only leftGrid ──
       if (onRight || setupPhase === 'done') return;
       const tile = leftMap[r][c];
 
       if (setupPhase === 'chest') {
         if (tile !== 'land') { shake(td); return; }
-        clearPlacement('chest');
-        place(td, r, c, 'chest', '📦');
-        setupPhase = 'key';
-
+        clearPlacement('chest'); place(td, r, c, 'chest', '📦'); setupPhase = 'key';
       } else if (setupPhase === 'key') {
         if (occupiedBy(r, c)) { shake(td); return; }
-        clearPlacement('key');
-        place(td, r, c, 'key', '🗝️');
-        setupPhase = 'mine';
-
+        clearPlacement('key'); place(td, r, c, 'key', '🗝️'); setupPhase = 'mine';
       } else if (setupPhase === 'mine') {
         if (occupiedBy(r, c)) { shake(td); return; }
-        clearPlacement('mine');
-        place(td, r, c, 'mine', '💣');
-        setupPhase = 'done';
+        clearPlacement('mine'); place(td, r, c, 'mine', '💣'); setupPhase = 'done';
         document.getElementById('readyBtn').classList.add('visible');
       }
-
       updatePhaseUI();
     }
 
-    function place(td, r, c, item, icon) {
-      placed[item] = {r, c};
-      td.innerHTML = `<span class="icon">${icon}</span>`;
-    }
-
+    function place(td, r, c, item, icon) { placed[item]={r,c}; td.innerHTML=`<span class="icon">${icon}</span>`; }
     function clearPlacement(item) {
       if (!placed[item]) return;
-      const {r, c} = placed[item];
+      const {r,c} = placed[item];
       const el = document.querySelector(`#leftGrid td[data-row="${r}"][data-col="${c}"]`);
       if (el) el.innerHTML = '';
       placed[item] = null;
     }
-
-    function occupiedBy(r, c) {
-      for (const [item, pos] of Object.entries(placed))
-        if (pos && pos.r === r && pos.c === c) return item;
-      return null;
-    }
-
+    function occupiedBy(r, c) { for (const [k,p] of Object.entries(placed)) if (p&&p.r===r&&p.c===c) return k; return null; }
     function shake(el) {
-      el.classList.remove('shaking');
-      void el.offsetWidth;
-      el.classList.add('shaking');
-      el.addEventListener('animationend', () => el.classList.remove('shaking'), {once: true});
+      el.classList.remove('shaking'); void el.offsetWidth; el.classList.add('shaking');
+      el.addEventListener('animationend', () => el.classList.remove('shaking'), {once:true});
     }
 
-    // ── Setup phase UI ────────────────────────────────────────────
-    const STEP_IDS = { chest: 'step-chest', key: 'step-key', mine: 'step-mine' };
-    const STEPS    = ['chest', 'key', 'mine'];
-
+    const STEP_IDS = {chest:'step-chest',key:'step-key',mine:'step-mine'};
+    const STEPS    = ['chest','key','mine'];
     function updatePhaseUI() {
       const curIdx = STEPS.indexOf(setupPhase);
-      STEPS.forEach((s, i) => {
-        const el = document.getElementById(STEP_IDS[s]);
-        el.className = 'phase-step';
-        if (setupPhase === 'done' || i < curIdx) el.classList.add('done');
-        else if (i === curIdx)                   el.classList.add('active');
+      STEPS.forEach((s,i) => {
+        const el = document.getElementById(STEP_IDS[s]); el.className = 'phase-step';
+        if (setupPhase==='done'||i<curIdx) el.classList.add('done');
+        else if (i===curIdx) el.classList.add('active');
       });
       document.getElementById('phaseHint').textContent = HINTS[setupPhase] ?? '';
     }
 
-    // ── Ready → show difficulty picker ────────────────────────────
-    document.getElementById('readyBtn').addEventListener('click', () => {
-      document.getElementById('diffOverlay').classList.remove('hidden');
-    });
+    document.getElementById('readyBtn').addEventListener('click', () => document.getElementById('diffOverlay').classList.remove('hidden'));
+    document.getElementById('easyBtn').addEventListener('click', () => startGame('easy'));
+    document.getElementById('medBtn').addEventListener('click',  () => startGame('medium'));
+    document.getElementById('hardBtn').addEventListener('click', () => startGame('hard'));
 
-    document.getElementById('easyBtn').addEventListener('click',   () => startGame('easy'));
-    document.getElementById('medBtn').addEventListener('click',    () => startGame('medium'));
-    document.getElementById('hardBtn').addEventListener('click',   () => startGame('hard'));
-
-    // ── Auto-place CPU items on a map ────────────────────────────
+    // ── Auto-place CPU items ────────────────────────────────────────
     function autoCpuItems(map, avoid) {
-      const avoidSet = new Set(avoid.filter(Boolean).map(p => `${p.r},${p.c}`));
-      const landTiles = [], allTiles = [];
-      for (let r = 0; r < ROWS; r++)
-        for (let c = 0; c < COLS; c++) {
-          allTiles.push({r, c});
-          if (map[r][c] === 'land') landTiles.push({r, c});
-        }
-      const shuffle = arr => {
-        const a = [...arr];
-        for (let i = a.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [a[i], a[j]] = [a[j], a[i]];
-        }
-        return a;
-      };
-      const sLand = shuffle(landTiles);
-      const sAll  = shuffle(allTiles);
-      const chest = sLand.find(t => !avoidSet.has(`${t.r},${t.c}`));
-      avoidSet.add(`${chest.r},${chest.c}`);
-      const key   = sAll.find(t => !avoidSet.has(`${t.r},${t.c}`));
-      avoidSet.add(`${key.r},${key.c}`);
-      const mine  = sAll.find(t => !avoidSet.has(`${t.r},${t.c}`));
-      return {
-        chest: {r: chest.r, c: chest.c},
-        key:   {r: key.r,   c: key.c},
-        mine:  mine ? {r: mine.r, c: mine.c} : null,
-      };
+      const avoidSet = new Set(avoid.filter(Boolean).map(p=>`${p.r},${p.c}`));
+      const landTiles=[], allTiles=[];
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        allTiles.push({r,c}); if(map[r][c]==='land') landTiles.push({r,c});
+      }
+      const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+      const sLand=shuffle(landTiles), sAll=shuffle(allTiles);
+      const chest=sLand.find(t=>!avoidSet.has(`${t.r},${t.c}`)); avoidSet.add(`${chest.r},${chest.c}`);
+      const key=sAll.find(t=>!avoidSet.has(`${t.r},${t.c}`));   avoidSet.add(`${key.r},${key.c}`);
+      const mine=sAll.find(t=>!avoidSet.has(`${t.r},${t.c}`));
+      return { chest:{r:chest.r,c:chest.c}, key:{r:key.r,c:key.c}, mine:mine?{r:mine.r,c:mine.c}:null };
     }
 
-    // ── Start game ────────────────────────────────────────────────
+    // ── Find start: guaranteed row C col 0 is land ─────────────────
+    function findStart(map) {
+      const boat = adjWater(map, 2, 0);
+      return { pawn:{r:2,c:0}, boat };
+    }
+    function adjWater(map, r, c) {
+      for (const [dr,dc] of DIRS) {
+        const nr=r+dr, nc=c+dc;
+        if (nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&map[nr][nc]==='water') return {r:nr,c:nc};
+      }
+      return null;
+    }
+
+    // ── Start game ─────────────────────────────────────────────────
     function startGame(diff) {
       difficulty = diff;
       document.getElementById('diffOverlay').classList.add('hidden');
       document.getElementById('phaseWrap').classList.add('hidden');
       document.getElementById('readyBtn').classList.add('hidden');
 
-      // Player starts on rightMap (opponent's island); CPU starts on leftMap (player's island)
-      const ps     = findStart(rightMap);
-      const cs     = findStart(leftMap);
-      playerPawn   = ps.pawn;
-      playerBoat   = ps.boat;
-      playerInBoat = false;
-      cpuPawn      = cs.pawn;
-      cpuBoat      = cs.boat;
+      const ps = findStart(rightMap), cs = findStart(leftMap);
+      playerPawn=ps.pawn; playerBoat=ps.boat; playerInBoat=false;
+      cpuPawn=cs.pawn;    cpuBoat=cs.boat;    cpuInBoat=false;
 
-      // Auto-place CPU's hidden items on rightMap
-      const items    = autoCpuItems(rightMap, [playerPawn, playerBoat]);
-      cpuPlaced.chest = items.chest;
-      cpuPlaced.key   = items.key;
-      cpuPlaced.mine  = items.mine;
+      const items = autoCpuItems(rightMap, [playerPawn, playerBoat]);
+      cpuPlaced.chest=items.chest; cpuPlaced.key=items.key; cpuPlaced.mine=items.mine;
 
-      // Reset inventory and state
-      inventory.key    = false;
-      inventory.manual = false;
-      cpuInventory.key    = false;
-      cpuInventory.manual = false;
-      skipNextTurn  = false;
-      cpuSkipNext   = false;
-      gameOver      = false;
-      cpuLiesLeft   = 1;
-      playerLiesLeft = 1;
-      lieActive     = false;
-      qLog.length   = 0;
-      pendingCpuQuestion = null;
+      inventory.key=false; inventory.manual=false;
+      cpuInventory.key=false; cpuInventory.manual=false;
+      skipNextTurn=false; cpuSkipNext=false; gameOver=false;
+      cpuLiesLeft=1; playerLiesLeft=1; lieActive=false;
+      gameLog.length=0; pendingCpuQuestion=null; selectedQuestion=null;
 
       updateInventoryUI();
       document.getElementById('inventoryBar').classList.remove('hidden');
-
-      // Unlock rightGrid for gameplay clicks
       document.querySelectorAll('#rightGrid td.cell').forEach(td => td.classList.remove('inactive'));
 
-      gamePhase   = 'playing';
-      currentTurn = 'player';
-      moveState   = 'idle';
-      diceVal     = 0;
-      stepsLeft   = 0;
-
+      gamePhase='playing'; currentTurn='player'; moveState='idle'; diceVal=0; stepsLeft=0;
       renderGrids();
       document.getElementById('gameHud').classList.remove('hidden');
-      renderQaLog();
-      updateHud();
+      renderGameLog(); updateHud();
     }
 
-    // ── Find starting positions ───────────────────────────────────
-    function findStart(map) {
-      for (let r = 0; r < ROWS; r++) {
-        if (map[r][0] === 'land') {
-          const w = adjWater(map, r, 0);
-          if (w) return {pawn: {r, c:0}, boat: w};
-        }
-      }
-      for (let r = 0; r < ROWS; r++)
-        for (let c = 0; c < COLS; c++)
-          if (map[r][c] === 'land') {
-            const w = adjWater(map, r, c);
-            if (w) return {pawn: {r, c}, boat: w};
-          }
-      for (let r = 0; r < ROWS; r++)
-        for (let c = 0; c < COLS; c++)
-          if (map[r][c] === 'land') return {pawn: {r, c}, boat: null};
-      return {pawn: {r:0, c:0}, boat: null};
-    }
-
-    function adjWater(map, r, c) {
-      for (const [dr, dc] of DIRS) {
-        const nr = r+dr, nc = c+dc;
-        if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && map[nr][nc]==='water')
-          return {r: nr, c: nc};
-      }
-      return null;
-    }
-
-    // ── Render ────────────────────────────────────────────────────
+    // ── Render ─────────────────────────────────────────────────────
     function renderGrids() { renderLeft(); renderRight(); }
 
     function renderLeft() {
-      // Left grid = player's island: shows CPU pawn/boat + player's placed items
       document.querySelectorAll('#leftGrid td.cell').forEach(td => {
-        const r = +td.dataset.row, c = +td.dataset.col;
-        const parts = [];
-        if (cpuBoat && cpuBoat.r===r && cpuBoat.c===c) parts.push('⛵');
-        if (cpuPawn && cpuPawn.r===r && cpuPawn.c===c) parts.push('🔴');
-        if (placed.chest && placed.chest.r===r && placed.chest.c===c) parts.push('📦');
-        if (placed.key   && placed.key.r===r   && placed.key.c===c)   parts.push('🗝️');
-        if (placed.mine  && placed.mine.r===r  && placed.mine.c===c)  parts.push('💣');
-        td.innerHTML = parts.length
-          ? `<span class="icon" style="font-size:${parts.length>1?'0.85rem':'1.35rem'}">${parts.join('')}</span>`
-          : '';
+        const r=+td.dataset.row, c=+td.dataset.col, parts=[];
+        if (cpuBoat&&cpuBoat.r===r&&cpuBoat.c===c) parts.push('⛵');
+        if (cpuPawn&&cpuPawn.r===r&&cpuPawn.c===c) parts.push('🔴');
+        if (placed.chest&&placed.chest.r===r&&placed.chest.c===c) parts.push('📦');
+        if (placed.key  &&placed.key.r===r  &&placed.key.c===c)   parts.push('🗝️');
+        if (placed.mine &&placed.mine.r===r &&placed.mine.c===c)  parts.push('💣');
+        td.innerHTML = parts.length ? `<span class="icon" style="font-size:${parts.length>1?'0.85rem':'1.35rem'}">${parts.join('')}</span>` : '';
       });
     }
 
     function renderRight() {
-      // Right grid = opponent's island: shows player pawn/boat (CPU's items are hidden)
       document.querySelectorAll('#rightGrid td.cell').forEach(td => {
-        const r = +td.dataset.row, c = +td.dataset.col;
-        const parts = [];
-        if (playerBoat && playerBoat.r===r && playerBoat.c===c) parts.push('⛵');
-        if (playerPawn && playerPawn.r===r && playerPawn.c===c) parts.push('🔵');
-        td.innerHTML = parts.length
-          ? `<span class="icon" style="font-size:${parts.length>1?'0.85rem':'1.35rem'}">${parts.join('')}</span>`
-          : '';
+        const r=+td.dataset.row, c=+td.dataset.col, parts=[];
+        if (playerBoat&&playerBoat.r===r&&playerBoat.c===c) parts.push('⛵');
+        if (playerPawn&&playerPawn.r===r&&playerPawn.c===c) parts.push('🔵');
+        td.innerHTML = parts.length ? `<span class="icon" style="font-size:${parts.length>1?'0.85rem':'1.35rem'}">${parts.join('')}</span>` : '';
       });
     }
 
-    // ── HUD ───────────────────────────────────────────────────────
+    // ── HUD ────────────────────────────────────────────────────────
     function updateHud() {
       if (gameOver) return;
-      const banner  = document.getElementById('turnBanner');
-      const rollBtn = document.getElementById('rollBtn');
-      const endBtn  = document.getElementById('endTurnBtn');
-      const diceEl  = document.getElementById('diceFace');
-      const digBtn  = document.getElementById('digBtn');
-      const askBtn  = document.getElementById('askBtn');
+      const banner=document.getElementById('turnBanner'), rollBtn=document.getElementById('rollBtn'),
+            endBtn=document.getElementById('endTurnBtn'), diceEl=document.getElementById('diceFace'),
+            digBtn=document.getElementById('digBtn'), askBtn=document.getElementById('askBtn');
 
       if (currentTurn === 'player') {
         banner.classList.remove('cpu-turn');
@@ -1004,655 +694,517 @@
         endBtn.disabled  = (moveState === 'idle');
         digBtn.classList.toggle('hidden', moveState !== 'idle');
         askBtn.classList.toggle('hidden', moveState !== 'idle');
-        if (moveState === 'idle') {
-          banner.textContent = '🔵 Your Turn';
-          diceEl.textContent = '';
-        } else {
-          banner.textContent = `🔵 Your Turn — ${stepsLeft} step${stepsLeft !== 1 ? 's' : ''} left`;
-          diceEl.textContent = DICE_FACES[diceVal - 1];
-        }
+        banner.textContent = moveState === 'idle'
+          ? '🔵 Your Turn'
+          : `🔵 Your Turn — ${stepsLeft} step${stepsLeft!==1?'s':''} left`;
+        diceEl.textContent = moveState === 'idle' ? '' : DICE_FACES[diceVal-1];
       } else {
         banner.textContent = '🔴 CPU\'s Turn…';
         banner.classList.add('cpu-turn');
-        rollBtn.disabled = true;
-        endBtn.disabled  = true;
-        digBtn.classList.add('hidden');
-        askBtn.classList.add('hidden');
+        rollBtn.disabled=true; endBtn.disabled=true;
+        digBtn.classList.add('hidden'); askBtn.classList.add('hidden');
         diceEl.textContent = '';
       }
     }
 
-    // ── Valid adjacent moves (1 step, with boat boarding) ─────────
+    // ── Movement helpers ───────────────────────────────────────────
     function getValidMoves(map, pawn, boat, inBoat) {
-      const moves = [];
-      const origin = inBoat ? boat : pawn;
-      for (const [dr, dc] of DIRS) {
-        const nr = origin.r + dr, nc = origin.c + dc;
-        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
-        const tile = map[nr][nc];
+      const moves=[], origin=inBoat?boat:pawn;
+      for (const [dr,dc] of DIRS) {
+        const nr=origin.r+dr, nc=origin.c+dc;
+        if (nr<0||nr>=ROWS||nc<0||nc>=COLS) continue;
+        const tile=map[nr][nc];
         if (!inBoat) {
-          if (tile === 'land') moves.push({r: nr, c: nc});
-          if (boat && nr === boat.r && nc === boat.c) moves.push({r: nr, c: nc});
+          if (tile==='land') moves.push({r:nr,c:nc});
+          if (boat&&nr===boat.r&&nc===boat.c) moves.push({r:nr,c:nc});
         } else {
-          if (tile === 'water' || tile === 'land') moves.push({r: nr, c: nc});
+          if (tile==='water'||tile==='land') moves.push({r:nr,c:nc});
         }
       }
-      const seen = new Set();
-      return moves.filter(({r, c}) => {
-        const k = `${r},${c}`;
-        return seen.has(k) ? false : (seen.add(k), true);
-      });
+      const seen=new Set();
+      return moves.filter(({r,c})=>{const k=`${r},${c}`; return seen.has(k)?false:(seen.add(k),true);});
     }
 
-    // ── BFS reachable land tiles (used by CPU) ────────────────────
-    function getReachable(map, start, steps) {
-      const dist = Array.from({length: ROWS}, () => Array(COLS).fill(-1));
-      dist[start.r][start.c] = 0;
-      const q = [{r: start.r, c: start.c, d: 0}];
-      const result = [];
-      while (q.length) {
-        const {r, c, d} = q.shift();
-        if (d >= steps) continue;
-        for (const [dr, dc] of DIRS) {
-          const nr = r+dr, nc = c+dc;
-          if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && dist[nr][nc]===-1 && map[nr][nc]==='land') {
-            dist[nr][nc] = d+1;
-            result.push({r: nr, c: nc});
-            q.push({r: nr, c: nc, d: d+1});
+    // ── CPU boat-aware BFS ─────────────────────────────────────────
+    // Returns all land tiles reachable within `steps` steps, with boat final position.
+    function getCpuReachable(startPawn, startBoat, startInBoat, steps) {
+      const sk = (pr,pc,ib,br,bc) => `${pr},${pc},${ib?1:0},${br},${bc}`;
+      const visited = new Set();
+      const init = {
+        pr:startPawn.r, pc:startPawn.c, ib:startInBoat,
+        br:startBoat?startBoat.r:-1, bc:startBoat?startBoat.c:-1, d:0
+      };
+      visited.add(sk(init.pr,init.pc,init.ib,init.br,init.bc));
+      const queue=[init], results=[];
+
+      while (queue.length) {
+        const {pr,pc,ib,br,bc,d} = queue.shift();
+        if (d>0) results.push({r:pr,c:pc,inBoat:ib,boatR:br,boatC:bc});
+        if (d>=steps) continue;
+
+        const or_=ib?br:pr, oc=ib?bc:pc;
+        for (const [dr,dc] of DIRS) {
+          const nr=or_+dr, nc=oc+dc;
+          if (nr<0||nr>=ROWS||nc<0||nc>=COLS) continue;
+          const tile=leftMap[nr][nc];
+          let ns=null;
+          if (!ib) {
+            if (tile==='land') ns={pr:nr,pc:nc,ib:false,br,bc,d:d+1};
+            else if (br!==-1&&nr===br&&nc===bc) ns={pr:nr,pc:nc,ib:true,br,bc,d:d+1};
+          } else {
+            if (tile==='water') ns={pr:nr,pc:nc,ib:true,br:nr,bc:nc,d:d+1};
+            else if (tile==='land') ns={pr:nr,pc:nc,ib:false,br,bc,d:d+1};
           }
+          if (ns) { const k=sk(ns.pr,ns.pc,ns.ib,ns.br,ns.bc); if(!visited.has(k)){visited.add(k);queue.push(ns);} }
         }
       }
-      return result;
+      // Only return land destinations
+      return results.filter(s=>!s.inBoat);
+    }
+
+    function pickBestCpuMove(moves) {
+      let target=null;
+      if (!cpuInventory.key&&placed.key) target=placed.key;
+      else if (!cpuInventory.manual&&placed.chest) target=placed.chest;
+      else return moves.reduce((b,t)=>t.c<b.c?t:b, moves[0]);
+      return moves.reduce((b,t)=>{
+        const dt=Math.abs(t.r-target.r)+Math.abs(t.c-target.c);
+        const db=Math.abs(b.r-target.r)+Math.abs(b.c-target.c);
+        return dt<db?t:b;
+      }, moves[0]);
     }
 
     function applyHighlights(tiles, gridId) {
       clearHighlights();
-      tiles.forEach(({r, c}) => {
-        const td = document.querySelector(`#${gridId} td[data-row="${r}"][data-col="${c}"]`);
-        if (td) td.classList.add('highlighted');
-      });
+      tiles.forEach(({r,c})=>{ const td=document.querySelector(`#${gridId} td[data-row="${r}"][data-col="${c}"]`); if(td) td.classList.add('highlighted'); });
     }
+    function clearHighlights() { document.querySelectorAll('.cell.highlighted').forEach(el=>el.classList.remove('highlighted')); }
 
-    function clearHighlights() {
-      document.querySelectorAll('.cell.highlighted').forEach(el => el.classList.remove('highlighted'));
-    }
-
-    // ── Roll dice ─────────────────────────────────────────────────
+    // ── Roll dice ──────────────────────────────────────────────────
     document.getElementById('rollBtn').addEventListener('click', () => {
-      if (currentTurn !== 'player' || moveState !== 'idle') return;
-      diceVal   = Math.floor(Math.random() * 6) + 1;
-      stepsLeft = diceVal;
-      moveState = 'moving';
-      highlighted = getValidMoves(rightMap, playerPawn, playerBoat, playerInBoat);
-      applyHighlights(highlighted, 'rightGrid');
-      updateHud();
+      if (currentTurn!=='player'||moveState!=='idle') return;
+      diceVal=Math.floor(Math.random()*6)+1; stepsLeft=diceVal; moveState='moving';
+      highlighted=getValidMoves(rightMap,playerPawn,playerBoat,playerInBoat);
+      applyHighlights(highlighted,'rightGrid'); updateHud();
     });
 
-    // ── Dig / Fish action ─────────────────────────────────────────
+    // ── Player Dig / Fish ──────────────────────────────────────────
     document.getElementById('digBtn').addEventListener('click', doDig);
-
     function doDig() {
-      if (currentTurn !== 'player' || moveState !== 'idle') return;
-      const r = playerPawn.r, c = playerPawn.c;
-      let msg = '🤷 Nothing here…';
+      if (currentTurn!=='player'||moveState!=='idle') return;
+      const r=playerPawn.r, c=playerPawn.c;
+      const pos=coordLabel(playerPawn);
+      let msg='🤷 Nothing here…', logText=`🔵 You dug at ${pos} — nothing.`;
 
-      if (cpuPlaced.key && !inventory.key
-          && cpuPlaced.key.r === r && cpuPlaced.key.c === c) {
-        inventory.key = true;
-        cpuPlaced.key = null;
-        msg = '🗝️ You found the key! Now locate the chest.';
-      } else if (cpuPlaced.chest && inventory.key
-                 && cpuPlaced.chest.r === r && cpuPlaced.chest.c === c) {
-        inventory.manual = true;
-        msg = '📜 You retrieved the manual! Reach the ★ to escape!';
-      } else if (cpuPlaced.chest && !inventory.key
-                 && cpuPlaced.chest.r === r && cpuPlaced.chest.c === c) {
-        msg = '📦 You found the chest — but you need the key first!';
+      if (cpuPlaced.key&&!inventory.key&&cpuPlaced.key.r===r&&cpuPlaced.key.c===c) {
+        inventory.key=true; cpuPlaced.key=null;
+        msg='🗝️ You found the key! Now locate the chest.';
+        logText=`🗝️ You dug at ${pos} — found the key!`;
+        logGameEvent({type:'item', text:logText});
+      } else if (cpuPlaced.chest&&inventory.key&&cpuPlaced.chest.r===r&&cpuPlaced.chest.c===c) {
+        inventory.manual=true;
+        msg='📜 You retrieved the manual! Reach the ★ to escape!';
+        logText=`📜 You dug at ${pos} — retrieved the manual!`;
+        logGameEvent({type:'item', text:logText});
+      } else if (cpuPlaced.chest&&!inventory.key&&cpuPlaced.chest.r===r&&cpuPlaced.chest.c===c) {
+        msg='📦 You found the chest — but you need the key first!';
+        logText=`🔵 You dug at ${pos} — found chest (need key first).`;
+        logGameEvent({type:'dig', text:logText});
+      } else {
+        logGameEvent({type:'dig', text:logText});
       }
 
-      showMessage(msg);
-      updateInventoryUI();
-
-      currentTurn = 'cpu';
-      updateHud();
-      setTimeout(cpuTurn, 1600);
+      showMessage(msg); updateInventoryUI();
+      currentTurn='cpu'; updateHud(); setTimeout(cpuTurn, 1600);
     }
 
-    // ── Ask Question (player → CPU) ───────────────────────────────
-    document.getElementById('askBtn').addEventListener('click', () => {
-      if (currentTurn !== 'player' || moveState !== 'idle') return;
-      document.getElementById('questionInput').value = '';
-      document.getElementById('questionInput').disabled = false;
+    // ── Question system ────────────────────────────────────────────
+    // Builds question list for PLAYER asking about CPU's items (on rightMap)
+    function buildPlayerQuestionList() {
+      const isAdj=(a,b)=>Math.abs(a.r-b.r)+Math.abs(a.c-b.c)===1;
+      const qs=[];
+      for (const item of ['key','chest']) {
+        const itemPos=cpuPlaced[item]; if (!itemPos) continue;
+        const otherItem=item==='key'?'chest':'key';
+        const otherPos=cpuPlaced[otherItem];
+        const il=item, ol=otherItem;
+        qs.push({text:`Is the ${il} on land?`,       answer:rightMap[itemPos.r][itemPos.c]==='land', pinpoints:false});
+        qs.push({text:`Is the ${il} in the water?`,  answer:rightMap[itemPos.r][itemPos.c]==='water',pinpoints:false});
+        for (let r=0;r<5;r++) qs.push({text:`Is the ${il} in row ${ROW_LABELS[r]}?`, answer:itemPos.r===r, pinpoints:false});
+        for (let c=0;c<5;c++) qs.push({text:`Is the ${il} in column ${c+1}?`,        answer:itemPos.c===c, pinpoints:false});
+        qs.push({text:`Is the ${il} adjacent to my pawn's current position?`, answer:isAdj(itemPos,playerPawn), pinpoints:false});
+        qs.push({text:`Am I standing on the ${il}?`, answer:itemPos.r===playerPawn.r&&itemPos.c===playerPawn.c, pinpoints:true});
+        if (otherPos) {
+          qs.push({text:`Is the ${il} in the same row as the ${ol}?`,    answer:itemPos.r===otherPos.r, pinpoints:false});
+          qs.push({text:`Is the ${il} in the same column as the ${ol}?`, answer:itemPos.c===otherPos.c, pinpoints:false});
+        }
+      }
+      return qs;
+    }
+
+    // Builds question list for CPU asking about PLAYER's items (on leftMap)
+    function buildCpuQuestionList() {
+      const isAdj=(a,b)=>Math.abs(a.r-b.r)+Math.abs(a.c-b.c)===1;
+      const qs=[];
+      for (const item of ['key','chest']) {
+        const itemPos=placed[item]; if (!itemPos) continue;
+        const otherItem=item==='key'?'chest':'key';
+        const otherPos=placed[otherItem];
+        const il=item, ol=otherItem;
+        qs.push({text:`Is the ${il} on land?`,       trueAnswer:leftMap[itemPos.r][itemPos.c]==='land', pinpoints:false});
+        qs.push({text:`Is the ${il} in the water?`,  trueAnswer:leftMap[itemPos.r][itemPos.c]==='water',pinpoints:false});
+        for (let r=0;r<5;r++) qs.push({text:`Is the ${il} in row ${ROW_LABELS[r]}?`, trueAnswer:itemPos.r===r, pinpoints:false});
+        for (let c=0;c<5;c++) qs.push({text:`Is the ${il} in column ${c+1}?`,        trueAnswer:itemPos.c===c, pinpoints:false});
+        qs.push({text:`Is the ${il} adjacent to my pawn's current position?`, trueAnswer:isAdj(itemPos,cpuPawn), pinpoints:false});
+        qs.push({text:`Am I standing on the ${il}?`, trueAnswer:itemPos.r===cpuPawn.r&&itemPos.c===cpuPawn.c, pinpoints:true});
+        if (otherPos) {
+          qs.push({text:`Is the ${il} in the same row as the ${ol}?`,    trueAnswer:itemPos.r===otherPos.r, pinpoints:false});
+          qs.push({text:`Is the ${il} in the same column as the ${ol}?`, trueAnswer:itemPos.c===otherPos.c, pinpoints:false});
+        }
+      }
+      return qs;
+    }
+
+    // ── Ask Question modal (player → CPU) ──────────────────────────
+    document.getElementById('askBtn').addEventListener('click', openAskModal);
+
+    function openAskModal() {
+      if (currentTurn!=='player'||moveState!=='idle') return;
+      selectedQuestion=null;
+      document.getElementById('questionSearch').value='';
+      document.getElementById('questionSearch').disabled=false;
+      document.getElementById('selectedQDisplay').textContent='No question selected.';
       document.getElementById('cpuAnswerBox').classList.add('hidden');
+      document.getElementById('submitAskBtn').disabled=true;
       document.getElementById('submitAskBtn').classList.remove('hidden');
       document.getElementById('cancelAskBtn').classList.remove('hidden');
       document.getElementById('closeAskBtn').classList.add('hidden');
-      document.getElementById('askInfo').textContent = cpuLiesLeft > 0
-        ? 'Type a yes/no question. The CPU will answer — it still has its one lie.'
-        : 'Type a yes/no question. The CPU has used its lie — answers are now truthful.';
+      document.getElementById('questionDropdown').style.pointerEvents='';
+      populateQuestionList('');
       document.getElementById('askOverlay').classList.remove('hidden');
-    });
+    }
 
-    document.getElementById('cancelAskBtn').addEventListener('click', () => {
-      document.getElementById('askOverlay').classList.add('hidden');
-    });
+    function populateQuestionList(filter) {
+      const all=buildPlayerQuestionList();
+      const dropdown=document.getElementById('questionDropdown');
+      dropdown.innerHTML='';
+      const visible = filter.trim()
+        ? all.filter(q=>q.text.toLowerCase().includes(filter.toLowerCase()))
+        : all;
+      if (visible.length===0) {
+        const d=document.createElement('div'); d.className='q-option'; d.style.color='#bbb'; d.textContent='No matching questions.';
+        dropdown.appendChild(d); return;
+      }
+      visible.forEach(q=>{
+        const div=document.createElement('div'); div.className='q-option';
+        if (selectedQuestion&&selectedQuestion.text===q.text) div.classList.add('selected');
+        div.textContent=q.text;
+        div.addEventListener('click',()=>{
+          selectedQuestion=q;
+          document.getElementById('selectedQDisplay').textContent=q.text;
+          document.getElementById('submitAskBtn').disabled=false;
+          dropdown.querySelectorAll('.q-option').forEach(el=>el.classList.remove('selected'));
+          div.classList.add('selected');
+        });
+        dropdown.appendChild(div);
+      });
+    }
+
+    document.getElementById('questionSearch').addEventListener('input', e => populateQuestionList(e.target.value));
+    document.getElementById('cancelAskBtn').addEventListener('click', () => document.getElementById('askOverlay').classList.add('hidden'));
 
     document.getElementById('submitAskBtn').addEventListener('click', () => {
-      const qText = document.getElementById('questionInput').value.trim();
-      if (!qText) return;
+      if (!selectedQuestion) return;
+      const trueAns=selectedQuestion.answer, pinpoints=selectedQuestion.pinpoints;
+      // CPU can only lie if: has lie AND it won't reveal key/chest (truth=YES + pinpoints)
+      const canLie = cpuLiesLeft>0 && !(pinpoints && trueAns);
+      let cpuAns=trueAns;
+      if (canLie && Math.random()<0.35) { cpuAns=!trueAns; cpuLiesLeft=0; }
 
-      // CPU generates a random answer; may use its lie once
-      let rawAnswer = Math.random() < 0.5;
-      let lied = false;
-      if (cpuLiesLeft > 0 && Math.random() < 0.42) {
-        rawAnswer = !rawAnswer;
-        lied = true;
-        cpuLiesLeft = 0;
-      }
+      const ansText=cpuAns?'YES':'NO';
+      logGameEvent({type:'question', who:'player', question:selectedQuestion.text, answer:ansText, lied:false});
 
-      const answerText = rawAnswer ? 'YES' : 'NO';
-      qLog.push({ who: 'player', question: qText, answer: answerText, lied: false });
-      renderQaLog();
-
-      const box = document.getElementById('cpuAnswerBox');
-      box.textContent = `🔴 CPU says: ${answerText}${lied ? ' (used its lie!)' : ''}`;
+      const box=document.getElementById('cpuAnswerBox');
+      box.textContent=`🔴 CPU: ${ansText}`;
       box.classList.remove('hidden');
-
       document.getElementById('submitAskBtn').classList.add('hidden');
       document.getElementById('cancelAskBtn').classList.add('hidden');
-      document.getElementById('questionInput').disabled = true;
+      document.getElementById('questionSearch').disabled=true;
+      document.getElementById('questionDropdown').style.pointerEvents='none';
       document.getElementById('closeAskBtn').classList.remove('hidden');
     });
 
     document.getElementById('closeAskBtn').addEventListener('click', () => {
-      document.getElementById('questionInput').disabled = false;
       document.getElementById('askOverlay').classList.add('hidden');
-      currentTurn = 'cpu';
-      updateHud();
-      setTimeout(cpuTurn, 900);
+      currentTurn='cpu'; updateHud(); setTimeout(cpuTurn, 900);
     });
 
-    // ── CPU question overlay ──────────────────────────────────────
-    function generateCpuQuestion() {
-      // Display col for left grid: displayed col = data-col + 1
-      // (data-col 0 = nearest star = displayed col 1)
-      const dc2d = dc => dc + 1;
-      const rl   = ROW_LABELS;
+    // ── CPU question panel (CPU → player, inline) ──────────────────
+    function showCpuQuestionPanel(q) {
+      pendingCpuQuestion=q;
+      document.getElementById('cpuqPanelText').textContent=q.text;
 
-      const templates = [];
+      const lieBtn=document.getElementById('lieBtn');
+      const ansYesBtn=document.getElementById('ansYesBtn');
+      const ansNoBtn=document.getElementById('ansNoBtn');
+      const lieHint=document.getElementById('cpuqLieHint');
 
-      // Specific tile questions (pinpointing)
-      for (let r = 0; r < 5; r++) {
-        for (let c = 0; c < 5; c++) {
-          templates.push({
-            text: `Is your key on tile ${rl[r]}${dc2d(c)}?`,
-            trueAnswer: () => placed.key.r === r && placed.key.c === c,
-            pinpoints: true, type: 'key-tile', target: {r, c},
-          });
-          templates.push({
-            text: `Is your chest on tile ${rl[r]}${dc2d(c)}?`,
-            trueAnswer: () => placed.chest.r === r && placed.chest.c === c,
-            pinpoints: true, type: 'chest-tile', target: {r, c},
-          });
-        }
-      }
-
-      // Row questions
-      for (let r = 0; r < 5; r++) {
-        templates.push({
-          text: `Is your chest in row ${rl[r]}?`,
-          trueAnswer: () => placed.chest.r === r,
-          pinpoints: false, type: 'chest-row', target: {r},
-        });
-        templates.push({
-          text: `Is your key in row ${rl[r]}?`,
-          trueAnswer: () => placed.key.r === r,
-          pinpoints: false, type: 'key-row', target: {r},
-        });
-      }
-
-      // Column questions
-      for (let c = 0; c < 5; c++) {
-        templates.push({
-          text: `Is your chest in column ${dc2d(c)}?`,
-          trueAnswer: () => placed.chest.c === c,
-          pinpoints: false, type: 'chest-col', target: {c},
-        });
-        templates.push({
-          text: `Is your key in column ${dc2d(c)}?`,
-          trueAnswer: () => placed.key.c === c,
-          pinpoints: false, type: 'key-col', target: {c},
-        });
-      }
-
-      // General questions
-      templates.push(
-        { text: 'Is your key on a water tile?',
-          trueAnswer: () => leftMap[placed.key.r][placed.key.c] === 'water',
-          pinpoints: false, type: 'general', target: null },
-        { text: 'Is your key on a land tile?',
-          trueAnswer: () => leftMap[placed.key.r][placed.key.c] === 'land',
-          pinpoints: false, type: 'general', target: null },
-        { text: 'Is your mine on a water tile?',
-          trueAnswer: () => leftMap[placed.mine.r][placed.mine.c] === 'water',
-          pinpoints: false, type: 'general', target: null },
-        { text: 'Is your chest closer to the star than your key?',
-          trueAnswer: () => placed.chest.c < placed.key.c,
-          pinpoints: false, type: 'general', target: null },
-        { text: 'Is your key in the top half of the island (rows A–C)?',
-          trueAnswer: () => placed.key.r <= 2,
-          pinpoints: false, type: 'general', target: null },
-        { text: 'Is your chest in the bottom half of the island (rows C–E)?',
-          trueAnswer: () => placed.chest.r >= 2,
-          pinpoints: false, type: 'general', target: null },
-        { text: 'Are your key and chest in the same row?',
-          trueAnswer: () => placed.key.r === placed.chest.r,
-          pinpoints: false, type: 'general', target: null },
-        { text: 'Is your key above your chest in the grid?',
-          trueAnswer: () => placed.key.r < placed.chest.r,
-          pinpoints: false, type: 'general', target: null },
-        { text: 'Is your mine closer to the star than your chest?',
-          trueAnswer: () => placed.mine.c < placed.chest.c,
-          pinpoints: false, type: 'general', target: null },
-        { text: 'Is your key and mine in the same column?',
-          trueAnswer: () => placed.key.c === placed.mine.c,
-          pinpoints: false, type: 'general', target: null }
-      );
-
-      // Filter by difficulty
-      let pool;
-      if (difficulty === 'easy') {
-        pool = templates.filter(t => !t.pinpoints);
-      } else if (difficulty === 'medium') {
-        pool = templates;
-      } else {
-        // Hard: prefer pinpoint questions
-        const precise = templates.filter(t => t.pinpoints);
-        pool = Math.random() < 0.65 ? precise : templates.filter(t => !t.pinpoints);
-      }
-
-      // Avoid repeating exact question texts
-      const askedTexts = new Set(qLog.filter(e => e.who === 'cpu').map(e => e.question));
-      const fresh = pool.filter(t => !askedTexts.has(t.text));
-      const finalPool = fresh.length > 0 ? fresh : pool;
-      if (finalPool.length === 0) return null;
-
-      const tmpl = finalPool[Math.floor(Math.random() * finalPool.length)];
-      return {
-        text:        tmpl.text,
-        trueAnswer:  tmpl.trueAnswer(),
-        pinpoints:   tmpl.pinpoints,
-        type:        tmpl.type,
-        target:      tmpl.target,
-      };
-    }
-
-    function showCpuQuestionModal(q) {
-      document.getElementById('cpuqText').textContent = q.text;
-
-      const lieBtn    = document.getElementById('lieBtn');
-      const ansYesBtn = document.getElementById('ansYesBtn');
-      const ansNoBtn  = document.getElementById('ansNoBtn');
-      const statusDiv = document.getElementById('cpuqLieStatus');
-
-      lieActive = false;
-      lieBtn.classList.remove('active');
-
-      // Lie blocked if: this question's true answer would correctly identify key or chest
+      lieActive=false; lieBtn.classList.remove('active');
       const lieBlocked = q.pinpoints && q.trueAnswer;
 
-      if (playerLiesLeft <= 0) {
-        lieBtn.disabled = true;
-        statusDiv.textContent = 'Your lie is spent — you must answer truthfully.';
-        // Enforce correct answer: disable the wrong button
-        ansYesBtn.disabled = !q.trueAnswer;
-        ansNoBtn.disabled  = q.trueAnswer;
+      if (playerLiesLeft<=0) {
+        lieBtn.disabled=true;
+        lieHint.textContent='Your lie has been used — you must answer truthfully.';
+        ansYesBtn.disabled=!q.trueAnswer; ansNoBtn.disabled=q.trueAnswer;
       } else if (lieBlocked) {
-        lieBtn.disabled = true;
-        statusDiv.textContent = '🚫 Lie unavailable — this answer correctly identifies a key item.';
-        ansYesBtn.disabled = false;
-        ansNoBtn.disabled  = false;
+        lieBtn.disabled=true;
+        lieHint.textContent='🚫 Lie unavailable — this answer correctly identifies an item.';
+        ansYesBtn.disabled=!q.trueAnswer; ansNoBtn.disabled=q.trueAnswer;
       } else {
-        lieBtn.disabled = false;
-        statusDiv.textContent = '🤫 You still have 1 lie available.';
-        ansYesBtn.disabled = false;
-        ansNoBtn.disabled  = false;
+        lieBtn.disabled=false;
+        lieHint.textContent='🤫 You have 1 lie available. Toggle LIE first, then click your answer.';
+        // Without lie active: force truthful answer
+        ansYesBtn.disabled=!q.trueAnswer; ansNoBtn.disabled=q.trueAnswer;
       }
 
-      document.getElementById('cpuqOverlay').classList.remove('hidden');
+      document.getElementById('turnBanner').textContent='🔴 CPU asks you…';
+      document.getElementById('cpuQPanel').classList.remove('hidden');
+      document.getElementById('rollBtn').disabled=true;
+      document.getElementById('endTurnBtn').disabled=true;
+      document.getElementById('digBtn').classList.add('hidden');
+      document.getElementById('askBtn').classList.add('hidden');
     }
 
     document.getElementById('lieBtn').addEventListener('click', () => {
-      if (playerLiesLeft <= 0 || document.getElementById('lieBtn').disabled) return;
-      lieActive = !lieActive;
-      document.getElementById('lieBtn').classList.toggle('active', lieActive);
+      const lieBtn=document.getElementById('lieBtn');
+      if (lieBtn.disabled) return;
+      lieActive=!lieActive; lieBtn.classList.toggle('active', lieActive);
+      const q=pendingCpuQuestion; if (!q) return;
+      const ansYesBtn=document.getElementById('ansYesBtn'), ansNoBtn=document.getElementById('ansNoBtn');
+      if (lieActive) {
+        // Both enabled so player can choose which flipped answer to submit
+        ansYesBtn.disabled=false; ansNoBtn.disabled=false;
+      } else {
+        // Lie deactivated: revert to truth-only
+        ansYesBtn.disabled=!q.trueAnswer; ansNoBtn.disabled=q.trueAnswer;
+      }
     });
 
-    document.getElementById('ansYesBtn').addEventListener('click', () => submitPlayerAnswer(true));
-    document.getElementById('ansNoBtn').addEventListener('click',  () => submitPlayerAnswer(false));
+    document.getElementById('ansYesBtn').addEventListener('click', ()=>submitPlayerAnswer(true));
+    document.getElementById('ansNoBtn').addEventListener('click',  ()=>submitPlayerAnswer(false));
 
     function submitPlayerAnswer(clickedYes) {
-      let finalAnswer = clickedYes;
-      let lied = false;
+      let finalAnswer=clickedYes, lied=false;
+      if (lieActive&&playerLiesLeft>0) { finalAnswer=!clickedYes; lied=true; playerLiesLeft=0; }
+      lieActive=false; document.getElementById('lieBtn').classList.remove('active');
 
-      if (lieActive && playerLiesLeft > 0) {
-        finalAnswer = !clickedYes;
-        lied = true;
-        playerLiesLeft = 0;
-      }
+      logGameEvent({type:'question', who:'cpu', question:pendingCpuQuestion.text, answer:finalAnswer?'YES':'NO', lied});
+      pendingCpuQuestion=null;
+      document.getElementById('cpuQPanel').classList.add('hidden');
 
-      lieActive = false;
-      document.getElementById('lieBtn').classList.remove('active');
-
-      qLog.push({
-        who:      'cpu',
-        question: pendingCpuQuestion.text,
-        answer:   finalAnswer ? 'YES' : 'NO',
-        lied,
-      });
-      renderQaLog();
-
-      pendingCpuQuestion = null;
-      document.getElementById('cpuqOverlay').classList.add('hidden');
-
-      // CPU asked instead of moved — hand back to player
-      setTimeout(() => {
-        if (gameOver) return;
-        currentTurn = 'player';
-        moveState   = 'idle';
-        diceVal     = 0;
-        updateHud();
-      }, 400);
+      setTimeout(()=>{ if(gameOver)return; currentTurn='player'; moveState='idle'; diceVal=0; updateHud(); }, 400);
     }
 
-    // ── Q&A Log ───────────────────────────────────────────────────
-    function renderQaLog() {
-      const log   = document.getElementById('qaLog');
-      const items = document.getElementById('qaLogItems');
+    // ── Game Log ───────────────────────────────────────────────────
+    function logGameEvent(entry) { gameLog.push(entry); renderGameLog(); }
 
-      if (qLog.length === 0) {
-        log.classList.add('hidden');
-        return;
-      }
-      log.classList.remove('hidden');
-      items.innerHTML = '';
+    function renderGameLog() {
+      const log=document.getElementById('qaLog'), items=document.getElementById('qaLogItems');
+      if (gameLog.length===0) { log.classList.add('hidden'); return; }
+      log.classList.remove('hidden'); items.innerHTML='';
 
-      qLog.forEach(entry => {
-        const div = document.createElement('div');
-        div.className = 'qa-entry';
-
-        const who = document.createElement('div');
-        who.className = 'qa-who';
-        who.textContent = entry.who === 'player' ? '🔵 You asked:' : '🔴 CPU asked:';
-
-        const q = document.createElement('div');
-        q.className = 'qa-q';
-        q.textContent = entry.question;
-
-        const ansRow = document.createElement('div');
-        ansRow.className = 'qa-ans-row';
-        ansRow.appendChild(document.createTextNode('→ '));
-
-        const a = document.createElement('span');
-        a.className = `qa-a ${entry.answer === 'YES' ? 'yes' : 'no'}`;
-        a.textContent = entry.answer;
-        ansRow.appendChild(a);
-
-        if (entry.lied) {
-          const lie = document.createElement('span');
-          lie.className = 'qa-lied';
-          lie.textContent = '(lied)';
-          ansRow.appendChild(lie);
+      gameLog.forEach(entry=>{
+        if (entry.type==='question') {
+          const div=document.createElement('div'); div.className='qa-entry';
+          const who=document.createElement('div'); who.className='qa-who';
+          who.textContent=entry.who==='player'?'🔵 You asked:':'🔴 CPU asked:';
+          const q=document.createElement('div'); q.className='qa-q'; q.textContent=entry.question;
+          const ansRow=document.createElement('div'); ansRow.className='qa-ans-row';
+          ansRow.appendChild(document.createTextNode('→ '));
+          const a=document.createElement('span');
+          a.className=`qa-a ${entry.answer==='YES'?'yes':'no'}`; a.textContent=entry.answer;
+          ansRow.appendChild(a);
+          if (entry.lied) { const s=document.createElement('span'); s.className='qa-lied'; s.textContent='(lied)'; ansRow.appendChild(s); }
+          div.appendChild(who); div.appendChild(q); div.appendChild(ansRow);
+          items.appendChild(div);
+        } else {
+          const div=document.createElement('div'); div.className=`log-entry log-${entry.type||'event'}`;
+          div.textContent=entry.text; items.appendChild(div);
         }
-
-        div.appendChild(who);
-        div.appendChild(q);
-        div.appendChild(ansRow);
-        items.appendChild(div);
       });
+      items.scrollTop=items.scrollHeight;
     }
 
-    // ── Win / Loss check ─────────────────────────────────────────
-    function checkPlayerWin() {
-      if (inventory.manual && playerPawn && playerPawn.c === 0) {
-        showEndgame(true);
-        return true;
-      }
-      return false;
-    }
-
+    // ── Win / Loss ─────────────────────────────────────────────────
     function checkCpuWin() {
-      if (cpuInventory.manual && cpuPawn && cpuPawn.c === 0) {
-        showEndgame(false);
-        return true;
-      }
+      if (cpuInventory.manual&&cpuPawn&&cpuPawn.c===0) { showEndgame(false); return true; }
       return false;
     }
-
     function showEndgame(playerWon) {
-      gameOver = true;
-      clearHighlights();
-      const overlay = document.getElementById('endgameOverlay');
-      const icon    = document.getElementById('endgameIcon');
-      const title   = document.getElementById('endgameTitle');
-      const msg     = document.getElementById('endgameMsg');
-
-      if (playerWon) {
-        icon.textContent  = '🎉';
-        title.textContent = 'You Escaped!';
-        title.className   = 'win';
-        msg.textContent   = 'You found the manual and reached the star. Babbi is free!';
-      } else {
-        icon.textContent  = '😞';
-        title.textContent = 'You Lost!';
-        title.className   = 'loss';
-        msg.textContent   = 'The CPU found its manual and escaped first. Better luck next time!';
-      }
-
-      overlay.classList.remove('hidden');
+      gameOver=true; clearHighlights();
+      document.getElementById('endgameIcon').textContent=playerWon?'🎉':'😞';
+      document.getElementById('endgameTitle').textContent=playerWon?'You Escaped!':'You Lost!';
+      document.getElementById('endgameTitle').className=playerWon?'win':'loss';
+      document.getElementById('endgameMsg').textContent=playerWon
+        ?'You found the manual and reached the star. Babbi is free!'
+        :'The CPU found its manual and escaped first. Better luck next time!';
+      document.getElementById('endgameOverlay').classList.remove('hidden');
     }
+    document.getElementById('playAgainBtn').addEventListener('click', ()=>location.reload());
 
-    document.getElementById('playAgainBtn').addEventListener('click', () => location.reload());
-
-    // ── Message bar ───────────────────────────────────────────────
+    // ── Message bar ────────────────────────────────────────────────
     function showMessage(text) {
-      const el = document.getElementById('messageBar');
-      el.textContent = text;
-      el.classList.add('visible');
-      clearTimeout(messageTimer);
-      messageTimer = setTimeout(() => el.classList.remove('visible'), 3800);
+      const el=document.getElementById('messageBar'); el.textContent=text; el.classList.add('visible');
+      clearTimeout(messageTimer); messageTimer=setTimeout(()=>el.classList.remove('visible'), 3800);
     }
 
-    // ── Inventory UI ──────────────────────────────────────────────
+    // ── Inventory UI ───────────────────────────────────────────────
     function updateInventoryUI() {
-      document.getElementById('invKey').classList.toggle('hidden', !inventory.key);
-      document.getElementById('invManual').classList.toggle('hidden', !inventory.manual);
-      document.getElementById('invEmpty').classList.toggle('hidden', inventory.key || inventory.manual);
+      document.getElementById('invKey').classList.toggle('hidden',!inventory.key);
+      document.getElementById('invManual').classList.toggle('hidden',!inventory.manual);
+      document.getElementById('invEmpty').classList.toggle('hidden',inventory.key||inventory.manual);
     }
 
-    // ── Execute one player step ───────────────────────────────────
+    // ── Player move ────────────────────────────────────────────────
     function doPlayerMove(r, c) {
-      const tile = rightMap[r][c];
+      const tile=rightMap[r][c];
+      const prevLabel=coordLabel(playerPawn);
 
       if (!playerInBoat) {
-        if (playerBoat && r === playerBoat.r && c === playerBoat.c) {
-          playerInBoat = true;
-          playerPawn   = {r, c};
-        } else {
-          playerPawn = {r, c};
-        }
+        if (playerBoat&&r===playerBoat.r&&c===playerBoat.c) { playerInBoat=true; playerPawn={r,c}; }
+        else playerPawn={r,c};
       } else {
-        if (tile === 'land') {
-          playerPawn   = {r, c};
-          playerInBoat = false;
-        } else {
-          playerBoat = {r, c};
-          playerPawn = {r, c};
-        }
+        if (tile==='land') { playerPawn={r,c}; playerInBoat=false; }
+        else { playerBoat={r,c}; playerPawn={r,c}; }
       }
+
+      logGameEvent({type:'move', text:`🔵 You moved from ${prevLabel} to ${coordLabel(playerPawn)}`});
 
       // Mine check
-      if (cpuPlaced.mine
-          && playerPawn.r === cpuPlaced.mine.r
-          && playerPawn.c === cpuPlaced.mine.c) {
-        cpuPlaced.mine = null;
-        skipNextTurn   = true;
-        clearHighlights();
-        renderRight();
+      if (cpuPlaced.mine&&playerPawn.r===cpuPlaced.mine.r&&playerPawn.c===cpuPlaced.mine.c) {
+        const pos=coordLabel(playerPawn); cpuPlaced.mine=null; skipNextTurn=true;
+        logGameEvent({type:'mine', text:`💥 You hit a mine at ${pos}! Your next turn is skipped.`});
+        clearHighlights(); renderRight();
         showMessage('💥 Boom! You hit a mine — you\'ll miss your next turn!');
-        setTimeout(endPlayerTurn, 1500);
-        return;
+        setTimeout(endPlayerTurn, 1500); return;
       }
 
-      // Win check (reached star col with manual)
-      if (inventory.manual && playerPawn.c === 0) {
-        clearHighlights();
-        renderRight();
-        showEndgame(true);
-        return;
+      // Win check
+      if (inventory.manual&&playerPawn.c===0) {
+        clearHighlights(); renderRight();
+        logGameEvent({type:'item', text:'🎉 You reached the star with the manual — you escaped!'});
+        showEndgame(true); return;
       }
 
-      stepsLeft--;
-      clearHighlights();
-      renderRight();
-
-      if (stepsLeft <= 0) {
-        endPlayerTurn();
-        return;
-      }
-
-      highlighted = getValidMoves(rightMap, playerPawn, playerBoat, playerInBoat);
-      if (highlighted.length === 0) {
-        endPlayerTurn();
-      } else {
-        applyHighlights(highlighted, 'rightGrid');
-        updateHud();
-      }
+      stepsLeft--; clearHighlights(); renderRight();
+      if (stepsLeft<=0) { endPlayerTurn(); return; }
+      highlighted=getValidMoves(rightMap,playerPawn,playerBoat,playerInBoat);
+      if (highlighted.length===0) endPlayerTurn();
+      else { applyHighlights(highlighted,'rightGrid'); updateHud(); }
     }
 
-    // ── End player turn ───────────────────────────────────────────
-    document.getElementById('endTurnBtn').addEventListener('click', () => {
-      if (currentTurn !== 'player' || moveState !== 'moving') return;
-      endPlayerTurn();
-    });
-
+    document.getElementById('endTurnBtn').addEventListener('click', ()=>{ if(currentTurn==='player'&&moveState==='moving') endPlayerTurn(); });
     function endPlayerTurn() {
-      clearHighlights();
-      highlighted = [];
-      diceVal     = 0;
-      stepsLeft   = 0;
-      moveState   = 'idle';
-      currentTurn = 'cpu';
-      updateHud();
-      setTimeout(cpuTurn, 900);
+      clearHighlights(); highlighted=[]; diceVal=0; stepsLeft=0; moveState='idle'; currentTurn='cpu';
+      updateHud(); setTimeout(cpuTurn, 900);
     }
 
-    // ── CPU: pick best move on medium/hard ────────────────────────
-    function pickBestCpuMove(moves) {
-      let target = null;
-
-      // Priority: find key → find chest → head to star (col 0)
-      if (!cpuInventory.key && placed.key) {
-        target = placed.key;
-      } else if (!cpuInventory.manual && placed.chest) {
-        target = placed.chest;
-      } else {
-        // Has manual — head toward star (col 0)
-        return moves.reduce((best, t) => (t.c < best.c ? t : best), moves[0]);
-      }
-
-      return moves.reduce((b, t) => {
-        const dt = Math.abs(t.r - target.r) + Math.abs(t.c - target.c);
-        const db = Math.abs(b.r - target.r) + Math.abs(b.c - target.c);
-        return dt < db ? t : b;
-      }, moves[0]);
-    }
-
-    // ── CPU turn (moves on leftMap = player's island) ─────────────
+    // ── CPU turn ───────────────────────────────────────────────────
     function cpuTurn() {
       if (gameOver) return;
 
-      // CPU stunned by mine
+      // Stunned
       if (cpuSkipNext) {
-        cpuSkipNext = false;
-        showMessage('💨 The CPU is still stunned from your mine — its turn is skipped!');
-        setTimeout(() => {
-          if (gameOver) return;
-          currentTurn = 'player';
-          moveState   = 'idle';
-          diceVal     = 0;
-          updateHud();
-        }, 1800);
+        cpuSkipNext=false;
+        logGameEvent({type:'skip', text:'💨 CPU\'s turn skipped — stunned by your mine.'});
+        showMessage('💨 The CPU is stunned — its turn is skipped!');
+        setTimeout(()=>{ if(gameOver)return; currentTurn='player'; moveState='idle'; diceVal=0; updateHud(); }, 1800);
         return;
       }
 
-      // Chance to ask a question instead of moving
-      const askProb = difficulty === 'easy' ? 0.15 : difficulty === 'medium' ? 0.25 : 0.35;
-      if (Math.random() < askProb) {
-        const q = generateCpuQuestion();
-        if (q) {
-          pendingCpuQuestion = q;
-          showCpuQuestionModal(q);
-          return; // Wait for player to answer; submitPlayerAnswer() resumes flow
+      // PRIORITY 1: Dig if on target tile
+      if (!cpuInventory.key&&placed.key&&cpuPawn.r===placed.key.r&&cpuPawn.c===placed.key.c) {
+        cpuInventory.key=true; placed.key=null;
+        const pos=coordLabel(cpuPawn);
+        logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — found the 🗝️ key!`});
+        showMessage('🔴 CPU found the key on your island!');
+        renderLeft();
+        setTimeout(()=>{ if(gameOver)return; currentTurn='player'; moveState='idle'; diceVal=0; updateHud(); }, 900);
+        return;
+      }
+      if (cpuInventory.key&&!cpuInventory.manual&&placed.chest&&cpuPawn.r===placed.chest.r&&cpuPawn.c===placed.chest.c) {
+        cpuInventory.manual=true;
+        const pos=coordLabel(cpuPawn);
+        logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — retrieved the 📜 manual!`});
+        showMessage('🔴 CPU retrieved the manual — it\'s heading for the ★!');
+        renderLeft();
+        setTimeout(()=>{ if(gameOver)return; currentTurn='player'; moveState='idle'; diceVal=0; updateHud(); }, 900);
+        return;
+      }
+
+      // PRIORITY 2: Maybe ask a question (not if already has manual)
+      if (!cpuInventory.manual) {
+        const askProb=difficulty==='easy'?0.15:difficulty==='medium'?0.25:0.35;
+        if (Math.random()<askProb) {
+          const pool=buildCpuQuestionList();
+          const askedTexts=new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
+          const fresh=pool.filter(q=>!askedTexts.has(q.text));
+          const finalPool=fresh.length>0?fresh:pool;
+          if (finalPool.length>0) {
+            let q;
+            if (difficulty==='hard') {
+              const precise=finalPool.filter(t=>t.pinpoints);
+              q=(precise.length>0&&Math.random()<0.55)?precise[Math.floor(Math.random()*precise.length)]:finalPool[Math.floor(Math.random()*finalPool.length)];
+            } else {
+              q=finalPool[Math.floor(Math.random()*finalPool.length)];
+            }
+            pendingCpuQuestion=q;
+            showCpuQuestionPanel(q);
+            return;
+          }
         }
       }
 
-      // Move
-      const roll  = Math.floor(Math.random() * 6) + 1;
-      const moves = getReachable(leftMap, cpuPawn, roll);
+      // PRIORITY 3: Move
+      const roll=Math.floor(Math.random()*6)+1;
+      const reachable=getCpuReachable(cpuPawn, cpuBoat, cpuInBoat, roll);
 
-      if (moves.length > 0) {
+      if (reachable.length>0) {
         let dest;
-        if (difficulty === 'easy') {
-          dest = moves[Math.floor(Math.random() * moves.length)];
-        } else {
-          dest = pickBestCpuMove(moves);
-        }
-        cpuPawn = dest;
+        if (difficulty==='easy') dest=reachable[Math.floor(Math.random()*reachable.length)];
+        else dest=pickBestCpuMove(reachable);
 
-        // Check item pickup
-        if (placed.key && !cpuInventory.key
-            && placed.key.r === dest.r && placed.key.c === dest.c) {
-          cpuInventory.key = true;
-          showMessage('🔴 CPU found the key on your island!');
-        } else if (placed.chest && cpuInventory.key && !cpuInventory.manual
-                   && placed.chest.r === dest.r && placed.chest.c === dest.c) {
-          cpuInventory.manual = true;
-          showMessage('🔴 CPU retrieved the manual — it\'s heading for the ★!');
-        } else if (placed.mine
-                   && placed.mine.r === dest.r && placed.mine.c === dest.c) {
-          placed.mine = null;
-          cpuSkipNext = true;
+        const prevLabel=coordLabel(cpuPawn);
+        cpuPawn={r:dest.r,c:dest.c}; cpuInBoat=false;
+        if (dest.boatR!==-1) cpuBoat={r:dest.boatR,c:dest.boatC};
+
+        logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
+
+        // Mine landing
+        if (placed.mine&&cpuPawn.r===placed.mine.r&&cpuPawn.c===placed.mine.c) {
+          const pos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
+          logGameEvent({type:'mine', text:`💥 Your mine at ${pos} went off! CPU skips next turn.`});
           showMessage('💥 Your mine went off — the CPU will skip its next turn!');
         }
 
         renderLeft();
-
-        // Check CPU win immediately after move
         if (checkCpuWin()) return;
       }
 
-      setTimeout(() => {
+      setTimeout(()=>{
         if (gameOver) return;
-        currentTurn = 'player';
-        moveState   = 'idle';
-        diceVal     = 0;
+        currentTurn='player'; moveState='idle'; diceVal=0;
         if (skipNextTurn) {
-          skipNextTurn = false;
+          skipNextTurn=false;
+          logGameEvent({type:'skip', text:'💨 Your turn was skipped — recovering from mine blast.'});
           showMessage('💨 Still recovering from the mine blast — skipping your turn.');
           updateHud();
-          setTimeout(() => {
-            if (gameOver) return;
-            currentTurn = 'cpu';
-            updateHud();
-            setTimeout(cpuTurn, 900);
-          }, 2200);
+          setTimeout(()=>{ if(gameOver)return; currentTurn='cpu'; updateHud(); setTimeout(cpuTurn,900); }, 2200);
         } else {
           updateHud();
         }
       }, 700);
     }
   </script>
-
 </body>
 </html>
