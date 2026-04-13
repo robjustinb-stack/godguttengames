@@ -275,6 +275,58 @@
       box-shadow: 0 6px 20px rgba(58,125,68,0.45);
     }
 
+    /* ── Dig button ──────────────────────────────────────────── */
+    .action-btn.dig-btn { background: #7a5230; }
+    .action-btn.dig-btn:hover:not(:disabled) { background: #5d3d22; }
+
+    /* ── Message bar ─────────────────────────────────────────── */
+    .message-bar {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.05rem;
+      padding: 8px 22px;
+      border-radius: 50px;
+      background: var(--card-bg);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      color: var(--dark);
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      max-width: 400px;
+      text-align: center;
+    }
+    .message-bar.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── Inventory bar ───────────────────────────────────────── */
+    .inventory-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 20px;
+      background: var(--card-bg);
+      border-radius: 50px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 18px;
+    }
+    .inv-label {
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #aaa;
+      font-weight: 700;
+    }
+    .inv-item {
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.9rem;
+      background: rgba(58,125,68,0.12);
+      border: 1.5px solid #aacfaa;
+      color: var(--tomato-green);
+      padding: 2px 12px;
+      border-radius: 50px;
+      animation: pop 0.25s ease both;
+    }
+    .inv-empty { color: #ccc; font-size: 0.85rem; }
+
     /* ── Rotate overlay (portrait on small screens) ─────────── */
     .rotate-overlay {
       display: none;
@@ -347,8 +399,18 @@
       <div class="dice-row">
         <button class="action-btn" id="rollBtn">🎲 Roll Dice</button>
         <span class="dice-face" id="diceFace"></span>
+        <button class="action-btn dig-btn hidden" id="digBtn">⛏️ Dig / Fish</button>
       </div>
       <button class="action-btn end-btn" id="endTurnBtn" disabled>End Turn ➜</button>
+      <div class="message-bar" id="messageBar"></div>
+    </div>
+
+    <!-- Inventory (shown during gameplay) -->
+    <div class="inventory-bar hidden" id="inventoryBar">
+      <span class="inv-label">Inventory</span>
+      <span id="invKey"    class="inv-item hidden">🗝️ Key</span>
+      <span id="invManual" class="inv-item hidden">📜 Manual</span>
+      <span id="invEmpty"  class="inv-empty">Empty</span>
     </div>
 
     <!-- Board -->
@@ -448,6 +510,12 @@
     let cpuPawn      = null;   // {r,c} on leftMap
     let cpuBoat      = null;   // {r,c} on leftMap
     let highlighted  = [];
+    // CPU's hidden items on rightMap (auto-placed at game start)
+    const cpuPlaced  = { chest: null, key: null, mine: null };
+    // Player's collected items
+    let inventory    = { key: false, manual: false };
+    let skipNextTurn = false;
+    let messageTimer = null;
 
     const HINTS = {
       chest: 'Place your chest on a land tile (green)',
@@ -594,6 +662,37 @@
     document.getElementById('medBtn').addEventListener('click',    () => startGame('medium'));
     document.getElementById('hardBtn').addEventListener('click',   () => startGame('hard'));
 
+    // ── Auto-place CPU items on a map ────────────────────────────
+    function autoCpuItems(map, avoid) {
+      const avoidSet = new Set(avoid.filter(Boolean).map(p => `${p.r},${p.c}`));
+      const landTiles = [], allTiles = [];
+      for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS; c++) {
+          allTiles.push({r, c});
+          if (map[r][c] === 'land') landTiles.push({r, c});
+        }
+      const shuffle = arr => {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      };
+      const sLand = shuffle(landTiles);
+      const sAll  = shuffle(allTiles);
+      const chest = sLand.find(t => !avoidSet.has(`${t.r},${t.c}`));
+      avoidSet.add(`${chest.r},${chest.c}`);
+      const key   = sAll.find(t => !avoidSet.has(`${t.r},${t.c}`));
+      avoidSet.add(`${key.r},${key.c}`);
+      const mine  = sAll.find(t => !avoidSet.has(`${t.r},${t.c}`));
+      return {
+        chest: {r: chest.r, c: chest.c},
+        key:   {r: key.r,   c: key.c},
+        mine:  mine ? {r: mine.r, c: mine.c} : null,
+      };
+    }
+
     // ── Start game ────────────────────────────────────────────────
     function startGame(diff) {
       difficulty = diff;
@@ -609,6 +708,19 @@
       playerInBoat = false;
       cpuPawn      = cs.pawn;
       cpuBoat      = cs.boat;
+
+      // Auto-place CPU's hidden items on rightMap
+      const items    = autoCpuItems(rightMap, [playerPawn, playerBoat]);
+      cpuPlaced.chest = items.chest;
+      cpuPlaced.key   = items.key;
+      cpuPlaced.mine  = items.mine;
+
+      // Reset inventory
+      inventory.key    = false;
+      inventory.manual = false;
+      skipNextTurn     = false;
+      updateInventoryUI();
+      document.getElementById('inventoryBar').classList.remove('hidden');
 
       // Unlock rightGrid for gameplay clicks
       document.querySelectorAll('#rightGrid td.cell').forEach(td => td.classList.remove('inactive'));
@@ -693,11 +805,14 @@
       const rollBtn = document.getElementById('rollBtn');
       const endBtn  = document.getElementById('endTurnBtn');
       const diceEl  = document.getElementById('diceFace');
+      const digBtn  = document.getElementById('digBtn');
 
       if (currentTurn === 'player') {
         banner.classList.remove('cpu-turn');
         rollBtn.disabled = (moveState !== 'idle');
         endBtn.disabled  = (moveState === 'idle');
+        // Dig/Fish only available before rolling
+        digBtn.classList.toggle('hidden', moveState !== 'idle');
         if (moveState === 'idle') {
           banner.textContent = '🔵 Your Turn';
           diceEl.textContent = '';
@@ -710,6 +825,7 @@
         banner.classList.add('cpu-turn');
         rollBtn.disabled = true;
         endBtn.disabled  = true;
+        digBtn.classList.add('hidden');
         diceEl.textContent = '';
       }
     }
@@ -784,6 +900,53 @@
       updateHud();
     });
 
+    // ── Dig / Fish action ─────────────────────────────────────────
+    document.getElementById('digBtn').addEventListener('click', doDig);
+
+    function doDig() {
+      if (currentTurn !== 'player' || moveState !== 'idle') return;
+      const r = playerPawn.r, c = playerPawn.c;
+      let msg = '🤷 Nothing here…';
+
+      if (cpuPlaced.key && !inventory.key
+          && cpuPlaced.key.r === r && cpuPlaced.key.c === c) {
+        inventory.key = true;
+        cpuPlaced.key = null;
+        msg = '🗝️ You found the key! Now locate the chest.';
+      } else if (cpuPlaced.chest && inventory.key
+                 && cpuPlaced.chest.r === r && cpuPlaced.chest.c === c) {
+        inventory.manual = true;
+        msg = '📜 You retrieved the manual! Reach the ★ to escape!';
+      } else if (cpuPlaced.chest && !inventory.key
+                 && cpuPlaced.chest.r === r && cpuPlaced.chest.c === c) {
+        msg = '📦 You found the chest — but you need the key first!';
+      }
+
+      showMessage(msg);
+      updateInventoryUI();
+
+      // Digging uses up the turn
+      currentTurn = 'cpu';
+      updateHud();
+      setTimeout(cpuTurn, 1600);
+    }
+
+    // ── Message bar ───────────────────────────────────────────────
+    function showMessage(text) {
+      const el = document.getElementById('messageBar');
+      el.textContent = text;
+      el.classList.add('visible');
+      clearTimeout(messageTimer);
+      messageTimer = setTimeout(() => el.classList.remove('visible'), 3500);
+    }
+
+    // ── Inventory UI ──────────────────────────────────────────────
+    function updateInventoryUI() {
+      document.getElementById('invKey').classList.toggle('hidden', !inventory.key);
+      document.getElementById('invManual').classList.toggle('hidden', !inventory.manual);
+      document.getElementById('invEmpty').classList.toggle('hidden', inventory.key || inventory.manual);
+    }
+
     // ── Execute one player step ───────────────────────────────────
     function doPlayerMove(r, c) {
       const tile = rightMap[r][c];
@@ -807,6 +970,19 @@
           playerBoat = {r, c};
           playerPawn = {r, c};
         }
+      }
+
+      // Mine check — triggers immediately on landing, before remaining steps matter
+      if (cpuPlaced.mine
+          && playerPawn.r === cpuPlaced.mine.r
+          && playerPawn.c === cpuPlaced.mine.c) {
+        cpuPlaced.mine = null;
+        skipNextTurn   = true;
+        clearHighlights();
+        renderRight();
+        showMessage('💥 Boom! You hit a mine — you\'ll miss your next turn!');
+        setTimeout(endPlayerTurn, 1500);
+        return;
       }
 
       stepsLeft--;
@@ -866,7 +1042,19 @@
         currentTurn = 'player';
         moveState   = 'idle';
         diceVal     = 0;
-        updateHud();
+        if (skipNextTurn) {
+          skipNextTurn = false;
+          showMessage('💨 Still recovering from the mine blast — skipping your turn.');
+          updateHud();
+          // Auto-play the skipped turn after a short pause
+          setTimeout(() => {
+            currentTurn = 'cpu';
+            updateHud();
+            setTimeout(cpuTurn, 900);
+          }, 2200);
+        } else {
+          updateHud();
+        }
       }, 700);
     }
   </script>
