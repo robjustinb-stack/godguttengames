@@ -397,9 +397,8 @@
     const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
     const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
 
-    // ── Map generation (all water 4-connected) ─────────────────────
+    // ── Map generation (exactly 10 land + 15 water, all water connected) ──
     function generateMap() {
-      // Always exactly 10 land + 15 water; retry until all 15 water tiles are connected
       while (true) {
         const tiles = Array(10).fill('land').concat(Array(15).fill('water'));
         for (let i = tiles.length - 1; i > 0; i--) {
@@ -407,7 +406,6 @@
           [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
         }
         const map = Array.from({length: ROWS}, (_, r) => tiles.slice(r * COLS, r * COLS + COLS));
-        // BFS from first water tile — all 15 must be reachable
         const waters = [];
         for (let r = 0; r < ROWS; r++)
           for (let c = 0; c < COLS; c++)
@@ -438,15 +436,18 @@
     let gamePhase  = 'setup'; // 'setup' | 'playing'
 
     // Gameplay
-    let difficulty  = 'easy';
-    let currentTurn = 'player'; // 'player' | 'cpu'
-    let moveState   = 'idle';   // 'idle' | 'rolled' | 'moved'
-    let diceVal     = 0;
-    let playerPawn  = null;  // {r,c} on leftMap
-    let playerBoat  = null;  // {r,c} on leftMap
-    let cpuPawn     = null;  // {r,c} on rightMap
-    let cpuBoat     = null;  // {r,c} on rightMap
-    let highlighted = [];
+    // Player moves on rightMap (opponent's island); CPU moves on leftMap (player's island)
+    let difficulty   = 'easy';
+    let currentTurn  = 'player'; // 'player' | 'cpu'
+    let moveState    = 'idle';   // 'idle' | 'moving'
+    let diceVal      = 0;
+    let stepsLeft    = 0;
+    let playerPawn   = null;   // {r,c} on rightMap
+    let playerBoat   = null;   // {r,c} on rightMap
+    let playerInBoat = false;
+    let cpuPawn      = null;   // {r,c} on leftMap
+    let cpuBoat      = null;   // {r,c} on leftMap
+    let highlighted  = [];
 
     const HINTS = {
       chest: 'Place your chest on a land tile (green)',
@@ -491,35 +492,33 @@
       td.className = 'cell ' + map[r][c];
       td.dataset.row = r;
       td.dataset.col = c;
-      if (isLeft) td.addEventListener('click', onCellClick);
-      else        td.classList.add('inactive');
+      // Both grids get click listeners; handler branches on gamePhase + which grid
+      td.addEventListener('click', onCellClick);
+      if (!isLeft) td.classList.add('inactive');
       return td;
     }
 
     buildGrid(document.getElementById('leftGrid'),  leftMap,  true);
     buildGrid(document.getElementById('rightGrid'), rightMap, false);
 
-    // ── Cell click (unified: setup + gameplay) ────────────────────
+    // ── Cell click (setup + gameplay) ─────────────────────────────
     function onCellClick(e) {
-      const td = e.currentTarget;
-      const r  = +td.dataset.row;
-      const c  = +td.dataset.col;
+      const td      = e.currentTarget;
+      const r       = +td.dataset.row;
+      const c       = +td.dataset.col;
+      const onRight = !!td.closest('#rightGrid');
 
-      // Gameplay branch
+      // ── Gameplay: player moves on rightGrid ──
       if (gamePhase === 'playing') {
-        if (currentTurn === 'player' && moveState === 'rolled' && td.classList.contains('highlighted')) {
-          playerPawn = {r, c};
-          clearHighlights();
-          highlighted = [];
-          moveState = 'moved';
-          renderLeft();
-          updateHud();
+        if (onRight && currentTurn === 'player' && moveState === 'moving'
+            && td.classList.contains('highlighted')) {
+          doPlayerMove(r, c);
         }
         return;
       }
 
-      // Setup branch
-      if (setupPhase === 'done') return;
+      // ── Setup: only leftGrid ──
+      if (onRight || setupPhase === 'done') return;
       const tile = leftMap[r][c];
 
       if (setupPhase === 'chest') {
@@ -602,17 +601,23 @@
       document.getElementById('phaseWrap').classList.add('hidden');
       document.getElementById('readyBtn').classList.add('hidden');
 
-      const ps = findStart(leftMap);
-      const cs = findStart(rightMap);
-      playerPawn = ps.pawn;
-      playerBoat = ps.boat;
-      cpuPawn    = cs.pawn;
-      cpuBoat    = cs.boat;
+      // Player starts on rightMap (opponent's island); CPU starts on leftMap (player's island)
+      const ps     = findStart(rightMap);
+      const cs     = findStart(leftMap);
+      playerPawn   = ps.pawn;
+      playerBoat   = ps.boat;
+      playerInBoat = false;
+      cpuPawn      = cs.pawn;
+      cpuBoat      = cs.boat;
+
+      // Unlock rightGrid for gameplay clicks
+      document.querySelectorAll('#rightGrid td.cell').forEach(td => td.classList.remove('inactive'));
 
       gamePhase   = 'playing';
       currentTurn = 'player';
       moveState   = 'idle';
       diceVal     = 0;
+      stepsLeft   = 0;
 
       renderGrids();
       document.getElementById('gameHud').classList.remove('hidden');
@@ -621,21 +626,18 @@
 
     // ── Find starting positions ───────────────────────────────────
     function findStart(map) {
-      // Prefer col 0 (nearest star) land tile with adjacent water
       for (let r = 0; r < ROWS; r++) {
         if (map[r][0] === 'land') {
           const w = adjWater(map, r, 0);
           if (w) return {pawn: {r, c:0}, boat: w};
         }
       }
-      // Any land tile with adjacent water
       for (let r = 0; r < ROWS; r++)
         for (let c = 0; c < COLS; c++)
           if (map[r][c] === 'land') {
             const w = adjWater(map, r, c);
             if (w) return {pawn: {r, c}, boat: w};
           }
-      // Fallback: any land tile, no boat
       for (let r = 0; r < ROWS; r++)
         for (let c = 0; c < COLS; c++)
           if (map[r][c] === 'land') return {pawn: {r, c}, boat: null};
@@ -655,28 +657,32 @@
     function renderGrids() { renderLeft(); renderRight(); }
 
     function renderLeft() {
+      // Left grid = player's island: shows CPU pawn/boat + player's placed items
       document.querySelectorAll('#leftGrid td.cell').forEach(td => {
         const r = +td.dataset.row, c = +td.dataset.col;
         const parts = [];
-        if (playerBoat && playerBoat.r===r && playerBoat.c===c) parts.push('⛵');
-        if (playerPawn && playerPawn.r===r && playerPawn.c===c) parts.push('🔵');
+        if (cpuBoat && cpuBoat.r===r && cpuBoat.c===c) parts.push('⛵');
+        if (cpuPawn && cpuPawn.r===r && cpuPawn.c===c) parts.push('🔴');
         if (placed.chest && placed.chest.r===r && placed.chest.c===c) parts.push('📦');
         if (placed.key   && placed.key.r===r   && placed.key.c===c)   parts.push('🗝️');
         if (placed.mine  && placed.mine.r===r  && placed.mine.c===c)  parts.push('💣');
         td.innerHTML = parts.length
-          ? `<span class="icon" style="font-size:${parts.length>1?'0.9rem':'1.35rem'}">${parts.join('')}</span>`
+          ? `<span class="icon" style="font-size:${parts.length>1?'0.85rem':'1.35rem'}">${parts.join('')}</span>`
           : '';
       });
     }
 
     function renderRight() {
+      // Right grid = opponent's island: shows player pawn/boat (CPU's items are hidden)
       document.querySelectorAll('#rightGrid td.cell').forEach(td => {
         const r = +td.dataset.row, c = +td.dataset.col;
         const parts = [];
-        if (cpuBoat && cpuBoat.r===r && cpuBoat.c===c) parts.push('⛵');
-        if (cpuPawn && cpuPawn.r===r && cpuPawn.c===c) parts.push('🔴');
+        // Boat always rendered at its water tile
+        if (playerBoat && playerBoat.r===r && playerBoat.c===c) parts.push('⛵');
+        // Pawn rendered at its position (coincides with boat when aboard)
+        if (playerPawn && playerPawn.r===r && playerPawn.c===c) parts.push('🔵');
         td.innerHTML = parts.length
-          ? `<span class="icon" style="font-size:${parts.length>1?'0.9rem':'1.35rem'}">${parts.join('')}</span>`
+          ? `<span class="icon" style="font-size:${parts.length>1?'0.85rem':'1.35rem'}">${parts.join('')}</span>`
           : '';
       });
     }
@@ -689,11 +695,16 @@
       const diceEl  = document.getElementById('diceFace');
 
       if (currentTurn === 'player') {
-        banner.textContent = '🔵 Your Turn';
         banner.classList.remove('cpu-turn');
         rollBtn.disabled = (moveState !== 'idle');
         endBtn.disabled  = (moveState === 'idle');
-        diceEl.textContent = diceVal ? DICE_FACES[diceVal - 1] : '';
+        if (moveState === 'idle') {
+          banner.textContent = '🔵 Your Turn';
+          diceEl.textContent = '';
+        } else {
+          banner.textContent = `🔵 Your Turn — ${stepsLeft} step${stepsLeft !== 1 ? 's' : ''} left`;
+          diceEl.textContent = DICE_FACES[diceVal - 1];
+        }
       } else {
         banner.textContent = '🔴 CPU\'s Turn…';
         banner.classList.add('cpu-turn');
@@ -703,17 +714,33 @@
       }
     }
 
-    // ── Roll dice ─────────────────────────────────────────────────
-    document.getElementById('rollBtn').addEventListener('click', () => {
-      if (currentTurn !== 'player' || moveState !== 'idle') return;
-      diceVal = Math.floor(Math.random() * 6) + 1;
-      moveState = 'rolled';
-      highlighted = getReachable(leftMap, playerPawn, diceVal);
-      applyHighlights(highlighted, 'leftGrid');
-      updateHud();
-    });
+    // ── Valid adjacent moves (1 step, with boat boarding) ─────────
+    function getValidMoves(map, pawn, boat, inBoat) {
+      const moves = [];
+      const origin = inBoat ? boat : pawn;
+      for (const [dr, dc] of DIRS) {
+        const nr = origin.r + dr, nc = origin.c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+        const tile = map[nr][nc];
+        if (!inBoat) {
+          // On land: walk to adjacent land tile
+          if (tile === 'land') moves.push({r: nr, c: nc});
+          // Board boat if it's adjacent
+          if (boat && nr === boat.r && nc === boat.c) moves.push({r: nr, c: nc});
+        } else {
+          // In boat: sail to adjacent water, or disembark to adjacent land
+          if (tile === 'water' || tile === 'land') moves.push({r: nr, c: nc});
+        }
+      }
+      // Deduplicate (boat tile might match twice if also land — shouldn't happen, but safe)
+      const seen = new Set();
+      return moves.filter(({r, c}) => {
+        const k = `${r},${c}`;
+        return seen.has(k) ? false : (seen.add(k), true);
+      });
+    }
 
-    // ── BFS reachable land tiles ──────────────────────────────────
+    // ── BFS reachable land tiles (used by CPU) ────────────────────
     function getReachable(map, start, steps) {
       const dist = Array.from({length: ROWS}, () => Array(COLS).fill(-1));
       dist[start.r][start.c] = 0;
@@ -746,33 +773,93 @@
       document.querySelectorAll('.cell.highlighted').forEach(el => el.classList.remove('highlighted'));
     }
 
-    // ── End turn ──────────────────────────────────────────────────
+    // ── Roll dice ─────────────────────────────────────────────────
+    document.getElementById('rollBtn').addEventListener('click', () => {
+      if (currentTurn !== 'player' || moveState !== 'idle') return;
+      diceVal   = Math.floor(Math.random() * 6) + 1;
+      stepsLeft = diceVal;
+      moveState = 'moving';
+      highlighted = getValidMoves(rightMap, playerPawn, playerBoat, playerInBoat);
+      applyHighlights(highlighted, 'rightGrid');
+      updateHud();
+    });
+
+    // ── Execute one player step ───────────────────────────────────
+    function doPlayerMove(r, c) {
+      const tile = rightMap[r][c];
+
+      if (!playerInBoat) {
+        if (playerBoat && r === playerBoat.r && c === playerBoat.c) {
+          // Board the boat
+          playerInBoat = true;
+          playerPawn   = {r, c}; // pawn is now at the boat's position
+        } else {
+          // Walk to adjacent land
+          playerPawn = {r, c};
+        }
+      } else {
+        if (tile === 'land') {
+          // Disembark: pawn steps onto land, boat stays at current water tile
+          playerPawn   = {r, c};
+          playerInBoat = false;
+        } else {
+          // Sail: move boat (and pawn) to adjacent water tile
+          playerBoat = {r, c};
+          playerPawn = {r, c};
+        }
+      }
+
+      stepsLeft--;
+      clearHighlights();
+      renderRight();
+
+      if (stepsLeft <= 0) {
+        endPlayerTurn();
+        return;
+      }
+
+      highlighted = getValidMoves(rightMap, playerPawn, playerBoat, playerInBoat);
+      if (highlighted.length === 0) {
+        // Pawn is stuck — end turn automatically
+        endPlayerTurn();
+      } else {
+        applyHighlights(highlighted, 'rightGrid');
+        updateHud();
+      }
+    }
+
+    // ── End player turn ───────────────────────────────────────────
     document.getElementById('endTurnBtn').addEventListener('click', () => {
-      if (currentTurn !== 'player') return;
+      if (currentTurn !== 'player' || moveState !== 'moving') return;
+      endPlayerTurn();
+    });
+
+    function endPlayerTurn() {
       clearHighlights();
       highlighted = [];
-      diceVal   = 0;
-      moveState = 'idle';
+      diceVal     = 0;
+      stepsLeft   = 0;
+      moveState   = 'idle';
       currentTurn = 'cpu';
       updateHud();
       setTimeout(cpuTurn, 900);
-    });
+    }
 
-    // ── CPU turn ──────────────────────────────────────────────────
+    // ── CPU turn (moves on leftMap = player's island) ─────────────
     function cpuTurn() {
       const roll  = Math.floor(Math.random() * 6) + 1;
-      const moves = getReachable(rightMap, cpuPawn, roll);
+      const moves = getReachable(leftMap, cpuPawn, roll);
 
       if (moves.length > 0) {
         let dest;
         if (difficulty === 'easy') {
           dest = moves[Math.floor(Math.random() * moves.length)];
         } else {
-          // Medium/Hard: prefer lower col index (closer to star)
+          // Medium/Hard: prefer lower col index (closer to star on leftMap)
           dest = moves.reduce((best, t) => (t.c < best.c ? t : best), moves[0]);
         }
         cpuPawn = dest;
-        renderRight();
+        renderLeft();
       }
 
       setTimeout(() => {
