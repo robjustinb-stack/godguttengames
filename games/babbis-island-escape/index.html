@@ -14,9 +14,7 @@
       --dark: #1a1a1a;
       --card-bg: rgba(255,255,255,0.82);
       --shadow: 0 8px 32px rgba(0,0,0,0.13);
-      --water: #4aabdb;
       --water-dark: #2d8ab0;
-      --land: #5ab85a;
       --land-dark: #389038;
       --cell: 52px;
     }
@@ -31,276 +29,246 @@
     }
 
     /* ── Wallpaper ───────────────────────────────────────────── */
-    .wallpaper {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
-    }
+    .wallpaper { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
 
     .tomato-grid {
-      position: absolute;
-      inset: -80px;
+      position: absolute; inset: -80px;
       display: grid;
       grid-template-columns: repeat(auto-fill, 72px);
       grid-auto-rows: 72px;
       transform: rotate(45deg) scale(1.5);
-      opacity: 0.18;
-      gap: 18px;
+      opacity: 0.18; gap: 18px;
     }
 
     .tomato {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 36px;
-      user-select: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; user-select: none;
     }
 
     /* ── Content ─────────────────────────────────────────────── */
     .content {
-      position: relative;
-      z-index: 1;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      position: relative; z-index: 1; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
       padding: 36px 24px 80px;
     }
 
     .back-link {
       align-self: flex-start;
       font-family: 'Fredoka One', cursive;
-      color: var(--tomato-green);
-      text-decoration: none;
-      font-size: 1rem;
-      margin-bottom: 20px;
-      opacity: 0.75;
-      transition: opacity 0.15s;
+      color: var(--tomato-green); text-decoration: none;
+      font-size: 1rem; margin-bottom: 20px;
+      opacity: 0.75; transition: opacity 0.15s;
     }
     .back-link:hover { opacity: 1; }
 
     h1 {
       font-family: 'Fredoka One', cursive;
       font-size: clamp(1.9rem, 5vw, 3rem);
-      color: var(--tomato-red);
-      text-align: center;
-      margin-bottom: 28px;
-      letter-spacing: 1px;
+      color: var(--tomato-red); text-align: center;
+      margin-bottom: 28px; letter-spacing: 1px;
       text-shadow: 3px 3px 0 rgba(232,57,42,0.15);
     }
 
+    /* ── Utility ─────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+
     /* ── Phase bar ───────────────────────────────────────────── */
     .phase-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 28px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 10px; margin-bottom: 28px;
     }
 
-    .phase-bar {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+    .phase-bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
     .phase-step {
-      font-family: 'Fredoka One', cursive;
-      font-size: 0.95rem;
-      padding: 6px 18px;
-      border-radius: 50px;
-      background: rgba(255,255,255,0.7);
-      border: 2px solid #ddd;
-      color: #bbb;
-      transition: all 0.25s;
-      white-space: nowrap;
+      font-family: 'Fredoka One', cursive; font-size: 0.95rem;
+      padding: 6px 18px; border-radius: 50px;
+      background: rgba(255,255,255,0.7); border: 2px solid #ddd;
+      color: #bbb; transition: all 0.25s; white-space: nowrap;
     }
-
     .phase-step.active {
-      background: var(--tomato-green);
-      border-color: var(--tomato-green);
-      color: white;
-      box-shadow: 0 3px 10px rgba(58,125,68,0.3);
+      background: var(--tomato-green); border-color: var(--tomato-green);
+      color: white; box-shadow: 0 3px 10px rgba(58,125,68,0.3);
     }
-
     .phase-step.done {
-      background: rgba(58,125,68,0.15);
-      border-color: #aacfaa;
-      color: var(--tomato-green);
-      text-decoration: line-through;
+      background: rgba(58,125,68,0.15); border-color: #aacfaa;
+      color: var(--tomato-green); text-decoration: line-through;
     }
 
     .phase-hint {
-      font-size: 0.88rem;
-      color: #777;
-      font-weight: 600;
-      min-height: 1.2em;
-      text-align: center;
+      font-size: 0.88rem; color: #777; font-weight: 600;
+      min-height: 1.2em; text-align: center;
     }
+
+    /* ── Game HUD ────────────────────────────────────────────── */
+    .game-hud {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 14px; margin-bottom: 24px;
+    }
+
+    .turn-banner {
+      font-family: 'Fredoka One', cursive; font-size: 1.4rem;
+      padding: 8px 32px; border-radius: 50px;
+      background: var(--card-bg); box-shadow: var(--shadow);
+      color: var(--dark); letter-spacing: 0.5px;
+      transition: background 0.35s;
+    }
+    .turn-banner.cpu-turn { background: rgba(232,57,42,0.14); }
+
+    .dice-row { display: flex; align-items: center; gap: 16px; }
+
+    .action-btn {
+      font-family: 'Fredoka One', cursive; font-size: 1.1rem;
+      padding: 10px 28px; border-radius: 50px; border: none;
+      cursor: pointer; background: var(--tomato-green); color: white;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+      transition: background 0.15s, transform 0.15s, opacity 0.15s;
+    }
+    .action-btn:hover:not(:disabled) { background: var(--leaf-green); transform: scale(1.05); }
+    .action-btn:disabled { opacity: 0.38; cursor: default; transform: none !important; }
+
+    .action-btn.end-btn { background: var(--tomato-red); }
+    .action-btn.end-btn:hover:not(:disabled) { background: #c0281a; }
+
+    .dice-face {
+      font-size: 2.6rem; min-width: 2.8rem; text-align: center;
+      transition: transform 0.2s;
+    }
+
+    /* ── Difficulty overlay ──────────────────────────────────── */
+    .diff-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.55);
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-card {
+      background: var(--cream); border-radius: 20px;
+      padding: 40px 48px;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.35);
+      text-align: center; max-width: 360px; width: 90%;
+      animation: fadeUp 0.3s ease both;
+    }
+    .modal-card h2 {
+      font-family: 'Fredoka One', cursive; font-size: 1.9rem;
+      color: var(--tomato-red); margin-bottom: 8px;
+    }
+    .modal-card p { color: #666; font-size: 0.95rem; margin-bottom: 24px; }
+
+    .diff-btns { display: flex; flex-direction: column; gap: 12px; }
+
+    .diff-btn {
+      font-family: 'Fredoka One', cursive; font-size: 1.2rem;
+      padding: 14px 32px; border-radius: 50px; border: none;
+      cursor: pointer; color: white;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .diff-btn:hover { transform: scale(1.06); }
+    .diff-btn.easy   { background: var(--tomato-green); box-shadow: 0 4px 14px rgba(58,125,68,0.35); }
+    .diff-btn.medium { background: var(--tomato-red);   box-shadow: 0 4px 14px rgba(232,57,42,0.35); }
+    .diff-btn.hard   { background: var(--dark);         box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
 
     /* ── Game area ───────────────────────────────────────────── */
-    .game-area {
-      display: flex;
-      align-items: flex-start; /* tops aligned; star is offset below via margin-top */
-      gap: 10px;
-    }
+    .game-area { display: flex; align-items: flex-start; gap: 10px; }
 
-    /* ── Grid wrapper + label ────────────────────────────────── */
-    .grid-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
+    .grid-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 
     .grid-label {
-      /* Fixed height so the star's margin-top calc is exact */
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Fredoka One', cursive;
-      font-size: 0.8rem;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--tomato-green);
-      opacity: 0.6;
+      height: 24px; display: flex; align-items: center; justify-content: center;
+      font-family: 'Fredoka One', cursive; font-size: 0.8rem;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--tomato-green); opacity: 0.6;
     }
 
     /* ── Star tile ───────────────────────────────────────────── */
     .star-tile {
-      width: var(--cell);
-      height: var(--cell);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.8rem;
-      background: var(--card-bg);
-      border-radius: 10px;
-      border: 2px solid rgba(255,255,255,0.8);
-      box-shadow: var(--shadow);
-      flex-shrink: 0;
-      user-select: none;
-      /*
-       * Align star centre to row C on both grids.
-       * From the top of .grid-wrap to the centre of row C:
-       *   label(24px) + gap(6px) + top-spacing(3px) + header(26px)
-       *   + spacing(3px) + rowA(cell) + spacing(3px) + rowB(cell)
-       *   + spacing(3px) + rowC/2 − starHeight/2  =  68px + 2×cell
-       */
+      width: var(--cell); height: var(--cell);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; background: var(--card-bg);
+      border-radius: 10px; border: 2px solid rgba(255,255,255,0.8);
+      box-shadow: var(--shadow); flex-shrink: 0; user-select: none;
       margin-top: calc(68px + 2 * var(--cell));
     }
 
     /* ── Grid table ──────────────────────────────────────────── */
-    .grid-table {
-      border-collapse: separate;
-      border-spacing: 3px;
-    }
+    .grid-table { border-collapse: separate; border-spacing: 3px; }
 
     .grid-table th {
-      font-family: 'Fredoka One', cursive;
-      font-size: 0.9rem;
-      color: var(--dark);
-      opacity: 0.6;
-      width: var(--cell);
-      height: 26px;
-      text-align: center;
-      user-select: none;
+      font-family: 'Fredoka One', cursive; font-size: 0.9rem;
+      color: var(--dark); opacity: 0.6;
+      width: var(--cell); height: 26px;
+      text-align: center; user-select: none;
     }
-
     .grid-table th.corner { opacity: 0; pointer-events: none; }
 
     /* ── Cells ───────────────────────────────────────────────── */
     .cell {
-      width: var(--cell);
-      height: var(--cell);
-      border-radius: 8px;
-      cursor: pointer;
-      text-align: center;
-      vertical-align: middle;
-      font-size: 1.45rem;
-      line-height: 1;
+      width: var(--cell); height: var(--cell);
+      border-radius: 8px; cursor: pointer;
+      text-align: center; vertical-align: middle;
+      font-size: 1.35rem; line-height: 1;
       transition: transform 0.12s, filter 0.12s;
-      user-select: none;
-      position: relative;
+      user-select: none; position: relative; overflow: hidden;
     }
-
     .cell.water {
       background: linear-gradient(135deg, #5bbfe6 0%, var(--water-dark) 100%);
       box-shadow: inset 0 -3px 5px rgba(0,0,0,0.18);
     }
-
     .cell.land {
       background: linear-gradient(135deg, #72d672 0%, var(--land-dark) 100%);
       box-shadow: inset 0 -3px 5px rgba(0,0,0,0.18);
     }
+    .cell:hover { transform: scale(1.12); filter: brightness(1.1); z-index: 3; }
 
-    .cell:hover {
-      transform: scale(1.12);
-      filter: brightness(1.1);
-      z-index: 3;
-    }
+    .cell.inactive { cursor: default; opacity: 0.75; }
+    .cell.inactive:hover { transform: none; filter: none; }
 
-    /* inactive = right grid (not player-setup) */
-    .cell.inactive {
-      cursor: default;
-      opacity: 0.72;
+    /* ── Cell highlights ─────────────────────────────────────── */
+    .cell.highlighted {
+      outline: 3px solid #ffe000;
+      outline-offset: -3px;
+      z-index: 2;
+      cursor: pointer;
+      animation: pulse-bright 0.85s ease-in-out infinite alternate;
     }
-    .cell.inactive:hover {
-      transform: none;
-      filter: none;
+    @keyframes pulse-bright {
+      from { filter: brightness(1.15); }
+      to   { filter: brightness(1.5); }
     }
 
     /* ── Animations ──────────────────────────────────────────── */
     @keyframes shake {
       0%,100% { transform: translateX(0); }
-      20%      { transform: translateX(-5px); }
-      50%      { transform: translateX(5px); }
-      75%      { transform: translateX(-3px); }
+      20%     { transform: translateX(-5px); }
+      50%     { transform: translateX(5px); }
+      75%     { transform: translateX(-3px); }
     }
-
     @keyframes pop {
       0%   { transform: scale(0.4); }
       65%  { transform: scale(1.25); }
       100% { transform: scale(1); }
     }
-
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
     .cell.shaking { animation: shake 0.32s ease both; }
-
     .cell .icon { display: inline-block; animation: pop 0.22s ease both; }
 
     /* ── Ready button ────────────────────────────────────────── */
     .ready-btn {
       margin-top: 36px;
-      font-family: 'Fredoka One', cursive;
-      font-size: 1.4rem;
-      padding: 14px 52px;
-      background: var(--tomato-green);
-      color: white;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
+      font-family: 'Fredoka One', cursive; font-size: 1.4rem;
+      padding: 14px 52px; background: var(--tomato-green);
+      color: white; border: none; border-radius: 50px; cursor: pointer;
       box-shadow: 0 4px 14px rgba(58,125,68,0.35);
-      transition: background 0.18s, transform 0.18s;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(10px);
-      transition: opacity 0.3s ease, transform 0.3s ease, background 0.18s, box-shadow 0.18s;
+      opacity: 0; pointer-events: none; transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease,
+                  background 0.18s, box-shadow 0.18s;
     }
-
-    .ready-btn.visible {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
+    .ready-btn.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
     .ready-btn:hover {
       background: var(--leaf-green);
       transform: scale(1.05) !important;
@@ -310,18 +278,10 @@
     /* ── Mobile ──────────────────────────────────────────────── */
     @media (max-width: 700px) {
       :root { --cell: 44px; }
-
-      .game-area {
-        flex-direction: column;
-        align-items: center; /* re-centre horizontally when stacked */
-      }
-
-      .star-tile {
-        font-size: 1.5rem;
-        margin-top: 0; /* reset — no row-C alignment needed when stacked */
-      }
-
-      .cell { border-radius: 6px; font-size: 1.25rem; }
+      .game-area { flex-direction: column; align-items: center; }
+      .star-tile { font-size: 1.5rem; margin-top: 0; }
+      .cell { border-radius: 6px; font-size: 1.1rem; }
+      .modal-card { padding: 30px 24px; }
     }
   </style>
 </head>
@@ -337,7 +297,8 @@
 
     <h1>Babbi's Island Escape</h1>
 
-    <div class="phase-wrap">
+    <!-- Setup phase UI -->
+    <div class="phase-wrap" id="phaseWrap">
       <div class="phase-bar">
         <div class="phase-step active" id="step-chest">📦 Chest</div>
         <div class="phase-step"        id="step-key"  >🗝️ Key</div>
@@ -346,23 +307,43 @@
       <div class="phase-hint" id="phaseHint">Place your chest on a land tile (green)</div>
     </div>
 
-    <div class="game-area">
+    <!-- Game HUD (shown during gameplay) -->
+    <div class="game-hud hidden" id="gameHud">
+      <div class="turn-banner" id="turnBanner">🔵 Your Turn</div>
+      <div class="dice-row">
+        <button class="action-btn" id="rollBtn">🎲 Roll Dice</button>
+        <span class="dice-face" id="diceFace"></span>
+      </div>
+      <button class="action-btn end-btn" id="endTurnBtn" disabled>End Turn ➜</button>
+    </div>
 
+    <!-- Board -->
+    <div class="game-area">
       <div class="grid-wrap">
         <div class="grid-label">Your Island</div>
         <table class="grid-table" id="leftGrid"></table>
       </div>
-
       <div class="star-tile">★</div>
-
       <div class="grid-wrap">
         <div class="grid-label">Opponent's Island</div>
         <table class="grid-table" id="rightGrid"></table>
       </div>
-
     </div>
 
     <button class="ready-btn" id="readyBtn">Ready ✓</button>
+
+    <!-- Difficulty overlay -->
+    <div class="diff-overlay hidden" id="diffOverlay">
+      <div class="modal-card">
+        <h2>Choose Difficulty</h2>
+        <p>How tough should your opponent be?</p>
+        <div class="diff-btns">
+          <button class="diff-btn easy"   id="easyBtn">🌊 Easy</button>
+          <button class="diff-btn medium" id="medBtn" >⚔️ Medium</button>
+          <button class="diff-btn hard"   id="hardBtn">💀 Hard</button>
+        </div>
+      </div>
+    </div>
 
   </div>
 
@@ -376,27 +357,23 @@
       tomatoGrid.appendChild(d);
     }
 
-    // ── Map generation (all water 4-connected) ─────────────────────
+    // ── Constants ─────────────────────────────────────────────────
     const ROWS = 5, COLS = 5;
     const ROW_LABELS = ['A', 'B', 'C', 'D', 'E'];
     const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
+    const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
 
+    // ── Map generation (all water 4-connected) ─────────────────────
     function generateMap() {
       while (true) {
-        // ~40% land probability
         const map = Array.from({length: ROWS}, () =>
           Array.from({length: COLS}, () => Math.random() < 0.4 ? 'land' : 'water')
         );
-
         const waters = [];
         for (let r = 0; r < ROWS; r++)
           for (let c = 0; c < COLS; c++)
             if (map[r][c] === 'water') waters.push([r, c]);
-
-        // Reject maps with too little water or too little land
         if (waters.length < 5 || waters.length > 22) continue;
-
-        // Flood-fill from first water tile to check connectivity
         const seen = Array.from({length: ROWS}, () => Array(COLS).fill(false));
         const q = [waters[0]];
         seen[waters[0][0]][waters[0][1]] = true;
@@ -404,26 +381,34 @@
         while (q.length) {
           const [r, c] = q.shift();
           for (const [dr, dc] of DIRS) {
-            const nr = r + dr, nc = c + dc;
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !seen[nr][nc] && map[nr][nc] === 'water') {
-              seen[nr][nc] = true;
-              q.push([nr, nc]);
-              cnt++;
+            const nr = r+dr, nc = c+dc;
+            if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && !seen[nr][nc] && map[nr][nc]==='water') {
+              seen[nr][nc] = true; q.push([nr,nc]); cnt++;
             }
           }
         }
-
         if (cnt === waters.length) return map;
-        // else retry
       }
     }
 
     const leftMap  = generateMap();
     const rightMap = generateMap();
 
-    // ── Game state ────────────────────────────────────────────────
-    const placed = { chest: null, key: null, mine: null };
-    let phase = 'chest'; // chest → key → mine → done
+    // ── State ─────────────────────────────────────────────────────
+    const placed  = { chest: null, key: null, mine: null };
+    let setupPhase = 'chest'; // chest → key → mine → done
+    let gamePhase  = 'setup'; // 'setup' | 'playing'
+
+    // Gameplay
+    let difficulty  = 'easy';
+    let currentTurn = 'player'; // 'player' | 'cpu'
+    let moveState   = 'idle';   // 'idle' | 'rolled' | 'moved'
+    let diceVal     = 0;
+    let playerPawn  = null;  // {r,c} on leftMap
+    let playerBoat  = null;  // {r,c} on leftMap
+    let cpuPawn     = null;  // {r,c} on rightMap
+    let cpuBoat     = null;  // {r,c} on rightMap
+    let highlighted = [];
 
     const HINTS = {
       chest: 'Place your chest on a land tile (green)',
@@ -433,35 +418,24 @@
     };
 
     // ── Build grids ───────────────────────────────────────────────
-    //
-    // Layout: columns A–E run vertically (row labels on side).
-    //         "rows" 1–5 run horizontally, numbered outward from the ★.
-    //   Left grid  → numbers shown 5 4 3 2 1 (right = col-1 = nearest star)
-    //   Right grid → numbers shown 1 2 3 4 5 (left  = col-1 = nearest star)
-    //
-    // data-col stores logical index 0–4 where 0 = column-1 (nearest star).
-
     function buildGrid(tableEl, map, isLeft) {
-      // ── header row ──
       const hdr = document.createElement('tr');
       if (isLeft) {
-        hdr.appendChild(mkTh('', 'corner'));          // blank top-left
-        for (let c = 4; c >= 0; c--) hdr.appendChild(mkTh(c + 1));  // 5 4 3 2 1
+        hdr.appendChild(mkTh('', 'corner'));
+        for (let c = 4; c >= 0; c--) hdr.appendChild(mkTh(c + 1));
       } else {
-        for (let c = 0; c < 5; c++) hdr.appendChild(mkTh(c + 1));   // 1 2 3 4 5
-        hdr.appendChild(mkTh('', 'corner'));          // blank top-right
+        for (let c = 0; c < 5; c++) hdr.appendChild(mkTh(c + 1));
+        hdr.appendChild(mkTh('', 'corner'));
       }
       tableEl.appendChild(hdr);
-
-      // ── data rows ──
       for (let r = 0; r < ROWS; r++) {
         const tr = document.createElement('tr');
         if (isLeft) {
-          tr.appendChild(mkTh(ROW_LABELS[r]));                     // A-E on left
-          for (let c = 4; c >= 0; c--) tr.appendChild(mkCell(map, r, c, isLeft));
+          tr.appendChild(mkTh(ROW_LABELS[r]));
+          for (let c = 4; c >= 0; c--) tr.appendChild(mkCell(map, r, c, true));
         } else {
-          for (let c = 0; c < 5; c++) tr.appendChild(mkCell(map, r, c, isLeft));
-          tr.appendChild(mkTh(ROW_LABELS[r]));                     // A-E on right
+          for (let c = 0; c < 5; c++) tr.appendChild(mkCell(map, r, c, false));
+          tr.appendChild(mkTh(ROW_LABELS[r]));
         }
         tableEl.appendChild(tr);
       }
@@ -487,31 +461,46 @@
     buildGrid(document.getElementById('leftGrid'),  leftMap,  true);
     buildGrid(document.getElementById('rightGrid'), rightMap, false);
 
-    // ── Cell click handler ────────────────────────────────────────
+    // ── Cell click (unified: setup + gameplay) ────────────────────
     function onCellClick(e) {
-      if (phase === 'done') return;
-      const td  = e.currentTarget;
-      const r   = +td.dataset.row;
-      const c   = +td.dataset.col;
+      const td = e.currentTarget;
+      const r  = +td.dataset.row;
+      const c  = +td.dataset.col;
+
+      // Gameplay branch
+      if (gamePhase === 'playing') {
+        if (currentTurn === 'player' && moveState === 'rolled' && td.classList.contains('highlighted')) {
+          playerPawn = {r, c};
+          clearHighlights();
+          highlighted = [];
+          moveState = 'moved';
+          renderLeft();
+          updateHud();
+        }
+        return;
+      }
+
+      // Setup branch
+      if (setupPhase === 'done') return;
       const tile = leftMap[r][c];
 
-      if (phase === 'chest') {
+      if (setupPhase === 'chest') {
         if (tile !== 'land') { shake(td); return; }
         clearPlacement('chest');
         place(td, r, c, 'chest', '📦');
-        phase = 'key';
+        setupPhase = 'key';
 
-      } else if (phase === 'key') {
+      } else if (setupPhase === 'key') {
         if (occupiedBy(r, c)) { shake(td); return; }
         clearPlacement('key');
         place(td, r, c, 'key', '🗝️');
-        phase = 'mine';
+        setupPhase = 'mine';
 
-      } else if (phase === 'mine') {
+      } else if (setupPhase === 'mine') {
         if (occupiedBy(r, c)) { shake(td); return; }
         clearPlacement('mine');
         place(td, r, c, 'mine', '💣');
-        phase = 'done';
+        setupPhase = 'done';
         document.getElementById('readyBtn').classList.add('visible');
       }
 
@@ -519,13 +508,13 @@
     }
 
     function place(td, r, c, item, icon) {
-      placed[item] = { r, c };
+      placed[item] = {r, c};
       td.innerHTML = `<span class="icon">${icon}</span>`;
     }
 
     function clearPlacement(item) {
       if (!placed[item]) return;
-      const { r, c } = placed[item];
+      const {r, c} = placed[item];
       const el = document.querySelector(`#leftGrid td[data-row="${r}"][data-col="${c}"]`);
       if (el) el.innerHTML = '';
       placed[item] = null;
@@ -539,30 +528,222 @@
 
     function shake(el) {
       el.classList.remove('shaking');
-      void el.offsetWidth; // force reflow to restart animation
+      void el.offsetWidth;
       el.classList.add('shaking');
-      el.addEventListener('animationend', () => el.classList.remove('shaking'), { once: true });
+      el.addEventListener('animationend', () => el.classList.remove('shaking'), {once: true});
     }
 
-    // ── Phase UI ──────────────────────────────────────────────────
+    // ── Setup phase UI ────────────────────────────────────────────
     const STEP_IDS = { chest: 'step-chest', key: 'step-key', mine: 'step-mine' };
     const STEPS    = ['chest', 'key', 'mine'];
 
     function updatePhaseUI() {
-      const curIdx = STEPS.indexOf(phase);
+      const curIdx = STEPS.indexOf(setupPhase);
       STEPS.forEach((s, i) => {
         const el = document.getElementById(STEP_IDS[s]);
         el.className = 'phase-step';
-        if (phase === 'done' || i < curIdx) el.classList.add('done');
-        else if (i === curIdx)              el.classList.add('active');
+        if (setupPhase === 'done' || i < curIdx) el.classList.add('done');
+        else if (i === curIdx)                   el.classList.add('active');
       });
-      document.getElementById('phaseHint').textContent = HINTS[phase] ?? '';
+      document.getElementById('phaseHint').textContent = HINTS[setupPhase] ?? '';
     }
 
-    // ── Ready button ──────────────────────────────────────────────
+    // ── Ready → show difficulty picker ────────────────────────────
     document.getElementById('readyBtn').addEventListener('click', () => {
-      alert('⚓ Setting sail… Stage 2 coming soon!');
+      document.getElementById('diffOverlay').classList.remove('hidden');
     });
+
+    document.getElementById('easyBtn').addEventListener('click',   () => startGame('easy'));
+    document.getElementById('medBtn').addEventListener('click',    () => startGame('medium'));
+    document.getElementById('hardBtn').addEventListener('click',   () => startGame('hard'));
+
+    // ── Start game ────────────────────────────────────────────────
+    function startGame(diff) {
+      difficulty = diff;
+      document.getElementById('diffOverlay').classList.add('hidden');
+      document.getElementById('phaseWrap').classList.add('hidden');
+      document.getElementById('readyBtn').classList.add('hidden');
+
+      const ps = findStart(leftMap);
+      const cs = findStart(rightMap);
+      playerPawn = ps.pawn;
+      playerBoat = ps.boat;
+      cpuPawn    = cs.pawn;
+      cpuBoat    = cs.boat;
+
+      gamePhase   = 'playing';
+      currentTurn = 'player';
+      moveState   = 'idle';
+      diceVal     = 0;
+
+      renderGrids();
+      document.getElementById('gameHud').classList.remove('hidden');
+      updateHud();
+    }
+
+    // ── Find starting positions ───────────────────────────────────
+    function findStart(map) {
+      // Prefer col 0 (nearest star) land tile with adjacent water
+      for (let r = 0; r < ROWS; r++) {
+        if (map[r][0] === 'land') {
+          const w = adjWater(map, r, 0);
+          if (w) return {pawn: {r, c:0}, boat: w};
+        }
+      }
+      // Any land tile with adjacent water
+      for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS; c++)
+          if (map[r][c] === 'land') {
+            const w = adjWater(map, r, c);
+            if (w) return {pawn: {r, c}, boat: w};
+          }
+      // Fallback: any land tile, no boat
+      for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS; c++)
+          if (map[r][c] === 'land') return {pawn: {r, c}, boat: null};
+      return {pawn: {r:0, c:0}, boat: null};
+    }
+
+    function adjWater(map, r, c) {
+      for (const [dr, dc] of DIRS) {
+        const nr = r+dr, nc = c+dc;
+        if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && map[nr][nc]==='water')
+          return {r: nr, c: nc};
+      }
+      return null;
+    }
+
+    // ── Render ────────────────────────────────────────────────────
+    function renderGrids() { renderLeft(); renderRight(); }
+
+    function renderLeft() {
+      document.querySelectorAll('#leftGrid td.cell').forEach(td => {
+        const r = +td.dataset.row, c = +td.dataset.col;
+        const parts = [];
+        if (playerBoat && playerBoat.r===r && playerBoat.c===c) parts.push('⛵');
+        if (playerPawn && playerPawn.r===r && playerPawn.c===c) parts.push('🔵');
+        if (placed.chest && placed.chest.r===r && placed.chest.c===c) parts.push('📦');
+        if (placed.key   && placed.key.r===r   && placed.key.c===c)   parts.push('🗝️');
+        if (placed.mine  && placed.mine.r===r  && placed.mine.c===c)  parts.push('💣');
+        td.innerHTML = parts.length
+          ? `<span class="icon" style="font-size:${parts.length>1?'0.9rem':'1.35rem'}">${parts.join('')}</span>`
+          : '';
+      });
+    }
+
+    function renderRight() {
+      document.querySelectorAll('#rightGrid td.cell').forEach(td => {
+        const r = +td.dataset.row, c = +td.dataset.col;
+        const parts = [];
+        if (cpuBoat && cpuBoat.r===r && cpuBoat.c===c) parts.push('⛵');
+        if (cpuPawn && cpuPawn.r===r && cpuPawn.c===c) parts.push('🔴');
+        td.innerHTML = parts.length
+          ? `<span class="icon" style="font-size:${parts.length>1?'0.9rem':'1.35rem'}">${parts.join('')}</span>`
+          : '';
+      });
+    }
+
+    // ── HUD ───────────────────────────────────────────────────────
+    function updateHud() {
+      const banner  = document.getElementById('turnBanner');
+      const rollBtn = document.getElementById('rollBtn');
+      const endBtn  = document.getElementById('endTurnBtn');
+      const diceEl  = document.getElementById('diceFace');
+
+      if (currentTurn === 'player') {
+        banner.textContent = '🔵 Your Turn';
+        banner.classList.remove('cpu-turn');
+        rollBtn.disabled = (moveState !== 'idle');
+        endBtn.disabled  = (moveState === 'idle');
+        diceEl.textContent = diceVal ? DICE_FACES[diceVal - 1] : '';
+      } else {
+        banner.textContent = '🔴 CPU\'s Turn…';
+        banner.classList.add('cpu-turn');
+        rollBtn.disabled = true;
+        endBtn.disabled  = true;
+        diceEl.textContent = '';
+      }
+    }
+
+    // ── Roll dice ─────────────────────────────────────────────────
+    document.getElementById('rollBtn').addEventListener('click', () => {
+      if (currentTurn !== 'player' || moveState !== 'idle') return;
+      diceVal = Math.floor(Math.random() * 6) + 1;
+      moveState = 'rolled';
+      highlighted = getReachable(leftMap, playerPawn, diceVal);
+      applyHighlights(highlighted, 'leftGrid');
+      updateHud();
+    });
+
+    // ── BFS reachable land tiles ──────────────────────────────────
+    function getReachable(map, start, steps) {
+      const dist = Array.from({length: ROWS}, () => Array(COLS).fill(-1));
+      dist[start.r][start.c] = 0;
+      const q = [{r: start.r, c: start.c, d: 0}];
+      const result = [];
+      while (q.length) {
+        const {r, c, d} = q.shift();
+        if (d >= steps) continue;
+        for (const [dr, dc] of DIRS) {
+          const nr = r+dr, nc = c+dc;
+          if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && dist[nr][nc]===-1 && map[nr][nc]==='land') {
+            dist[nr][nc] = d+1;
+            result.push({r: nr, c: nc});
+            q.push({r: nr, c: nc, d: d+1});
+          }
+        }
+      }
+      return result;
+    }
+
+    function applyHighlights(tiles, gridId) {
+      clearHighlights();
+      tiles.forEach(({r, c}) => {
+        const td = document.querySelector(`#${gridId} td[data-row="${r}"][data-col="${c}"]`);
+        if (td) td.classList.add('highlighted');
+      });
+    }
+
+    function clearHighlights() {
+      document.querySelectorAll('.cell.highlighted').forEach(el => el.classList.remove('highlighted'));
+    }
+
+    // ── End turn ──────────────────────────────────────────────────
+    document.getElementById('endTurnBtn').addEventListener('click', () => {
+      if (currentTurn !== 'player') return;
+      clearHighlights();
+      highlighted = [];
+      diceVal   = 0;
+      moveState = 'idle';
+      currentTurn = 'cpu';
+      updateHud();
+      setTimeout(cpuTurn, 900);
+    });
+
+    // ── CPU turn ──────────────────────────────────────────────────
+    function cpuTurn() {
+      const roll  = Math.floor(Math.random() * 6) + 1;
+      const moves = getReachable(rightMap, cpuPawn, roll);
+
+      if (moves.length > 0) {
+        let dest;
+        if (difficulty === 'easy') {
+          dest = moves[Math.floor(Math.random() * moves.length)];
+        } else {
+          // Medium/Hard: prefer lower col index (closer to star)
+          dest = moves.reduce((best, t) => (t.c < best.c ? t : best), moves[0]);
+        }
+        cpuPawn = dest;
+        renderRight();
+      }
+
+      setTimeout(() => {
+        currentTurn = 'player';
+        moveState   = 'idle';
+        diceVal     = 0;
+        updateHud();
+      }, 700);
+    }
   </script>
 
 </body>
