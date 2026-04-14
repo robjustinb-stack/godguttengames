@@ -161,19 +161,34 @@
     .grid-table { border-collapse: separate; border-spacing: 3px; }
     .grid-table th { font-family: 'Fredoka One', cursive; font-size: 0.9rem; color: var(--dark); opacity: 0.6; width: var(--cell); height: 26px; text-align: center; user-select: none; }
     .grid-table th.corner { opacity: 0; pointer-events: none; }
-    .cell { width: var(--cell); height: var(--cell); border-radius: 8px; cursor: pointer; text-align: center; vertical-align: middle; font-size: 1.35rem; line-height: 1; transition: transform 0.12s, filter 0.12s; user-select: none; position: relative; overflow: hidden; }
+    .cell {
+      width: var(--cell); height: var(--cell); border-radius: 8px; cursor: pointer;
+      vertical-align: middle; line-height: 1; transition: filter 0.12s;
+      user-select: none; position: relative;
+      /* overflow: visible so icons/pieces are never clipped by the cell boundary */
+      overflow: visible;
+    }
     .cell.water { background: linear-gradient(135deg, #5bbfe6 0%, var(--water-dark) 100%); box-shadow: inset 0 -3px 5px rgba(0,0,0,0.18); }
     .cell.land  { background: linear-gradient(135deg, #72d672 0%, var(--land-dark) 100%);  box-shadow: inset 0 -3px 5px rgba(0,0,0,0.18); }
-    .cell:hover { transform: scale(1.12); filter: brightness(1.1); z-index: 3; }
+    /* No transform-scale on hover — scale causes clipping; brightness-only is safe */
+    .cell:hover { filter: brightness(1.14); z-index: 3; }
     .cell.inactive { cursor: default; opacity: 0.75; }
-    .cell.inactive:hover { transform: none; filter: none; }
+    .cell.inactive:hover { filter: none; }
     .cell.highlighted { outline: 3px solid #ffe000; outline-offset: -3px; z-index: 2; cursor: pointer; animation: pulse-bright 0.85s ease-in-out infinite alternate; }
     @keyframes pulse-bright { from { filter: brightness(1.15); } to { filter: brightness(1.5); } }
     @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 50%{transform:translateX(5px)} 75%{transform:translateX(-3px)} }
-    @keyframes pop { 0%{transform:scale(0.4)} 65%{transform:scale(1.25)} 100%{transform:scale(1)} }
+    /* Gentler pop — never scales above 100% so it can't overflow the cell */
+    @keyframes pop { 0%{transform:scale(0.55)} 70%{transform:scale(1.04)} 100%{transform:scale(1)} }
     @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
     .cell.shaking { animation: shake 0.32s ease both; }
-    .cell .icon { display: inline-block; animation: pop 0.22s ease both; }
+    /* Icon fills cell via absolute positioning — always centered, never clipped */
+    .cell .icon {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; line-height: 1;
+      animation: pop 0.22s ease both;
+      pointer-events: none;
+    }
 
     /* ── Ready button ── */
     .ready-btn {
@@ -282,10 +297,129 @@
     @media (max-width: 900px) {
       :root { --cell: 44px; }
       .star-tile { font-size: 1.5rem; }
-      .cell { border-radius: 6px; font-size: 1.1rem; }
+      .cell { border-radius: 6px; }
       .modal-card { padding: 30px 24px; }
     }
     @media (max-width: 900px) and (orientation: portrait) { .rotate-overlay { display: flex; } }
+
+    /* ── Mobile collapsible log toggle button ── */
+    .mobile-log-btn {
+      display: none; background: none; border: none; cursor: pointer;
+      font-size: 0.75rem; color: var(--tomato-green); padding: 0 4px; line-height: 1;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       Mobile landscape layout  ≤700 px wide, landscape orientation
+       All game chrome is fixed; board fills the middle; nothing scrolls.
+    ══════════════════════════════════════════════════════════════════ */
+    @media (max-width: 700px) and (orientation: landscape) {
+      :root { --cell: 36px; }
+
+      /* Always: trim decorative header to save height */
+      h1, .back-link { display: none !important; }
+
+      /* ── Gameplay-active layout (class added by JS on startGame) ── */
+      body.game-active { overflow: hidden; height: 100dvh; }
+
+      body.game-active .content {
+        padding: 0; height: 100dvh; overflow: hidden;
+        display: flex; flex-direction: column; gap: 0; align-items: stretch;
+      }
+
+      body.game-active .phase-wrap,
+      body.game-active .ready-btn { display: none !important; }
+
+      /* Turn banner → fixed strip at top of viewport */
+      body.game-active #gameHud #turnBanner {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 70;
+        border-radius: 0; font-size: 0.9rem; padding: 4px 12px;
+        text-align: center; margin: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      }
+
+      /* Inventory bar → fixed just below the turn banner */
+      body.game-active #inventoryBar {
+        position: fixed; top: 30px; left: 0; right: 0; z-index: 65;
+        border-radius: 0; margin: 0; padding: 2px 12px;
+        justify-content: center;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        font-size: 0.78rem;
+      }
+      body.game-active #inventoryBar .inv-item { font-size: 0.78rem; padding: 1px 8px; }
+
+      /* Board → fills middle space between top bars and action bar */
+      body.game-active .game-area {
+        position: fixed;
+        top: 56px;            /* turn banner 30px + inventory 26px */
+        bottom: 62px;         /* action bar height */
+        left: 0; right: 0; z-index: 10;
+        display: flex; align-items: center; justify-content: center;
+        overflow: visible; gap: 6px;
+      }
+
+      /* Shrink grid labels and headers to fit smaller height */
+      body.game-active .grid-label { font-size: 0.62rem; height: 16px; }
+      body.game-active .grid-table th { font-size: 0.72rem; height: 20px; width: var(--cell); }
+      body.game-active .star-tile {
+        font-size: 1.2rem;
+        margin-top: calc(36px + 2 * var(--cell)); /* align with row C */
+      }
+
+      /* Action bar → fixed at bottom */
+      body.game-active #gameHud {
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
+        margin: 0; padding: 4px 8px 5px; gap: 4px;
+        flex-direction: row; flex-wrap: wrap;
+        align-items: center; justify-content: center;
+        min-height: 52px;
+        background: rgba(253,246,227,0.98);
+        border-top: 2px solid rgba(0,0,0,0.1);
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+      }
+      body.game-active #gameHud .action-btn { font-size: 0.8rem; padding: 5px 14px; }
+      body.game-active #gameHud .dice-face  { font-size: 1.6rem; min-width: 1.8rem; }
+      body.game-active #messageBar {
+        font-size: 0.8rem; padding: 4px 14px;
+        max-width: 90vw;
+      }
+
+      /* CPU question panel inside action bar: full-width row */
+      body.game-active #cpuQPanel {
+        width: 100%; padding: 5px 10px; border-radius: 10px;
+        order: -1; /* show above other buttons */
+      }
+      body.game-active #cpuQPanel .cpuq-question { font-size: 0.85rem; margin-bottom: 5px; }
+      body.game-active #cpuQPanel .action-btn    { font-size: 0.78rem; padding: 4px 12px; }
+      body.game-active #cpuQPanel .lie-btn        { font-size: 0.78rem; padding: 4px 10px; }
+      body.game-active #cpuQPanel .cpuq-lie-hint  { font-size: 0.7rem; }
+
+      /* Game log → collapsible strip, fixed just above the action bar */
+      body.game-active #qaLog {
+        position: fixed; bottom: 62px; left: 0; right: 0; z-index: 50;
+        margin: 0; border-radius: 0; padding: 0;
+        background: rgba(253,246,227,0.97);
+        border-top: 1px solid rgba(0,0,0,0.1);
+        max-height: 28px; overflow: hidden;
+        transition: max-height 0.22s ease;
+      }
+      body.game-active #qaLog.log-expanded { max-height: 180px; }
+
+      body.game-active .qa-log-title {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 4px 10px; cursor: pointer; margin-bottom: 0; font-size: 0.72rem;
+        user-select: none;
+      }
+      body.game-active .mobile-log-btn { display: inline-block; }
+      body.game-active #qaLogPreview {
+        padding: 0 10px 3px; font-size: 0.72rem; color: #666;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      body.game-active #qaLogItems {
+        max-height: 140px; overflow-y: auto; padding: 2px 10px 6px;
+      }
+      body.game-active .log-entry { font-size: 0.76rem; }
+      body.game-active .qa-q      { font-size: 0.76rem; }
+    }
   </style>
 </head>
 <body>
@@ -359,7 +493,11 @@
 
     <!-- Game Log -->
     <div class="qa-log hidden" id="qaLog">
-      <div class="qa-log-title">📋 Game Log</div>
+      <div class="qa-log-title" id="qaLogTitle">
+        📋 Game Log
+        <button class="mobile-log-btn" id="mobileLogToggle" aria-label="Toggle log">▲</button>
+      </div>
+      <div id="qaLogPreview"></div>
       <div id="qaLogItems"></div>
     </div>
 
@@ -374,9 +512,9 @@
       </div>
     </div>
 
-    <!-- Ask Question overlay -->
+    <!-- Ask Question overlay — tap backdrop to dismiss when answer is shown -->
     <div class="ask-overlay hidden" id="askOverlay">
-      <div class="ask-modal">
+      <div class="ask-modal" id="askModal">
         <h2>❓ Ask a Question</h2>
         <p class="sub">Select a question about the items hidden on the opponent's island.</p>
         <div class="question-picker">
@@ -389,9 +527,15 @@
           <button class="action-btn" id="cancelAskBtn" style="background:#999">Cancel</button>
           <button class="action-btn ask-btn" id="submitAskBtn" disabled>Ask ❓</button>
         </div>
-        <div class="modal-btns" style="margin-top:10px">
-          <button class="action-btn end-btn hidden" id="closeAskBtn">Close &amp; End Turn</button>
+        <!-- Shown after CPU answers; large, prominent, impossible to miss -->
+        <div class="modal-btns" style="margin-top:12px">
+          <button class="action-btn end-btn hidden" id="closeAskBtn" style="font-size:1.15rem; padding:12px 36px; width:100%; border-radius:14px;">
+            ✕ Close &amp; End Turn
+          </button>
         </div>
+        <p class="hidden" id="tapOutsideHint" style="font-size:0.75rem; color:#aaa; margin-top:8px;">
+          or tap outside to close
+        </p>
       </div>
     </div>
 
@@ -651,6 +795,7 @@
       document.querySelectorAll('#rightGrid td.cell').forEach(td => td.classList.remove('inactive'));
 
       gamePhase='playing'; currentTurn='player'; moveState='idle'; diceVal=0; stepsLeft=0;
+      document.body.classList.add('game-active'); // enables mobile game layout
       renderGrids();
       document.getElementById('gameHud').classList.remove('hidden');
       renderGameLog(); updateHud();
@@ -961,8 +1106,8 @@
         const otherItem=item==='key'?'chest':'key';
         const otherPos=cpuPlaced[otherItem];
         const il=item, ol=otherItem;
-        qs.push({text:`Is the ${il} on land?`,       answer:rightMap[itemPos.r][itemPos.c]==='land', pinpoints:false});
-        qs.push({text:`Is the ${il} in the water?`,  answer:rightMap[itemPos.r][itemPos.c]==='water',pinpoints:false});
+        qs.push({text:`Is the ${il} on land?`,      answer:rightMap[itemPos.r][itemPos.c]==='land', pinpoints:false});
+        if (il !== 'chest') qs.push({text:`Is the ${il} in the water?`, answer:rightMap[itemPos.r][itemPos.c]==='water', pinpoints:false});
         for (let r=0;r<5;r++) qs.push({text:`Is the ${il} in row ${ROW_LABELS[r]}?`, answer:itemPos.r===r, pinpoints:false});
         for (let c=0;c<5;c++) qs.push({text:`Is the ${il} in column ${c+1}?`,        answer:itemPos.c===c, pinpoints:false});
         qs.push({text:`Is the ${il} adjacent to my pawn's current position?`, answer:isAdj(itemPos,playerPawn), pinpoints:false});
@@ -985,7 +1130,7 @@
         const otherItem=item==='key'?'chest':'key', otherPos=placed[otherItem];
         const il=item, ol=otherItem;
         qs.push({text:`Is the ${il} on land?`,      trueAnswer:leftMap[itemPos.r][itemPos.c]==='land',  pinpoints:false, constraint:{item:il,type:'land'}});
-        qs.push({text:`Is the ${il} in the water?`, trueAnswer:leftMap[itemPos.r][itemPos.c]==='water', pinpoints:false, constraint:{item:il,type:'water'}});
+        if (il !== 'chest') qs.push({text:`Is the ${il} in the water?`, trueAnswer:leftMap[itemPos.r][itemPos.c]==='water', pinpoints:false, constraint:{item:il,type:'water'}});
         for (let r=0;r<5;r++) qs.push({text:`Is the ${il} in row ${ROW_LABELS[r]}?`, trueAnswer:itemPos.r===r, pinpoints:false, constraint:{item:il,type:'row',value:r}});
         for (let c=0;c<5;c++) qs.push({text:`Is the ${il} in column ${c+1}?`,        trueAnswer:itemPos.c===c, pinpoints:false, constraint:{item:il,type:'col',value:c}});
         qs.push({text:`Is the ${il} adjacent to my pawn's current position?`, trueAnswer:isAdj(itemPos,cpuPawn), pinpoints:false, constraint:{item:il,type:'adjacent',pawnR:cpuPawn.r,pawnC:cpuPawn.c}});
@@ -1013,6 +1158,7 @@
       document.getElementById('submitAskBtn').classList.remove('hidden');
       document.getElementById('cancelAskBtn').classList.remove('hidden');
       document.getElementById('closeAskBtn').classList.add('hidden');
+      document.getElementById('tapOutsideHint').classList.add('hidden');
       document.getElementById('questionDropdown').style.pointerEvents='';
       populateQuestionList('');
       document.getElementById('askOverlay').classList.remove('hidden');
@@ -1047,6 +1193,15 @@
     document.getElementById('questionSearch').addEventListener('input', e => populateQuestionList(e.target.value));
     document.getElementById('cancelAskBtn').addEventListener('click', () => document.getElementById('askOverlay').classList.add('hidden'));
 
+    // Tap outside the modal card to dismiss (only when answer is already shown)
+    document.getElementById('askOverlay').addEventListener('click', e => {
+      if (e.target !== document.getElementById('askOverlay')) return; // clicked inside modal
+      const closeBtn = document.getElementById('closeAskBtn');
+      if (!closeBtn.classList.contains('hidden')) { closeBtn.click(); return; }
+      const cancelBtn = document.getElementById('cancelAskBtn');
+      if (!cancelBtn.classList.contains('hidden')) { cancelBtn.click(); }
+    });
+
     document.getElementById('submitAskBtn').addEventListener('click', () => {
       if (!selectedQuestion) return;
       const trueAns=selectedQuestion.answer, pinpoints=selectedQuestion.pinpoints;
@@ -1066,6 +1221,7 @@
       document.getElementById('questionSearch').disabled=true;
       document.getElementById('questionDropdown').style.pointerEvents='none';
       document.getElementById('closeAskBtn').classList.remove('hidden');
+      document.getElementById('tapOutsideHint').classList.remove('hidden');
     });
 
     document.getElementById('closeAskBtn').addEventListener('click', () => {
@@ -1172,7 +1328,26 @@
         }
       });
       items.scrollTop=items.scrollHeight;
+
+      // Mobile preview: show last event as a single collapsed line
+      const preview = document.getElementById('qaLogPreview');
+      if (preview) {
+        const last = gameLog[gameLog.length-1];
+        if (last) {
+          preview.textContent = last.type==='question'
+            ? `${last.who==='player'?'🔵':'🔴'} Q: ${last.question} → ${last.answer}`
+            : last.text;
+        }
+      }
     }
+
+    // Mobile log expand/collapse toggle
+    document.getElementById('qaLogTitle').addEventListener('click', () => {
+      const log = document.getElementById('qaLog');
+      const expanded = log.classList.toggle('log-expanded');
+      const btn = document.getElementById('mobileLogToggle');
+      if (btn) btn.textContent = expanded ? '▼' : '▲';
+    });
 
     // ── Win / Loss ─────────────────────────────────────────────────
     function checkCpuWin() {
