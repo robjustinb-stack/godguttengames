@@ -205,6 +205,13 @@
     }
     .ready-btn.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
     .ready-btn:hover { background: var(--leaf-green); transform: scale(1.05) !important; box-shadow: 0 6px 20px rgba(58,125,68,0.45); }
+    .confirm-placement-btn {
+      margin-top: 10px; font-family: 'Fredoka One', cursive; font-size: 1.05rem;
+      padding: 9px 28px; background: #5b3da8; color: white; border: none;
+      border-radius: 50px; cursor: pointer; box-shadow: 0 3px 10px rgba(91,61,168,0.35);
+      transition: background 0.18s;
+    }
+    .confirm-placement-btn:hover { background: #7b5dc8; }
 
     /* ── Ask Question overlay ── */
     .ask-overlay {
@@ -507,6 +514,7 @@
         <div class="phase-step"        id="step-mine" >💣 Mine</div>
       </div>
       <div class="phase-hint" id="phaseHint">Place your chest on a land tile (green)</div>
+      <button class="confirm-placement-btn hidden" id="confirmPlacementBtn">✓ Confirm Placement</button>
     </div>
 
     <!-- Game HUD -->
@@ -806,16 +814,21 @@
 
       if (setupPhase === 'chest') {
         if (tile !== 'land') { shake(td); return; }
-        clearPlacement('chest'); place(td, r, c, 'chest', '📦'); setupPhase = 'key';
+        const occ = occupiedBy(r, c);
+        if (occ && occ !== 'chest') { shake(td); return; }
+        clearPlacement('chest'); place(td, r, c, 'chest', '📦');
       } else if (setupPhase === 'key') {
-        if (occupiedBy(r, c)) { shake(td); return; }
-        clearPlacement('key'); place(td, r, c, 'key', '🗝️'); setupPhase = 'mine';
+        const occ = occupiedBy(r, c);
+        if (occ && occ !== 'key') { shake(td); return; }
+        clearPlacement('key'); place(td, r, c, 'key', '🗝️');
       } else if (setupPhase === 'mine') {
-        if (occupiedBy(r, c)) { shake(td); return; }
-        clearPlacement('mine'); place(td, r, c, 'mine', '💣'); setupPhase = 'done';
-        document.getElementById('readyBtn').classList.add('visible');
+        const occ = occupiedBy(r, c);
+        if (occ && occ !== 'mine') { shake(td); return; }
+        clearPlacement('mine'); place(td, r, c, 'mine', '💣');
       }
+      document.getElementById('confirmPlacementBtn').classList.remove('hidden');
       updatePhaseUI();
+      document.getElementById('phaseHint').textContent = 'Click ✓ Confirm to lock in place, or click another tile to move it';
     }
 
     function place(td, r, c, item, icon) { placed[item]={r,c}; td.innerHTML=`<span class="icon">${icon}</span>`; }
@@ -845,6 +858,19 @@
     }
 
     document.getElementById('readyBtn').addEventListener('click', () => document.getElementById('diffOverlay').classList.remove('hidden'));
+
+    document.getElementById('confirmPlacementBtn').addEventListener('click', () => {
+      if (setupPhase === 'done' || !placed[setupPhase]) return;
+      document.getElementById('confirmPlacementBtn').classList.add('hidden');
+      if (setupPhase === 'chest')      setupPhase = 'key';
+      else if (setupPhase === 'key')   setupPhase = 'mine';
+      else if (setupPhase === 'mine') {
+        setupPhase = 'done';
+        document.getElementById('readyBtn').classList.add('visible');
+      }
+      updatePhaseUI();
+    });
+
     document.getElementById('playBtn').addEventListener('click', () => startGame());
 
     // ── Auto-place CPU items ────────────────────────────────────────
@@ -1350,7 +1376,7 @@
       if (canLie && Math.random()<0.35) { cpuAns=!trueAns; cpuLiesLeft=0; cpuLied=true; updateLieStatus(); }
 
       const ansText=cpuAns?'YES':'NO';
-      logGameEvent({type:'question', who:'player', question:selectedQuestion.text, answer:ansText, lied:cpuLied});
+      logGameEvent({type:'question', who:'player', question:selectedQuestion.text, answer:ansText});
 
       const box=document.getElementById('cpuAnswerBox');
       box.textContent=`🔴 CPU: ${ansText}`;
