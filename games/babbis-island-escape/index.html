@@ -89,17 +89,22 @@
       border-radius: 16px; padding: 16px 28px; text-align: center; max-width: 500px; width: 100%;
     }
     .cpuq-question { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: var(--dark); margin-bottom: 12px; }
-    .cpuq-lie-hint { font-size: 0.78rem; color: #999; margin-top: 8px; min-height: 1em; }
 
     .answer-btns { display: flex; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap; }
-    .lie-btn {
-      font-family: 'Fredoka One', cursive; font-size: 1rem; padding: 9px 20px;
-      border-radius: 50px; border: 2px solid #9b3fde;
-      cursor: pointer; color: #9b3fde; background: transparent; transition: all 0.15s;
+
+    /* ── Lie indicator badges ── */
+    .lie-indicator {
+      font-size: 0.82rem; cursor: default; transition: opacity 0.3s, filter 0.3s;
+      display: inline-flex; align-items: center; gap: 2px;
     }
-    .lie-btn:hover:not(:disabled) { background: rgba(155,63,222,0.1); }
-    .lie-btn.active { background: #9b3fde; color: white; }
-    .lie-btn:disabled { opacity: 0.35; cursor: default; }
+    .lie-indicator .lie-label { font-size: 0.68rem; color: #888; font-family: 'Nunito', sans-serif; }
+    .lie-indicator.used { opacity: 0.28; filter: grayscale(1); }
+
+    /* ── Already-asked question (greyed in dropdown) ── */
+    .q-option.q-asked {
+      opacity: 0.38; cursor: default; pointer-events: none;
+      text-decoration: line-through; color: #bbb;
+    }
 
     /* ── Message bar ── */
     .message-bar {
@@ -309,116 +314,131 @@
     }
 
     /* ══════════════════════════════════════════════════════════════════
-       Mobile landscape layout  ≤700 px wide, landscape orientation
-       All game chrome is fixed; board fills the middle; nothing scrolls.
+       Mobile landscape layout — phones in landscape (max-height: 500px)
+       Two-panel fixed layout: LEFT 30% controls+log | RIGHT 70% board
+       Nothing scrolls; fits entirely on screen. Tomato wallpaper shows
+       behind the right panel gaps.
     ══════════════════════════════════════════════════════════════════ */
-    @media (max-width: 700px) and (orientation: landscape) {
-      :root { --cell: 36px; }
+    @media (max-height: 500px) and (orientation: landscape) {
+      :root { --cell: 30px; }
 
-      /* Always: trim decorative header to save height */
+      /* Hide decorative title */
       h1, .back-link { display: none !important; }
 
-      /* ── Gameplay-active layout (class added by JS on startGame) ── */
+      /* ── Active game: two-panel fixed layout ── */
       body.game-active { overflow: hidden; height: 100dvh; }
-
-      body.game-active .content {
-        padding: 0; height: 100dvh; overflow: hidden;
-        display: flex; flex-direction: column; gap: 0; align-items: stretch;
-      }
-
+      body.game-active .content { padding: 0; height: 100dvh; overflow: hidden; display: block; }
       body.game-active .phase-wrap,
       body.game-active .ready-btn { display: none !important; }
 
-      /* Turn banner → fixed strip at top of viewport */
+      /* ─── LEFT PANEL ─────────────────────────────────────── */
+
+      /* Turn banner — top strip of left panel */
       body.game-active #gameHud #turnBanner {
-        position: fixed; top: 0; left: 0; right: 0; z-index: 70;
-        border-radius: 0; font-size: 0.9rem; padding: 4px 12px;
+        position: fixed; top: 0; left: 0; width: 30%; z-index: 70;
+        border-radius: 0; font-size: 0.78rem; padding: 5px 8px;
         text-align: center; margin: 0;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      }
-
-      /* Inventory bar → fixed just below the turn banner */
-      body.game-active #inventoryBar {
-        position: fixed; top: 30px; left: 0; right: 0; z-index: 65;
-        border-radius: 0; margin: 0; padding: 2px 12px;
-        justify-content: center;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        font-size: 0.78rem;
-      }
-      body.game-active #inventoryBar .inv-item { font-size: 0.78rem; padding: 1px 8px; }
-
-      /* Board → fills middle space between top bars and action bar */
-      body.game-active .game-area {
-        position: fixed;
-        top: 56px;            /* turn banner 30px + inventory 26px */
-        bottom: 62px;         /* action bar height */
-        left: 0; right: 0; z-index: 10;
-        display: flex; align-items: center; justify-content: center;
-        overflow: visible; gap: 6px;
-      }
-
-      /* Shrink grid labels and headers to fit smaller height */
-      body.game-active .grid-label { font-size: 0.62rem; height: 16px; }
-      body.game-active .grid-table th { font-size: 0.72rem; height: 20px; width: var(--cell); }
-      body.game-active .star-tile {
-        font-size: 1.2rem;
-        margin-top: calc(36px + 2 * var(--cell)); /* align with row C */
-      }
-
-      /* Action bar → fixed at bottom */
-      body.game-active #gameHud {
-        position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
-        margin: 0; padding: 4px 8px 5px; gap: 4px;
-        flex-direction: row; flex-wrap: wrap;
-        align-items: center; justify-content: center;
-        min-height: 52px;
-        background: rgba(253,246,227,0.98);
-        border-top: 2px solid rgba(0,0,0,0.1);
-        box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
-      }
-      body.game-active #gameHud .action-btn { font-size: 0.8rem; padding: 5px 14px; }
-      body.game-active #gameHud .dice-face  { font-size: 1.6rem; min-width: 1.8rem; }
-      body.game-active #messageBar {
-        font-size: 0.8rem; padding: 4px 14px;
-        max-width: 90vw;
-      }
-
-      /* CPU question panel inside action bar: full-width row */
-      body.game-active #cpuQPanel {
-        width: 100%; padding: 5px 10px; border-radius: 10px;
-        order: -1; /* show above other buttons */
-      }
-      body.game-active #cpuQPanel .cpuq-question { font-size: 0.85rem; margin-bottom: 5px; }
-      body.game-active #cpuQPanel .action-btn    { font-size: 0.78rem; padding: 4px 12px; }
-      body.game-active #cpuQPanel .lie-btn        { font-size: 0.78rem; padding: 4px 10px; }
-      body.game-active #cpuQPanel .cpuq-lie-hint  { font-size: 0.7rem; }
-
-      /* Game log → collapsible strip, fixed just above the action bar */
-      body.game-active #qaLog {
-        position: fixed; bottom: 62px; left: 0; right: 0; z-index: 50;
-        margin: 0; border-radius: 0; padding: 0;
-        background: rgba(253,246,227,0.97);
-        border-top: 1px solid rgba(0,0,0,0.1);
-        max-height: 28px; overflow: hidden;
-        transition: max-height 0.22s ease;
-      }
-      body.game-active #qaLog.log-expanded { max-height: 180px; }
-
-      body.game-active .qa-log-title {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 4px 10px; cursor: pointer; margin-bottom: 0; font-size: 0.72rem;
-        user-select: none;
-      }
-      body.game-active .mobile-log-btn { display: inline-block; }
-      body.game-active #qaLogPreview {
-        padding: 0 10px 3px; font-size: 0.72rem; color: #666;
+        background: var(--card-bg);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.12);
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
-      body.game-active #qaLogItems {
-        max-height: 140px; overflow-y: auto; padding: 2px 10px 6px;
+      body.game-active #gameHud #turnBanner.cpu-turn { background: rgba(232,57,42,0.14); }
+
+      /* Inventory bar — just below turn banner */
+      body.game-active #inventoryBar {
+        position: fixed; top: 28px; left: 0; width: 30%; z-index: 65;
+        border-radius: 0; margin: 0; padding: 2px 6px 2px;
+        justify-content: center; flex-wrap: wrap; gap: 3px;
+        box-shadow: none; background: rgba(253,246,227,0.98);
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+        min-height: 22px;
       }
-      body.game-active .log-entry { font-size: 0.76rem; }
-      body.game-active .qa-q      { font-size: 0.76rem; }
+      body.game-active #inventoryBar .inv-item  { font-size: 0.65rem; padding: 1px 5px; }
+      body.game-active #inventoryBar .inv-label { font-size: 0.58rem; }
+      body.game-active #inventoryBar .inv-empty { font-size: 0.65rem; }
+      body.game-active #inventoryBar .lie-indicator { font-size: 0.65rem; }
+      body.game-active #inventoryBar .lie-label { display: none; }
+
+      /* Action controls — middle of left panel */
+      body.game-active #gameHud {
+        position: fixed; top: 52px; left: 0; width: 30%;
+        bottom: 38vh; z-index: 60;
+        margin: 0; padding: 5px 6px; gap: 4px;
+        flex-direction: column; flex-wrap: nowrap;
+        align-items: stretch; justify-content: flex-start;
+        background: rgba(253,246,227,0.98);
+        border-right: 1px solid rgba(0,0,0,0.1);
+        overflow: hidden;
+      }
+      body.game-active #gameHud .dice-row {
+        flex-direction: column; gap: 4px; width: 100%; align-items: stretch;
+      }
+      body.game-active #gameHud .dice-face {
+        font-size: 1.4rem; text-align: center; min-width: auto;
+      }
+      body.game-active #gameHud .action-btn {
+        font-size: 0.72rem; padding: 5px 6px; width: 100%; border-radius: 9px;
+      }
+      body.game-active #messageBar {
+        font-size: 0.64rem; padding: 3px 6px; max-width: 100%;
+        text-align: center; border-radius: 7px; white-space: normal; line-height: 1.2;
+      }
+
+      /* CPU question panel — inside left panel controls area */
+      body.game-active #cpuQPanel {
+        width: 100%; padding: 5px 6px; border-radius: 8px; border-width: 1.5px;
+      }
+      body.game-active #cpuQPanel .cpuq-question {
+        font-size: 0.73rem; margin-bottom: 5px; line-height: 1.3;
+      }
+      body.game-active #cpuQPanel .answer-btns { gap: 5px; }
+      body.game-active #cpuQPanel .action-btn {
+        font-size: 0.7rem; padding: 4px 6px; width: auto; flex: 1;
+      }
+
+      /* Game log — bottom of left panel, always visible */
+      body.game-active #qaLog {
+        position: fixed; bottom: 0; left: 0; width: 30%; height: 38vh; z-index: 50;
+        margin: 0; padding: 0; border-radius: 0; box-shadow: none;
+        background: rgba(253,246,227,0.97);
+        border-top: 1px solid rgba(0,0,0,0.12);
+        border-right: 1px solid rgba(0,0,0,0.1);
+        display: flex !important; /* always visible in left panel */
+        flex-direction: column; overflow: hidden;
+      }
+      body.game-active .qa-log-title {
+        padding: 3px 7px; margin-bottom: 0; font-size: 0.63rem;
+        user-select: none; flex-shrink: 0; cursor: default;
+        border-bottom: 1px solid rgba(0,0,0,0.06);
+      }
+      body.game-active .mobile-log-btn { display: none; }
+      body.game-active #qaLogPreview   { display: none; }
+      body.game-active #qaLogItems {
+        flex: 1; overflow-y: auto; padding: 2px 6px 4px; max-height: none;
+      }
+      body.game-active .log-entry { font-size: 0.67rem; }
+      body.game-active .qa-entry  { padding: 2px 0; }
+      body.game-active .qa-who    { font-size: 0.62rem; }
+      body.game-active .qa-q      { font-size: 0.67rem; }
+      body.game-active .qa-a      { font-size: 0.67rem; padding: 1px 6px; }
+
+      /* ─── RIGHT PANEL — both grids ──────────────────────── */
+      body.game-active .game-area {
+        position: fixed; top: 0; bottom: 0; left: 30%; right: 0; z-index: 10;
+        display: flex; align-items: center; justify-content: center;
+        overflow: visible; gap: 4px;
+      }
+
+      /* Shrink grid headers and labels */
+      body.game-active .grid-label   { font-size: 0.55rem; height: 13px; }
+      body.game-active .grid-table th { font-size: 0.65rem; height: 17px; width: var(--cell); }
+      body.game-active .star-tile {
+        font-size: 1rem; width: var(--cell); height: var(--cell);
+        margin-top: calc(30px + 2 * var(--cell));
+        border-radius: 7px;
+      }
+      body.game-active .cell { border-radius: 5px; }
+      body.game-active .cell .icon { font-size: 1rem; }
     }
   </style>
 </head>
@@ -458,11 +478,9 @@
       <div class="cpu-question-panel hidden" id="cpuQPanel">
         <div class="cpuq-question" id="cpuqPanelText"></div>
         <div class="answer-btns">
-          <button class="lie-btn" id="lieBtn">🤫 LIE</button>
           <button class="action-btn" id="ansYesBtn">YES</button>
           <button class="action-btn end-btn" id="ansNoBtn">NO</button>
         </div>
-        <div class="cpuq-lie-hint" id="cpuqLieHint"></div>
       </div>
       <button class="action-btn end-btn" id="endTurnBtn" disabled>End Turn ➜</button>
       <div class="message-bar" id="messageBar"></div>
@@ -474,6 +492,8 @@
       <span id="invKey"    class="inv-item hidden">🗝️ Key</span>
       <span id="invManual" class="inv-item hidden">📜 Manual</span>
       <span id="invEmpty"  class="inv-empty">Empty</span>
+      <span class="lie-indicator" id="playerLieIndicator" title="Your lie: available">🤫 <span class="lie-label">You</span></span>
+      <span class="lie-indicator" id="cpuLieIndicator"    title="CPU lie: available">🤫 <span class="lie-label">CPU</span></span>
     </div>
 
     <!-- Board -->
@@ -516,7 +536,7 @@
     <div class="ask-overlay hidden" id="askOverlay">
       <div class="ask-modal" id="askModal">
         <h2>❓ Ask a Question</h2>
-        <p class="sub">Select a question about the items hidden on the opponent's island.</p>
+        <p class="sub">Select a question about items on Babbi's Island. <span id="qCounterModal" style="font-weight:700;color:#5b3da8;"></span></p>
         <div class="question-picker">
           <input type="text" class="q-search" id="questionSearch" placeholder="Type to filter questions…">
           <div class="q-list" id="questionDropdown"></div>
@@ -636,9 +656,10 @@
     let cpuSkipNext  = false;
     let messageTimer = null;
     let gameOver     = false;
-    let cpuLiesLeft  = 1;
-    let playerLiesLeft = 1;
-    let lieActive    = false;
+    let cpuLiesLeft       = 1;
+    let playerLiesLeft    = 1;
+    let playerQuestionsLeft = 5;
+    let cpuQuestionsLeft    = 5;
     const gameLog    = [];
     let pendingCpuQuestion = null;
     let selectedQuestion   = null; // for player ask modal
@@ -786,11 +807,12 @@
       inventory.key=false; inventory.manual=false;
       cpuInventory.key=false; cpuInventory.manual=false;
       skipNextTurn=false; cpuSkipNext=false; gameOver=false;
-      cpuLiesLeft=1; playerLiesLeft=1; lieActive=false;
+      cpuLiesLeft=1; playerLiesLeft=1;
+      playerQuestionsLeft=5; cpuQuestionsLeft=5;
       gameLog.length=0; pendingCpuQuestion=null; selectedQuestion=null;
       initCpuKnowledge();
 
-      updateInventoryUI();
+      updateInventoryUI(); updateLieStatus();
       document.getElementById('inventoryBar').classList.remove('hidden');
       document.querySelectorAll('#rightGrid td.cell').forEach(td => td.classList.remove('inactive'));
 
@@ -838,6 +860,12 @@
         endBtn.disabled  = (moveState === 'idle');
         digBtn.classList.toggle('hidden', moveState !== 'idle');
         askBtn.classList.toggle('hidden', moveState !== 'idle');
+        if (moveState === 'idle') {
+          askBtn.disabled = (playerQuestionsLeft <= 0);
+          askBtn.textContent = playerQuestionsLeft > 0
+            ? `❓ Ask (${playerQuestionsLeft}/5)`
+            : '❓ No Questions Left';
+        }
         banner.textContent = moveState === 'idle'
           ? '🔵 Your Turn'
           : `🔵 Your Turn — ${stepsLeft} step${stepsLeft!==1?'s':''} left`;
@@ -1160,32 +1188,43 @@
       document.getElementById('closeAskBtn').classList.add('hidden');
       document.getElementById('tapOutsideHint').classList.add('hidden');
       document.getElementById('questionDropdown').style.pointerEvents='';
+      document.getElementById('qCounterModal').textContent =
+        `${playerQuestionsLeft} question${playerQuestionsLeft !== 1 ? 's' : ''} remaining.`;
       populateQuestionList('');
       document.getElementById('askOverlay').classList.remove('hidden');
     }
 
     function populateQuestionList(filter) {
-      const all=buildPlayerQuestionList();
-      const dropdown=document.getElementById('questionDropdown');
-      dropdown.innerHTML='';
+      const all = buildPlayerQuestionList();
+      const askedSet = new Set(
+        gameLog.filter(e => e.type==='question' && e.who==='player').map(e => e.question)
+      );
+      const dropdown = document.getElementById('questionDropdown');
+      dropdown.innerHTML = '';
       const visible = filter.trim()
-        ? all.filter(q=>q.text.toLowerCase().includes(filter.toLowerCase()))
+        ? all.filter(q => q.text.toLowerCase().includes(filter.toLowerCase()))
         : all;
-      if (visible.length===0) {
-        const d=document.createElement('div'); d.className='q-option'; d.style.color='#bbb'; d.textContent='No matching questions.';
+      if (visible.length === 0) {
+        const d = document.createElement('div'); d.className = 'q-option';
+        d.style.color = '#bbb'; d.textContent = 'No matching questions.';
         dropdown.appendChild(d); return;
       }
-      visible.forEach(q=>{
-        const div=document.createElement('div'); div.className='q-option';
-        if (selectedQuestion&&selectedQuestion.text===q.text) div.classList.add('selected');
-        div.textContent=q.text;
-        div.addEventListener('click',()=>{
-          selectedQuestion=q;
-          document.getElementById('selectedQDisplay').textContent=q.text;
-          document.getElementById('submitAskBtn').disabled=false;
-          dropdown.querySelectorAll('.q-option').forEach(el=>el.classList.remove('selected'));
-          div.classList.add('selected');
-        });
+      visible.forEach(q => {
+        const div = document.createElement('div'); div.className = 'q-option';
+        div.textContent = q.text;
+        if (askedSet.has(q.text)) {
+          div.classList.add('q-asked');
+          div.title = 'Already asked';
+        } else {
+          if (selectedQuestion && selectedQuestion.text === q.text) div.classList.add('selected');
+          div.addEventListener('click', () => {
+            selectedQuestion = q;
+            document.getElementById('selectedQDisplay').textContent = q.text;
+            document.getElementById('submitAskBtn').disabled = false;
+            dropdown.querySelectorAll('.q-option').forEach(el => el.classList.remove('selected'));
+            div.classList.add('selected');
+          });
+        }
         dropdown.appendChild(div);
       });
     }
@@ -1204,14 +1243,17 @@
 
     document.getElementById('submitAskBtn').addEventListener('click', () => {
       if (!selectedQuestion) return;
+      // Decrement player question count
+      playerQuestionsLeft = Math.max(0, playerQuestionsLeft - 1);
+
       const trueAns=selectedQuestion.answer, pinpoints=selectedQuestion.pinpoints;
       // CPU can only lie if: has lie AND it won't reveal key/chest (truth=YES + pinpoints)
       const canLie = cpuLiesLeft>0 && !(pinpoints && trueAns);
-      let cpuAns=trueAns;
-      if (canLie && Math.random()<0.35) { cpuAns=!trueAns; cpuLiesLeft=0; }
+      let cpuAns=trueAns, cpuLied=false;
+      if (canLie && Math.random()<0.35) { cpuAns=!trueAns; cpuLiesLeft=0; cpuLied=true; updateLieStatus(); }
 
       const ansText=cpuAns?'YES':'NO';
-      logGameEvent({type:'question', who:'player', question:selectedQuestion.text, answer:ansText, lied:false});
+      logGameEvent({type:'question', who:'player', question:selectedQuestion.text, answer:ansText, lied:cpuLied});
 
       const box=document.getElementById('cpuAnswerBox');
       box.textContent=`🔴 CPU: ${ansText}`;
@@ -1230,73 +1272,54 @@
     });
 
     // ── CPU question panel (CPU → player, inline) ──────────────────
+    // Player answers freely (YES/NO). If they answer dishonestly, the lie is
+    // consumed silently. After the lie is used, only the truthful button is enabled.
     function showCpuQuestionPanel(q) {
-      pendingCpuQuestion=q;
-      document.getElementById('cpuqPanelText').textContent=q.text;
+      pendingCpuQuestion = q;
+      document.getElementById('cpuqPanelText').textContent = q.text;
 
-      const lieBtn=document.getElementById('lieBtn');
-      const ansYesBtn=document.getElementById('ansYesBtn');
-      const ansNoBtn=document.getElementById('ansNoBtn');
-      const lieHint=document.getElementById('cpuqLieHint');
+      const ansYesBtn = document.getElementById('ansYesBtn');
+      const ansNoBtn  = document.getElementById('ansNoBtn');
 
-      lieActive=false; lieBtn.classList.remove('active');
-      const lieBlocked = q.pinpoints && q.trueAnswer;
-
-      if (playerLiesLeft<=0) {
-        lieBtn.disabled=true;
-        lieHint.textContent='Your lie has been used — you must answer truthfully.';
-        ansYesBtn.disabled=!q.trueAnswer; ansNoBtn.disabled=q.trueAnswer;
-      } else if (lieBlocked) {
-        lieBtn.disabled=true;
-        lieHint.textContent='🚫 Lie unavailable — this answer correctly identifies an item.';
-        ansYesBtn.disabled=!q.trueAnswer; ansNoBtn.disabled=q.trueAnswer;
+      if (playerLiesLeft <= 0) {
+        // Lie already used — force truthful answer only
+        ansYesBtn.disabled = !q.trueAnswer;
+        ansNoBtn.disabled  =  q.trueAnswer;
       } else {
-        lieBtn.disabled=false;
-        lieHint.textContent='🤫 You have 1 lie available. Toggle LIE first, then click your answer.';
-        // Without lie active: force truthful answer
-        ansYesBtn.disabled=!q.trueAnswer; ansNoBtn.disabled=q.trueAnswer;
+        // Lie available — both buttons free
+        ansYesBtn.disabled = false;
+        ansNoBtn.disabled  = false;
       }
 
-      document.getElementById('turnBanner').textContent='🔴 CPU asks you…';
+      document.getElementById('turnBanner').textContent = '🔴 CPU asks you…';
       document.getElementById('cpuQPanel').classList.remove('hidden');
-      document.getElementById('rollBtn').disabled=true;
-      document.getElementById('endTurnBtn').disabled=true;
+      document.getElementById('rollBtn').disabled    = true;
+      document.getElementById('endTurnBtn').disabled = true;
       document.getElementById('digBtn').classList.add('hidden');
       document.getElementById('askBtn').classList.add('hidden');
     }
 
-    document.getElementById('lieBtn').addEventListener('click', () => {
-      const lieBtn=document.getElementById('lieBtn');
-      if (lieBtn.disabled) return;
-      lieActive=!lieActive; lieBtn.classList.toggle('active', lieActive);
-      const q=pendingCpuQuestion; if (!q) return;
-      const ansYesBtn=document.getElementById('ansYesBtn'), ansNoBtn=document.getElementById('ansNoBtn');
-      if (lieActive) {
-        // Both enabled so player can choose which flipped answer to submit
-        ansYesBtn.disabled=false; ansNoBtn.disabled=false;
-      } else {
-        // Lie deactivated: revert to truth-only
-        ansYesBtn.disabled=!q.trueAnswer; ansNoBtn.disabled=q.trueAnswer;
-      }
-    });
-
-    document.getElementById('ansYesBtn').addEventListener('click', ()=>submitPlayerAnswer(true));
-    document.getElementById('ansNoBtn').addEventListener('click',  ()=>submitPlayerAnswer(false));
+    document.getElementById('ansYesBtn').addEventListener('click', () => submitPlayerAnswer(true));
+    document.getElementById('ansNoBtn').addEventListener('click',  () => submitPlayerAnswer(false));
 
     function submitPlayerAnswer(clickedYes) {
-      let finalAnswer=clickedYes, lied=false;
-      if (lieActive&&playerLiesLeft>0) { finalAnswer=!clickedYes; lied=true; playerLiesLeft=0; }
-      lieActive=false; document.getElementById('lieBtn').classList.remove('active');
+      const trueAnswer = pendingCpuQuestion.trueAnswer;
+      const lied = (clickedYes !== trueAnswer);
 
-      // Update CPU's knowledge with the player's answer (which might be a lie)
-      if (pendingCpuQuestion && pendingCpuQuestion.constraint) {
-        applyCpuConstraint(pendingCpuQuestion.constraint, finalAnswer);
+      if (lied) {
+        // Silently consume the player's one lie
+        playerLiesLeft = Math.max(0, playerLiesLeft - 1);
       }
 
-      logGameEvent({type:'question', who:'cpu', question:pendingCpuQuestion.text, answer:finalAnswer?'YES':'NO', lied});
-      pendingCpuQuestion=null;
-      document.getElementById('cpuQPanel').classList.add('hidden');
+      // Update CPU knowledge with what the player actually said (may be dishonest)
+      if (pendingCpuQuestion.constraint) {
+        applyCpuConstraint(pendingCpuQuestion.constraint, clickedYes);
+      }
 
+      logGameEvent({type:'question', who:'cpu', question:pendingCpuQuestion.text, answer:clickedYes?'YES':'NO', lied});
+      pendingCpuQuestion = null;
+      document.getElementById('cpuQPanel').classList.add('hidden');
+      updateLieStatus();
       handTurnToPlayer(400);
     }
 
@@ -1377,6 +1400,16 @@
       document.getElementById('invKey').classList.toggle('hidden',!inventory.key);
       document.getElementById('invManual').classList.toggle('hidden',!inventory.manual);
       document.getElementById('invEmpty').classList.toggle('hidden',inventory.key||inventory.manual);
+    }
+
+    // ── Lie status indicators ──────────────────────────────────────
+    function updateLieStatus() {
+      const pEl = document.getElementById('playerLieIndicator');
+      const cEl = document.getElementById('cpuLieIndicator');
+      pEl.classList.toggle('used', playerLiesLeft <= 0);
+      pEl.title = playerLiesLeft > 0 ? 'Your lie: available' : 'Your lie: used';
+      cEl.classList.toggle('used', cpuLiesLeft <= 0);
+      cEl.title = cpuLiesLeft > 0 ? 'CPU lie: available' : 'CPU lie: used';
     }
 
     // ── Player move ────────────────────────────────────────────────
@@ -1493,15 +1526,16 @@
         return;
       }
 
-      // ── PRIORITY 2: Ask a question (if useful, with probability gate) ──
-      if (!cpuInventory.manual && Math.random() < ASK_PROB) {
+      // ── PRIORITY 2: Ask a question (if questions remaining, useful, probability gate) ──
+      if (!cpuInventory.manual && cpuQuestionsLeft > 0 && Math.random() < ASK_PROB) {
         const pool = buildCpuQuestionList();
         const askedSet = new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
         const fresh = pool.filter(q=>!askedSet.has(q.text));
         if (fresh.length > 0) {
           const q = pickBestCpuQuestion(fresh);
           if (q) {
-            pendingCpuQuestion=q;
+            cpuQuestionsLeft = Math.max(0, cpuQuestionsLeft - 1);
+            pendingCpuQuestion = q;
             showCpuQuestionPanel(q);
             return; // turn resumes after player answers (handTurnToPlayer called from submitPlayerAnswer)
           }
