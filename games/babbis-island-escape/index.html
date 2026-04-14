@@ -333,16 +333,16 @@
 
       /* ─── LEFT PANEL ─────────────────────────────────────── */
 
-      /* Turn banner — top strip of left panel */
+      /* Turn banner — top strip of left panel, transparent so it blends with panel */
       body.game-active #gameHud #turnBanner {
         position: fixed; top: 0; left: 0; width: 30%; z-index: 70;
         border-radius: 0; font-size: 0.78rem; padding: 5px 8px;
         text-align: center; margin: 0;
-        background: var(--card-bg);
-        box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        background: transparent;
+        box-shadow: none;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
-      body.game-active #gameHud #turnBanner.cpu-turn { background: rgba(232,57,42,0.14); }
+      body.game-active #gameHud #turnBanner.cpu-turn { background: rgba(232,57,42,0.12); }
 
       /* Inventory bar — just below turn banner */
       body.game-active #inventoryBar {
@@ -361,9 +361,9 @@
 
       /* Action controls — middle of left panel */
       body.game-active #gameHud {
-        position: fixed; top: 52px; left: 0; width: 30%;
-        bottom: 38vh; z-index: 60;
-        margin: 0; padding: 5px 6px; gap: 4px;
+        position: fixed; top: 50px; left: 0; width: 30%;
+        bottom: 36vh; z-index: 60;
+        margin: 0; padding: 3px 5px; gap: 3px;
         flex-direction: column; flex-wrap: nowrap;
         align-items: stretch; justify-content: flex-start;
         background: rgba(253,246,227,0.98);
@@ -371,17 +371,20 @@
         overflow: hidden;
       }
       body.game-active #gameHud .dice-row {
-        flex-direction: column; gap: 4px; width: 100%; align-items: stretch;
+        flex-direction: column; gap: 3px; width: 100%; align-items: stretch;
       }
       body.game-active #gameHud .dice-face {
-        font-size: 1.4rem; text-align: center; min-width: auto;
+        font-size: 1.3rem; text-align: center; min-width: auto;
       }
+      /* Hide dice face when empty — saves vertical space between turns */
+      body.game-active #gameHud .dice-face:empty { display: none; }
       body.game-active #gameHud .action-btn {
-        font-size: 0.72rem; padding: 5px 6px; width: 100%; border-radius: 9px;
+        font-size: 0.68rem; padding: 4px 5px; width: 100%; border-radius: 8px;
+        box-shadow: none; /* slim down */
       }
       body.game-active #messageBar {
-        font-size: 0.64rem; padding: 3px 6px; max-width: 100%;
-        text-align: center; border-radius: 7px; white-space: normal; line-height: 1.2;
+        font-size: 0.62rem; padding: 2px 5px; max-width: 100%;
+        text-align: center; border-radius: 6px; white-space: normal; line-height: 1.2;
       }
 
       /* CPU question panel — inside left panel controls area */
@@ -398,7 +401,7 @@
 
       /* Game log — bottom of left panel, always visible */
       body.game-active #qaLog {
-        position: fixed; bottom: 0; left: 0; width: 30%; height: 38vh; z-index: 50;
+        position: fixed; bottom: 0; left: 0; width: 30%; height: 36vh; z-index: 50;
         margin: 0; padding: 0; border-radius: 0; box-shadow: none;
         background: rgba(253,246,227,0.97);
         border-top: 1px solid rgba(0,0,0,0.12);
@@ -434,7 +437,7 @@
       body.game-active .grid-table th { font-size: 0.65rem; height: 17px; width: var(--cell); }
       body.game-active .star-tile {
         font-size: 1rem; width: var(--cell); height: var(--cell);
-        margin-top: calc(30px + 2 * var(--cell));
+        margin-top: calc(48px + 2 * var(--cell));
         border-radius: 7px;
       }
       body.game-active .cell { border-radius: 5px; }
@@ -492,8 +495,7 @@
       <span id="invKey"    class="inv-item hidden">🗝️ Key</span>
       <span id="invManual" class="inv-item hidden">📜 Manual</span>
       <span id="invEmpty"  class="inv-empty">Empty</span>
-      <span class="lie-indicator" id="playerLieIndicator" title="Your lie: available">🤫 <span class="lie-label">You</span></span>
-      <span class="lie-indicator" id="cpuLieIndicator"    title="CPU lie: available">🤫 <span class="lie-label">CPU</span></span>
+      <span class="lie-indicator" id="playerLieIndicator" title="Your lie: available">🤫 <span class="lie-label">Lie</span></span>
     </div>
 
     <!-- Board -->
@@ -1405,11 +1407,8 @@
     // ── Lie status indicators ──────────────────────────────────────
     function updateLieStatus() {
       const pEl = document.getElementById('playerLieIndicator');
-      const cEl = document.getElementById('cpuLieIndicator');
       pEl.classList.toggle('used', playerLiesLeft <= 0);
       pEl.title = playerLiesLeft > 0 ? 'Your lie: available' : 'Your lie: used';
-      cEl.classList.toggle('used', cpuLiesLeft <= 0);
-      cEl.title = cpuLiesLeft > 0 ? 'CPU lie: available' : 'CPU lie: used';
     }
 
     // ── Player move ────────────────────────────────────────────────
