@@ -289,6 +289,46 @@
     .endgame-card h2.win  { color: var(--tomato-green); }
     .endgame-card h2.loss { color: var(--tomato-red); }
 
+    /* ── Rules / How-to-play modal ── */
+    .rules-overlay {
+      position: fixed; inset: 0; z-index: 250; background: rgba(0,0,0,0.62);
+      display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px);
+    }
+    .rules-overlay.hidden { display: none; }
+    .rules-modal {
+      background: var(--cream); border-radius: 20px; padding: 28px 32px;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.4); max-width: 500px; width: 92%;
+      max-height: 86vh; overflow-y: auto; animation: fadeUp 0.3s ease both; position: relative;
+    }
+    .rules-modal h2 { font-family: 'Fredoka One', cursive; font-size: 1.5rem; color: var(--tomato-red); margin-bottom: 16px; padding-right: 28px; }
+    .rules-close-btn {
+      position: absolute; top: 14px; right: 16px;
+      background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #aaa;
+      line-height: 1; padding: 2px 6px; transition: color 0.15s;
+    }
+    .rules-close-btn:hover { color: var(--dark); }
+    .rules-section { margin-bottom: 13px; font-size: 0.9rem; line-height: 1.55; color: #444; }
+    .rules-section strong { font-family: 'Fredoka One', cursive; color: var(--dark); font-size: 0.96rem; display: block; margin-bottom: 2px; }
+
+    /* "How to Play" button on landing/setup screen */
+    .how-to-play-btn {
+      font-family: 'Fredoka One', cursive; font-size: 1rem; padding: 8px 24px;
+      border-radius: 50px; border: 2px solid rgba(91,61,168,0.3); cursor: pointer;
+      background: rgba(91,61,168,0.08); color: #5b3da8; margin-bottom: 18px;
+      transition: background 0.15s;
+    }
+    .how-to-play-btn:hover { background: rgba(91,61,168,0.16); }
+    body.game-active .how-to-play-btn { display: none !important; }
+
+    /* Small in-game '?' rules trigger */
+    .rules-trigger {
+      font-family: 'Fredoka One', cursive; font-size: 0.78rem; padding: 1px 8px;
+      border-radius: 50%; border: 1.5px solid rgba(91,61,168,0.35); cursor: pointer;
+      background: rgba(91,61,168,0.07); color: #5b3da8; line-height: 1.5; flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .rules-trigger:hover { background: rgba(91,61,168,0.18); }
+
     /* ── Rotate overlay ── */
     .rotate-overlay {
       display: none; position: fixed; inset: 0; z-index: 200; background: #1a1a1a;
@@ -457,6 +497,7 @@
   <div class="content">
     <a href="../../index.html" class="back-link">← Godguttengames</a>
     <h1>Babbi's Island Escape</h1>
+    <button class="how-to-play-btn" id="howToPlayBtn">📖 How to Play</button>
 
     <!-- Setup phase -->
     <div class="phase-wrap" id="phaseWrap">
@@ -496,6 +537,7 @@
       <span id="invManual" class="inv-item hidden">📜 Manual</span>
       <span id="invEmpty"  class="inv-empty">Empty</span>
       <span class="lie-indicator" id="playerLieIndicator" title="Your lie: available">🤫 <span class="lie-label">Lie</span></span>
+      <button class="rules-trigger" id="gameRulesBtn" title="How to Play">?</button>
     </div>
 
     <!-- Board -->
@@ -558,6 +600,46 @@
         <p class="hidden" id="tapOutsideHint" style="font-size:0.75rem; color:#aaa; margin-top:8px;">
           or tap outside to close
         </p>
+      </div>
+    </div>
+
+    <!-- Rules / How-to-play overlay -->
+    <div class="rules-overlay hidden" id="rulesOverlay">
+      <div class="rules-modal">
+        <button class="rules-close-btn" id="rulesCloseBtn" aria-label="Close">✕</button>
+        <h2>📖 How to Play</h2>
+        <div class="rules-section">
+          <strong>🏝️ About</strong>
+          You and your worst enemy Babbi have both been stranded on adjacent island groups. All you have is a raft and your wits. Between the islands is a helicopter that seats one person with only enough gas for one trip. Hidden on each island is a chest with a flight manual. Find the key, unlock the chest, and reach the helicopter before Babbi does.
+        </div>
+        <div class="rules-section">
+          <strong>🎯 Objective</strong>
+          Find the key → unlock the chest → get the manual → reach the ★ tile to win.
+        </div>
+        <div class="rules-section">
+          <strong>⚙️ Setup</strong>
+          Each player places their chest (land only), key, and mine on their island. Items are hidden from your opponent. Players start adjacent to the star on their opponent's island, and play takes place on the opposing player's island.
+        </div>
+        <div class="rules-section">
+          <strong>🎲 On Your Turn</strong>
+          Choose one: Roll the die and spend action points on movement and digging in any order. Or ask Babbi a yes/no question about item locations (max 5 questions, uses the whole turn).
+        </div>
+        <div class="rules-section">
+          <strong>🚤 Movement</strong>
+          Move horizontally or vertically only. Use the boat to cross water — boarding and disembarking each cost 1 action point. You cannot swim.
+        </div>
+        <div class="rules-section">
+          <strong>💣 Mine</strong>
+          If you land on the mine it detonates — you miss your next turn and the mine is removed permanently.
+        </div>
+        <div class="rules-section">
+          <strong>🤥 The Lie</strong>
+          Each player may lie once when answering a question. Once used all future answers are enforced as truthful.
+        </div>
+        <div class="rules-section">
+          <strong>❓ Questions</strong>
+          Choose from a structured list. Max 5 questions per player. No repeated questions allowed.
+        </div>
       </div>
     </div>
 
@@ -858,20 +940,24 @@
 
       if (currentTurn === 'player') {
         banner.classList.remove('cpu-turn');
-        rollBtn.disabled = (moveState !== 'idle');
-        endBtn.disabled  = (moveState === 'idle');
-        digBtn.classList.toggle('hidden', moveState !== 'idle');
-        askBtn.classList.toggle('hidden', moveState !== 'idle');
-        if (moveState === 'idle') {
+        const isIdle   = (moveState === 'idle');
+        const isMoving = (moveState === 'moving');
+        rollBtn.disabled = !isIdle;
+        endBtn.disabled  = isIdle;
+        // Dig available only while spending action points (after rolling)
+        digBtn.classList.toggle('hidden', !isMoving);
+        // Ask only available before rolling (entire turn choice)
+        askBtn.classList.toggle('hidden', !isIdle);
+        if (isIdle) {
           askBtn.disabled = (playerQuestionsLeft <= 0);
           askBtn.textContent = playerQuestionsLeft > 0
             ? `❓ Ask (${playerQuestionsLeft}/5)`
             : '❓ No Questions Left';
         }
-        banner.textContent = moveState === 'idle'
+        banner.textContent = isIdle
           ? '🔵 Your Turn'
-          : `🔵 Your Turn — ${stepsLeft} step${stepsLeft!==1?'s':''} left`;
-        diceEl.textContent = moveState === 'idle' ? '' : DICE_FACES[diceVal-1];
+          : `🔵 ${stepsLeft} point${stepsLeft!==1?'s':''} left`;
+        diceEl.textContent = isIdle ? '' : DICE_FACES[diceVal-1];
       } else {
         banner.textContent = '🔴 CPU\'s Turn…';
         banner.classList.add('cpu-turn');
@@ -913,7 +999,7 @@
 
       while (queue.length) {
         const {pr,pc,ib,br,bc,d} = queue.shift();
-        if (d>0) results.push({r:pr,c:pc,inBoat:ib,boatR:br,boatC:bc});
+        if (d>0) results.push({r:pr,c:pc,inBoat:ib,boatR:br,boatC:bc,steps:d});
         if (d>=steps) continue;
 
         const or_=ib?br:pr, oc=ib?bc:pc;
@@ -1096,10 +1182,10 @@
       applyHighlights(highlighted,'rightGrid'); updateHud();
     });
 
-    // ── Player Dig / Fish ──────────────────────────────────────────
+    // ── Player Dig / Fish (costs 1 action point, available while spending points) ──
     document.getElementById('digBtn').addEventListener('click', doDig);
     function doDig() {
-      if (currentTurn!=='player'||moveState!=='idle') return;
+      if (currentTurn!=='player'||moveState!=='moving') return;
       const r=playerPawn.r, c=playerPawn.c;
       const pos=coordLabel(playerPawn);
       let msg='🤷 Nothing here…', logText=`🔵 You dug at ${pos} — nothing.`;
@@ -1123,7 +1209,16 @@
       }
 
       showMessage(msg); updateInventoryUI();
-      handTurnToCpu(1600);
+
+      // Digging costs 1 action point
+      stepsLeft--;
+      clearHighlights(); renderRight();
+      if (stepsLeft <= 0) { endPlayerTurn(); return; }
+
+      // Remaining points: refresh move highlights + keep Dig button available
+      highlighted = getValidMoves(rightMap, playerPawn, playerBoat, playerInBoat);
+      if (highlighted.length === 0) endPlayerTurn();
+      else { applyHighlights(highlighted, 'rightGrid'); updateHud(); }
     }
 
     // ── Question system ────────────────────────────────────────────
@@ -1391,6 +1486,17 @@
     }
     document.getElementById('playAgainBtn').addEventListener('click', ()=>location.reload());
 
+    // ── Rules modal ───────────────────────────────────────────────
+    function openRulesModal() { document.getElementById('rulesOverlay').classList.remove('hidden'); }
+    function closeRulesModal() { document.getElementById('rulesOverlay').classList.add('hidden'); }
+
+    document.getElementById('howToPlayBtn').addEventListener('click', openRulesModal);
+    document.getElementById('gameRulesBtn').addEventListener('click', openRulesModal);
+    document.getElementById('rulesCloseBtn').addEventListener('click', closeRulesModal);
+    document.getElementById('rulesOverlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('rulesOverlay')) closeRulesModal();
+    });
+
     // ── Message bar ────────────────────────────────────────────────
     function showMessage(text) {
       const el=document.getElementById('messageBar'); el.textContent=text; el.classList.add('visible');
@@ -1479,7 +1585,33 @@
     document.getElementById('endTurnBtn').addEventListener('click', ()=>{ if(currentTurn==='player'&&moveState==='moving') endPlayerTurn(); });
     function endPlayerTurn() { handTurnToCpu(900); }
 
+    // ── CPU dig helper — attempts a dig at current position, returns true if item found ──
+    function cpuAttemptDig() {
+      const pos = coordLabel(cpuPawn);
+      if (!cpuInventory.key && placed.key && placed.key.r===cpuPawn.r && placed.key.c===cpuPawn.c) {
+        cpuInventory.key=true; placed.key=null;
+        cpuKnowledge.key.confirmed=null; cpuKnowledge.key.possible=new Set();
+        logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — found the 🗝️ key!`});
+        showMessage('🔴 CPU found the key on your island!');
+        return true;
+      }
+      if (cpuInventory.key && !cpuInventory.manual && placed.chest && placed.chest.r===cpuPawn.r && placed.chest.c===cpuPawn.c) {
+        cpuInventory.manual=true;
+        cpuKnowledge.chest.confirmed=null; cpuKnowledge.chest.possible=new Set();
+        logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — retrieved the 📜 manual!`});
+        showMessage('🔴 CPU retrieved the manual — heading for the ★!');
+        return true;
+      }
+      // Nothing here — remove from possibility sets
+      cpuKnowledge.key.possible.delete(`${cpuPawn.r},${cpuPawn.c}`);
+      cpuKnowledge.chest.possible.delete(`${cpuPawn.r},${cpuPawn.c}`);
+      logGameEvent({type:'dig', text:`🔴 CPU dug at ${pos} — nothing found.`});
+      showMessage(`🔴 CPU dug at ${pos} — nothing there.`);
+      return false;
+    }
+
     // ── CPU turn ───────────────────────────────────────────────────
+    // Turn structure mirrors the player: roll dice → spend AP on move+dig in any order.
     function cpuTurn() {
       if (gameOver) return;
 
@@ -1492,40 +1624,7 @@
         return;
       }
 
-      const pos = coordLabel(cpuPawn);
-
-      // ── PRIORITY 1: Dig — based on knowledge + probability ──
-      if (!cpuInventory.manual && shouldCpuDig()) {
-        // CPU decides to dig here
-        if (!cpuInventory.key && placed.key && placed.key.r===cpuPawn.r && placed.key.c===cpuPawn.c) {
-          cpuInventory.key=true; placed.key=null;
-          // Clear key knowledge (found it)
-          cpuKnowledge.key.confirmed=null; cpuKnowledge.key.possible=new Set();
-          logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — found the 🗝️ key!`});
-          showMessage('🔴 CPU found the key on your island!');
-          renderLeft();
-          handTurnToPlayer(900);
-          return;
-        }
-        if (cpuInventory.key && !cpuInventory.manual && placed.chest && placed.chest.r===cpuPawn.r && placed.chest.c===cpuPawn.c) {
-          cpuInventory.manual=true;
-          cpuKnowledge.chest.confirmed=null; cpuKnowledge.chest.possible=new Set();
-          logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — retrieved the 📜 manual!`});
-          showMessage('🔴 CPU retrieved the manual — heading for the ★!');
-          renderLeft();
-          handTurnToPlayer(900);
-          return;
-        }
-        // Dug but nothing here — eliminate this tile from both possible sets
-        cpuKnowledge.key.possible.delete(`${cpuPawn.r},${cpuPawn.c}`);
-        cpuKnowledge.chest.possible.delete(`${cpuPawn.r},${cpuPawn.c}`);
-        logGameEvent({type:'dig', text:`🔴 CPU dug at ${pos} — nothing found.`});
-        showMessage(`🔴 CPU dug at ${pos} — nothing there.`);
-        handTurnToPlayer(900);
-        return;
-      }
-
-      // ── PRIORITY 2: Ask a question (if questions remaining, useful, probability gate) ──
+      // ── PRIORITY 1: Ask a question (entire turn, probability gate) ──
       if (!cpuInventory.manual && cpuQuestionsLeft > 0 && Math.random() < ASK_PROB) {
         const pool = buildCpuQuestionList();
         const askedSet = new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
@@ -1536,30 +1635,54 @@
             cpuQuestionsLeft = Math.max(0, cpuQuestionsLeft - 1);
             pendingCpuQuestion = q;
             showCpuQuestionPanel(q);
-            return; // turn resumes after player answers (handTurnToPlayer called from submitPlayerAnswer)
+            return;
           }
         }
       }
 
-      // ── PRIORITY 3: Move toward current target using boat-aware BFS ──
+      // ── Roll dice → action points ──
       const roll = Math.floor(Math.random()*6)+1;
-      const reachable = getCpuReachable(cpuPawn, cpuBoat, cpuInBoat, roll);
+      let ap = roll;
 
-      if (reachable.length > 0) {
-        const dest = pickBestCpuMove(reachable);
-        const prevLabel = coordLabel(cpuPawn);
-        cpuPawn={r:dest.r,c:dest.c}; cpuInBoat=false;
-        if (dest.boatR!==-1) cpuBoat={r:dest.boatR,c:dest.boatC};
+      // ── Step 1: Dig at current position if it's a likely target (costs 1 AP) ──
+      if (!cpuInventory.manual && ap > 0 && shouldCpuDig()) {
+        ap--;
+        cpuAttemptDig();
+        renderLeft();
+        if (checkCpuWin()) return;
+        // Item may have been found; target may have shifted — continue with remaining AP
+      }
 
-        logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
+      // ── Step 2: Move toward next target using remaining AP ──
+      if (ap > 0) {
+        const reachable = getCpuReachable(cpuPawn, cpuBoat, cpuInBoat, ap);
+        if (reachable.length > 0) {
+          const dest = pickBestCpuMove(reachable);
+          const prevLabel = coordLabel(cpuPawn);
+          cpuPawn={r:dest.r,c:dest.c}; cpuInBoat=false;
+          if (dest.boatR!==-1) cpuBoat={r:dest.boatR,c:dest.boatC};
+          ap -= (dest.steps || 1);
 
-        // Mine landing
-        if (placed.mine && cpuPawn.r===placed.mine.r && cpuPawn.c===placed.mine.c) {
-          const mpos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
-          logGameEvent({type:'mine', text:`💥 Your mine at ${mpos} went off! CPU skips next turn.`});
-          showMessage('💥 Your mine went off — the CPU will skip its next turn!');
+          logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
+
+          // Mine landing
+          if (placed.mine && cpuPawn.r===placed.mine.r && cpuPawn.c===placed.mine.c) {
+            const mpos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
+            logGameEvent({type:'mine', text:`💥 Your mine at ${mpos} went off! CPU skips next turn.`});
+            showMessage('💥 Your mine went off — the CPU will skip its next turn!');
+            renderLeft();
+            if (checkCpuWin()) return;
+            handTurnToPlayer(700); return;
+          }
+
+          renderLeft();
+          if (checkCpuWin()) return;
         }
+      }
 
+      // ── Step 3: Dig at new position if AP remains and tile is a target ──
+      if (!cpuInventory.manual && ap > 0 && shouldCpuDig()) {
+        cpuAttemptDig();
         renderLeft();
         if (checkCpuWin()) return;
       }
