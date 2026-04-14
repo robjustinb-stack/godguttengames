@@ -363,15 +363,13 @@
       <div id="qaLogItems"></div>
     </div>
 
-    <!-- Difficulty overlay -->
+    <!-- Start overlay -->
     <div class="diff-overlay hidden" id="diffOverlay">
       <div class="modal-card">
-        <h2>Choose Difficulty</h2>
-        <p>How tough should your opponent be?</p>
+        <h2>Ready?</h2>
+        <p>Your items are placed. The CPU has hidden its items too. Find the manual and reach the ★ to escape!</p>
         <div class="diff-btns">
-          <button class="diff-btn easy"   id="easyBtn">🌊 Easy</button>
-          <button class="diff-btn medium" id="medBtn" >⚔️ Medium</button>
-          <button class="diff-btn hard"   id="hardBtn">💀 Hard</button>
+          <button class="diff-btn easy" id="playBtn">🚀 Play</button>
         </div>
       </div>
     </div>
@@ -475,7 +473,7 @@
     let setupPhase = 'chest';
     let gamePhase  = 'setup';
 
-    let difficulty   = 'easy';
+    const ASK_PROB   = 0.25;   // chance CPU asks a question each turn
     let currentTurn  = 'player';
     let moveState    = 'idle';
     let diceVal      = 0;
@@ -500,6 +498,9 @@
     const gameLog    = [];
     let pendingCpuQuestion = null;
     let selectedQuestion   = null; // for player ask modal
+
+    // ── CPU knowledge (deduced from Q&A, NOT direct access to placed) ─
+    let cpuKnowledge = {};   // initialised in startGame via initCpuKnowledge()
 
     const HINTS = {
       chest: 'Place your chest on a land tile (green)',
@@ -595,9 +596,7 @@
     }
 
     document.getElementById('readyBtn').addEventListener('click', () => document.getElementById('diffOverlay').classList.remove('hidden'));
-    document.getElementById('easyBtn').addEventListener('click', () => startGame('easy'));
-    document.getElementById('medBtn').addEventListener('click',  () => startGame('medium'));
-    document.getElementById('hardBtn').addEventListener('click', () => startGame('hard'));
+    document.getElementById('playBtn').addEventListener('click', () => startGame());
 
     // ── Auto-place CPU items ────────────────────────────────────────
     function autoCpuItems(map, avoid) {
@@ -628,8 +627,7 @@
     }
 
     // ── Start game ─────────────────────────────────────────────────
-    function startGame(diff) {
-      difficulty = diff;
+    function startGame() {
       document.getElementById('diffOverlay').classList.add('hidden');
       document.getElementById('phaseWrap').classList.add('hidden');
       document.getElementById('readyBtn').classList.add('hidden');
@@ -646,6 +644,7 @@
       skipNextTurn=false; cpuSkipNext=false; gameOver=false;
       cpuLiesLeft=1; playerLiesLeft=1; lieActive=false;
       gameLog.length=0; pendingCpuQuestion=null; selectedQuestion=null;
+      initCpuKnowledge();
 
       updateInventoryUI();
       document.getElementById('inventoryBar').classList.remove('hidden');
@@ -762,16 +761,150 @@
       return results.filter(s=>!s.inBoat);
     }
 
+    // ── CPU knowledge system ──────────────────────────────────────────
+    function initCpuKnowledge() {
+      const allT=new Set(), landT=new Set();
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        allT.add(`${r},${c}`);
+        if (leftMap[r][c]==='land') landT.add(`${r},${c}`);
+      }
+      cpuKnowledge = {
+        key:   { possible: new Set(allT),  confirmed: null },
+        chest: { possible: new Set(landT), confirmed: null }
+      };
+    }
+
+    function applyCpuConstraint(constraint, answerWasYes) {
+      if (!constraint) return;
+      const k = cpuKnowledge[constraint.item];
+      if (!k || k.possible.size === 0) return;
+
+      const del = t => {
+        const [r,c] = t.split(',').map(Number);
+        let matches;
+        switch (constraint.type) {
+          case 'land':     matches = leftMap[r][c]==='land';  break;
+          case 'water':    matches = leftMap[r][c]==='water'; break;
+          case 'row':      matches = r===constraint.value;    break;
+          case 'col':      matches = c===constraint.value;    break;
+          case 'adjacent': {
+            const adj=new Set();
+            for (const [dr,dc] of DIRS){ const nr=constraint.pawnR+dr,nc=constraint.pawnC+dc; if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS) adj.add(`${nr},${nc}`); }
+            matches = adj.has(t); break;
+          }
+          case 'pinpoint': matches = t===`${constraint.pawnR},${constraint.pawnC}`; break;
+          default: return;
+        }
+        // keep tile if it matches what the answer claims
+        if (answerWasYes !== matches) k.possible.delete(t);
+      };
+
+      if (constraint.type === 'pinpoint' && answerWasYes) {
+        // Confirmed exact position
+        k.confirmed = {r:constraint.pawnR, c:constraint.pawnC};
+        k.possible   = new Set([`${constraint.pawnR},${constraint.pawnC}`]);
+      } else {
+        for (const t of [...k.possible]) del(t);
+      }
+
+      // If we emptied the set (player probably lied), reset gracefully
+      if (k.possible.size === 0) {
+        k.confirmed = null;
+        for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+          if (constraint.item==='chest' && leftMap[r][c]!=='land') continue;
+          k.possible.add(`${r},${c}`);
+        }
+      }
+      // Auto-confirm when single tile remains
+      if (k.possible.size === 1 && !k.confirmed) {
+        const [r,c] = [...k.possible][0].split(',').map(Number);
+        k.confirmed = {r,c};
+      }
+    }
+
+    // Returns the tile CPU should move toward (based on knowledge)
+    function getCpuTarget() {
+      if (cpuInventory.manual) return {r:2, c:0}; // head to star
+
+      const item = cpuInventory.key ? 'chest' : 'key';
+      const k = cpuKnowledge[item];
+
+      if (k && k.confirmed) return k.confirmed;
+
+      if (k && k.possible.size > 0) {
+        // centroid of possible tiles — then snap to nearest actual tile in set
+        let sr=0, sc=0, n=0;
+        for (const t of k.possible) { const [r,c]=t.split(',').map(Number); sr+=r; sc+=c; n++; }
+        const cr=Math.round(sr/n), cc=Math.round(sc/n);
+        let best=null, bd=Infinity;
+        for (const t of k.possible) {
+          const [r,c]=t.split(',').map(Number);
+          const d=Math.abs(r-cr)+Math.abs(c-cc);
+          if (d<bd) { bd=d; best={r,c}; }
+        }
+        if (best) return best;
+      }
+      return {r:2, c:2}; // fallback
+    }
+
+    // Returns true if CPU should attempt to dig on its current tile
+    function shouldCpuDig() {
+      const item = !cpuInventory.key ? 'key' : (!cpuInventory.manual ? 'chest' : null);
+      if (!item) return false;
+      const k = cpuKnowledge[item];
+      if (!k) return false;
+
+      const pos = `${cpuPawn.r},${cpuPawn.c}`;
+      if (!k.possible.has(pos)) return false;  // ruled out
+
+      if (k.confirmed && k.confirmed.r===cpuPawn.r && k.confirmed.c===cpuPawn.c) return true; // certain
+
+      const n = k.possible.size;
+      const prob = n<=1 ? 1.0 : n<=2 ? 0.8 : n<=4 ? 0.6 : 0.4;
+      return Math.random() < prob;
+    }
+
     function pickBestCpuMove(moves) {
-      let target=null;
-      if (!cpuInventory.key&&placed.key) target=placed.key;
-      else if (!cpuInventory.manual&&placed.chest) target=placed.chest;
-      else return moves.reduce((b,t)=>t.c<b.c?t:b, moves[0]);
+      const target = getCpuTarget();
       return moves.reduce((b,t)=>{
         const dt=Math.abs(t.r-target.r)+Math.abs(t.c-target.c);
         const db=Math.abs(b.r-target.r)+Math.abs(b.c-target.c);
-        return dt<db?t:b;
+        return dt<db ? t : b;
       }, moves[0]);
+    }
+
+    // Pick the CPU question that splits remaining possible tiles most evenly
+    function pickBestCpuQuestion(pool) {
+      const item = !cpuInventory.key ? 'key' : 'chest';
+      const k = cpuKnowledge[item];
+      const askedSet = new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
+
+      // Prefer unasked questions about current target item with a usable constraint
+      let candidates = pool.filter(q=>!askedSet.has(q.text) && q.text.includes(item) && q.constraint);
+      if (candidates.length===0) candidates = pool.filter(q=>!askedSet.has(q.text));
+      if (candidates.length===0) candidates = pool;
+
+      if (!k || k.possible.size <= 1) return candidates[Math.floor(Math.random()*candidates.length)];
+
+      let bestQ=null, bestScore=Infinity;
+      for (const q of candidates) {
+        const con=q.constraint; if (!con) continue;
+        let yes=0;
+        for (const t of k.possible) {
+          const [r,c]=t.split(',').map(Number);
+          let m=false;
+          if      (con.type==='land')     m=leftMap[r][c]==='land';
+          else if (con.type==='water')    m=leftMap[r][c]==='water';
+          else if (con.type==='row')      m=r===con.value;
+          else if (con.type==='col')      m=c===con.value;
+          else if (con.type==='adjacent'){ const adj=new Set(); for(const[dr,dc]of DIRS){const nr=con.pawnR+dr,nc=con.pawnC+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)adj.add(`${nr},${nc}`);}; m=adj.has(t); }
+          else if (con.type==='pinpoint') m=t===`${con.pawnR},${con.pawnC}`;
+          if(m) yes++;
+        }
+        const score=Math.abs(yes/k.possible.size - 0.5);
+        if (score<bestScore){ bestScore=score; bestQ=q; }
+      }
+      return bestQ || candidates[Math.floor(Math.random()*candidates.length)];
     }
 
     function applyHighlights(tiles, gridId) {
@@ -815,7 +948,7 @@
       }
 
       showMessage(msg); updateInventoryUI();
-      currentTurn='cpu'; updateHud(); setTimeout(cpuTurn, 1600);
+      handTurnToCpu(1600);
     }
 
     // ── Question system ────────────────────────────────────────────
@@ -843,23 +976,24 @@
     }
 
     // Builds question list for CPU asking about PLAYER's items (on leftMap)
+    // Each question carries a `constraint` descriptor used to update cpuKnowledge.
     function buildCpuQuestionList() {
       const isAdj=(a,b)=>Math.abs(a.r-b.r)+Math.abs(a.c-b.c)===1;
       const qs=[];
       for (const item of ['key','chest']) {
         const itemPos=placed[item]; if (!itemPos) continue;
-        const otherItem=item==='key'?'chest':'key';
-        const otherPos=placed[otherItem];
+        const otherItem=item==='key'?'chest':'key', otherPos=placed[otherItem];
         const il=item, ol=otherItem;
-        qs.push({text:`Is the ${il} on land?`,       trueAnswer:leftMap[itemPos.r][itemPos.c]==='land', pinpoints:false});
-        qs.push({text:`Is the ${il} in the water?`,  trueAnswer:leftMap[itemPos.r][itemPos.c]==='water',pinpoints:false});
-        for (let r=0;r<5;r++) qs.push({text:`Is the ${il} in row ${ROW_LABELS[r]}?`, trueAnswer:itemPos.r===r, pinpoints:false});
-        for (let c=0;c<5;c++) qs.push({text:`Is the ${il} in column ${c+1}?`,        trueAnswer:itemPos.c===c, pinpoints:false});
-        qs.push({text:`Is the ${il} adjacent to my pawn's current position?`, trueAnswer:isAdj(itemPos,cpuPawn), pinpoints:false});
-        qs.push({text:`Am I standing on the ${il}?`, trueAnswer:itemPos.r===cpuPawn.r&&itemPos.c===cpuPawn.c, pinpoints:true});
+        qs.push({text:`Is the ${il} on land?`,      trueAnswer:leftMap[itemPos.r][itemPos.c]==='land',  pinpoints:false, constraint:{item:il,type:'land'}});
+        qs.push({text:`Is the ${il} in the water?`, trueAnswer:leftMap[itemPos.r][itemPos.c]==='water', pinpoints:false, constraint:{item:il,type:'water'}});
+        for (let r=0;r<5;r++) qs.push({text:`Is the ${il} in row ${ROW_LABELS[r]}?`, trueAnswer:itemPos.r===r, pinpoints:false, constraint:{item:il,type:'row',value:r}});
+        for (let c=0;c<5;c++) qs.push({text:`Is the ${il} in column ${c+1}?`,        trueAnswer:itemPos.c===c, pinpoints:false, constraint:{item:il,type:'col',value:c}});
+        qs.push({text:`Is the ${il} adjacent to my pawn's current position?`, trueAnswer:isAdj(itemPos,cpuPawn), pinpoints:false, constraint:{item:il,type:'adjacent',pawnR:cpuPawn.r,pawnC:cpuPawn.c}});
+        qs.push({text:`Am I standing on the ${il}?`, trueAnswer:itemPos.r===cpuPawn.r&&itemPos.c===cpuPawn.c, pinpoints:true, constraint:{item:il,type:'pinpoint',pawnR:cpuPawn.r,pawnC:cpuPawn.c}});
         if (otherPos) {
-          qs.push({text:`Is the ${il} in the same row as the ${ol}?`,    trueAnswer:itemPos.r===otherPos.r, pinpoints:false});
-          qs.push({text:`Is the ${il} in the same column as the ${ol}?`, trueAnswer:itemPos.c===otherPos.c, pinpoints:false});
+          // cross-item constraints — no deduction model for these, constraint:null
+          qs.push({text:`Is the ${il} in the same row as the ${ol}?`,    trueAnswer:itemPos.r===otherPos.r, pinpoints:false, constraint:null});
+          qs.push({text:`Is the ${il} in the same column as the ${ol}?`, trueAnswer:itemPos.c===otherPos.c, pinpoints:false, constraint:null});
         }
       }
       return qs;
@@ -936,7 +1070,7 @@
 
     document.getElementById('closeAskBtn').addEventListener('click', () => {
       document.getElementById('askOverlay').classList.add('hidden');
-      currentTurn='cpu'; updateHud(); setTimeout(cpuTurn, 900);
+      handTurnToCpu(900);
     });
 
     // ── CPU question panel (CPU → player, inline) ──────────────────
@@ -998,11 +1132,16 @@
       if (lieActive&&playerLiesLeft>0) { finalAnswer=!clickedYes; lied=true; playerLiesLeft=0; }
       lieActive=false; document.getElementById('lieBtn').classList.remove('active');
 
+      // Update CPU's knowledge with the player's answer (which might be a lie)
+      if (pendingCpuQuestion && pendingCpuQuestion.constraint) {
+        applyCpuConstraint(pendingCpuQuestion.constraint, finalAnswer);
+      }
+
       logGameEvent({type:'question', who:'cpu', question:pendingCpuQuestion.text, answer:finalAnswer?'YES':'NO', lied});
       pendingCpuQuestion=null;
       document.getElementById('cpuQPanel').classList.add('hidden');
 
-      setTimeout(()=>{ if(gameOver)return; currentTurn='player'; moveState='idle'; diceVal=0; updateHud(); }, 400);
+      handTurnToPlayer(400);
     }
 
     // ── Game Log ───────────────────────────────────────────────────
@@ -1037,7 +1176,7 @@
 
     // ── Win / Loss ─────────────────────────────────────────────────
     function checkCpuWin() {
-      if (cpuInventory.manual&&cpuPawn&&cpuPawn.c===0) { showEndgame(false); return true; }
+      if (cpuInventory.manual && cpuPawn && cpuPawn.r===2 && cpuPawn.c===0) { showEndgame(false); return true; }
       return false;
     }
     function showEndgame(playerWon) {
@@ -1089,8 +1228,8 @@
         setTimeout(endPlayerTurn, 1500); return;
       }
 
-      // Win check
-      if (inventory.manual&&playerPawn.c===0) {
+      // Win check — must be on the STAR tile exactly (row C, col 0)
+      if (inventory.manual && playerPawn.r===2 && playerPawn.c===0) {
         clearHighlights(); renderRight();
         logGameEvent({type:'item', text:'🎉 You reached the star with the manual — you escaped!'});
         showEndgame(true); return;
@@ -1103,87 +1242,113 @@
       else { applyHighlights(highlighted,'rightGrid'); updateHud(); }
     }
 
-    document.getElementById('endTurnBtn').addEventListener('click', ()=>{ if(currentTurn==='player'&&moveState==='moving') endPlayerTurn(); });
-    function endPlayerTurn() {
-      clearHighlights(); highlighted=[]; diceVal=0; stepsLeft=0; moveState='idle'; currentTurn='cpu';
-      updateHud(); setTimeout(cpuTurn, 900);
+    // ── Turn hand-off helpers (single source of truth) ────────────────
+    // All turn changes MUST go through these two functions.
+    function handTurnToPlayer(delay) {
+      delay = (delay === undefined) ? 700 : delay;
+      setTimeout(()=>{
+        if (gameOver) return;
+        if (skipNextTurn) {
+          skipNextTurn = false;
+          currentTurn = 'cpu'; moveState = 'idle'; diceVal = 0; stepsLeft = 0;
+          logGameEvent({type:'skip', text:'💨 Your turn was skipped — recovering from mine blast.'});
+          showMessage('💨 Still recovering from the mine blast — your turn is skipped!');
+          updateHud();
+          setTimeout(()=>{ if(gameOver)return; cpuTurn(); }, 2200);
+        } else {
+          currentTurn = 'player'; moveState = 'idle'; diceVal = 0; stepsLeft = 0;
+          updateHud();
+        }
+      }, delay);
     }
+
+    function handTurnToCpu(delay) {
+      delay = (delay === undefined) ? 900 : delay;
+      clearHighlights(); highlighted = []; diceVal = 0; stepsLeft = 0; moveState = 'idle';
+      currentTurn = 'cpu'; updateHud();
+      setTimeout(()=>{ if(gameOver)return; cpuTurn(); }, delay);
+    }
+
+    document.getElementById('endTurnBtn').addEventListener('click', ()=>{ if(currentTurn==='player'&&moveState==='moving') endPlayerTurn(); });
+    function endPlayerTurn() { handTurnToCpu(900); }
 
     // ── CPU turn ───────────────────────────────────────────────────
     function cpuTurn() {
       if (gameOver) return;
 
-      // Stunned
+      // ── Stunned by mine ──
       if (cpuSkipNext) {
         cpuSkipNext=false;
         logGameEvent({type:'skip', text:'💨 CPU\'s turn skipped — stunned by your mine.'});
         showMessage('💨 The CPU is stunned — its turn is skipped!');
-        setTimeout(()=>{ if(gameOver)return; currentTurn='player'; moveState='idle'; diceVal=0; updateHud(); }, 1800);
+        handTurnToPlayer(1800);
         return;
       }
 
-      // PRIORITY 1: Dig if on target tile
-      if (!cpuInventory.key&&placed.key&&cpuPawn.r===placed.key.r&&cpuPawn.c===placed.key.c) {
-        cpuInventory.key=true; placed.key=null;
-        const pos=coordLabel(cpuPawn);
-        logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — found the 🗝️ key!`});
-        showMessage('🔴 CPU found the key on your island!');
-        renderLeft();
-        setTimeout(()=>{ if(gameOver)return; currentTurn='player'; moveState='idle'; diceVal=0; updateHud(); }, 900);
-        return;
-      }
-      if (cpuInventory.key&&!cpuInventory.manual&&placed.chest&&cpuPawn.r===placed.chest.r&&cpuPawn.c===placed.chest.c) {
-        cpuInventory.manual=true;
-        const pos=coordLabel(cpuPawn);
-        logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — retrieved the 📜 manual!`});
-        showMessage('🔴 CPU retrieved the manual — it\'s heading for the ★!');
-        renderLeft();
-        setTimeout(()=>{ if(gameOver)return; currentTurn='player'; moveState='idle'; diceVal=0; updateHud(); }, 900);
+      const pos = coordLabel(cpuPawn);
+
+      // ── PRIORITY 1: Dig — based on knowledge + probability ──
+      if (!cpuInventory.manual && shouldCpuDig()) {
+        // CPU decides to dig here
+        if (!cpuInventory.key && placed.key && placed.key.r===cpuPawn.r && placed.key.c===cpuPawn.c) {
+          cpuInventory.key=true; placed.key=null;
+          // Clear key knowledge (found it)
+          cpuKnowledge.key.confirmed=null; cpuKnowledge.key.possible=new Set();
+          logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — found the 🗝️ key!`});
+          showMessage('🔴 CPU found the key on your island!');
+          renderLeft();
+          handTurnToPlayer(900);
+          return;
+        }
+        if (cpuInventory.key && !cpuInventory.manual && placed.chest && placed.chest.r===cpuPawn.r && placed.chest.c===cpuPawn.c) {
+          cpuInventory.manual=true;
+          cpuKnowledge.chest.confirmed=null; cpuKnowledge.chest.possible=new Set();
+          logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — retrieved the 📜 manual!`});
+          showMessage('🔴 CPU retrieved the manual — heading for the ★!');
+          renderLeft();
+          handTurnToPlayer(900);
+          return;
+        }
+        // Dug but nothing here — eliminate this tile from both possible sets
+        cpuKnowledge.key.possible.delete(`${cpuPawn.r},${cpuPawn.c}`);
+        cpuKnowledge.chest.possible.delete(`${cpuPawn.r},${cpuPawn.c}`);
+        logGameEvent({type:'dig', text:`🔴 CPU dug at ${pos} — nothing found.`});
+        showMessage(`🔴 CPU dug at ${pos} — nothing there.`);
+        handTurnToPlayer(900);
         return;
       }
 
-      // PRIORITY 2: Maybe ask a question (not if already has manual)
-      if (!cpuInventory.manual) {
-        const askProb=difficulty==='easy'?0.15:difficulty==='medium'?0.25:0.35;
-        if (Math.random()<askProb) {
-          const pool=buildCpuQuestionList();
-          const askedTexts=new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
-          const fresh=pool.filter(q=>!askedTexts.has(q.text));
-          const finalPool=fresh.length>0?fresh:pool;
-          if (finalPool.length>0) {
-            let q;
-            if (difficulty==='hard') {
-              const precise=finalPool.filter(t=>t.pinpoints);
-              q=(precise.length>0&&Math.random()<0.55)?precise[Math.floor(Math.random()*precise.length)]:finalPool[Math.floor(Math.random()*finalPool.length)];
-            } else {
-              q=finalPool[Math.floor(Math.random()*finalPool.length)];
-            }
+      // ── PRIORITY 2: Ask a question (if useful, with probability gate) ──
+      if (!cpuInventory.manual && Math.random() < ASK_PROB) {
+        const pool = buildCpuQuestionList();
+        const askedSet = new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
+        const fresh = pool.filter(q=>!askedSet.has(q.text));
+        if (fresh.length > 0) {
+          const q = pickBestCpuQuestion(fresh);
+          if (q) {
             pendingCpuQuestion=q;
             showCpuQuestionPanel(q);
-            return;
+            return; // turn resumes after player answers (handTurnToPlayer called from submitPlayerAnswer)
           }
         }
       }
 
-      // PRIORITY 3: Move
-      const roll=Math.floor(Math.random()*6)+1;
-      const reachable=getCpuReachable(cpuPawn, cpuBoat, cpuInBoat, roll);
+      // ── PRIORITY 3: Move toward current target using boat-aware BFS ──
+      const roll = Math.floor(Math.random()*6)+1;
+      const reachable = getCpuReachable(cpuPawn, cpuBoat, cpuInBoat, roll);
 
-      if (reachable.length>0) {
-        let dest;
-        if (difficulty==='easy') dest=reachable[Math.floor(Math.random()*reachable.length)];
-        else dest=pickBestCpuMove(reachable);
-
-        const prevLabel=coordLabel(cpuPawn);
+      if (reachable.length > 0) {
+        const dest = pickBestCpuMove(reachable);
+        const prevLabel = coordLabel(cpuPawn);
         cpuPawn={r:dest.r,c:dest.c}; cpuInBoat=false;
         if (dest.boatR!==-1) cpuBoat={r:dest.boatR,c:dest.boatC};
 
         logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
 
         // Mine landing
-        if (placed.mine&&cpuPawn.r===placed.mine.r&&cpuPawn.c===placed.mine.c) {
-          const pos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
-          logGameEvent({type:'mine', text:`💥 Your mine at ${pos} went off! CPU skips next turn.`});
+        if (placed.mine && cpuPawn.r===placed.mine.r && cpuPawn.c===placed.mine.c) {
+          const mpos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
+          logGameEvent({type:'mine', text:`💥 Your mine at ${mpos} went off! CPU skips next turn.`});
           showMessage('💥 Your mine went off — the CPU will skip its next turn!');
         }
 
@@ -1191,19 +1356,7 @@
         if (checkCpuWin()) return;
       }
 
-      setTimeout(()=>{
-        if (gameOver) return;
-        currentTurn='player'; moveState='idle'; diceVal=0;
-        if (skipNextTurn) {
-          skipNextTurn=false;
-          logGameEvent({type:'skip', text:'💨 Your turn was skipped — recovering from mine blast.'});
-          showMessage('💨 Still recovering from the mine blast — skipping your turn.');
-          updateHud();
-          setTimeout(()=>{ if(gameOver)return; currentTurn='cpu'; updateHud(); setTimeout(cpuTurn,900); }, 2200);
-        } else {
-          updateHud();
-        }
-      }, 700);
+      handTurnToPlayer(700);
     }
   </script>
 </body>
