@@ -1125,12 +1125,18 @@
       if (k && k.confirmed) return k.confirmed;
 
       if (k && k.possible.size > 0) {
+        const curKey  = `${cpuPawn.r},${cpuPawn.c}`;
         const histSet = new Set(cpuVisitHistory);
         const all = [...k.possible].map(t => { const [r,c]=t.split(',').map(Number); return {r,c,key:t}; });
 
-        // Prefer candidates not recently visited
-        const unvisited = all.filter(p => !histSet.has(p.key));
-        const pool = unvisited.length > 0 ? unvisited : all; // fall back if all are in history
+        // Priority 1: unvisited tiles that are not the current position
+        const unvisited  = all.filter(p => !histSet.has(p.key) && p.key !== curKey);
+        // Priority 2: any tile that is not the current position (even if visited)
+        const nonCurrent = all.filter(p => p.key !== curKey);
+        // Priority 3: current position only when it is the sole remaining candidate
+        const pool = unvisited.length > 0 ? unvisited
+                   : nonCurrent.length > 0 ? nonCurrent
+                   : all;
 
         // Among the pool, pick the tile nearest to the CPU's current position
         let best = null, bd = Infinity;
@@ -1736,6 +1742,7 @@
     // ── CPU turn ───────────────────────────────────────────────────
     // Turn structure mirrors the player: roll dice → spend AP on move+dig in any order.
     function cpuTurn() {
+      console.log('[CPU] cpuTurn() start — pos:', cpuPawn, 'inv:', JSON.stringify(cpuInventory), 'gameOver:', gameOver);
       if (gameOver) return;
 
       // ── Stunned by mine ──
@@ -1749,15 +1756,18 @@
 
       // ── DECISION: Ask a question (uses the entire turn, no movement) ──
       // Probability is adaptive based on how many possible locations remain.
+      console.log('[CPU] asking check — shouldAsk:', cpuShouldAskQuestion(), 'qLeft:', cpuQuestionsLeft);
       if (cpuShouldAskQuestion()) {
         const pool = buildCpuQuestionList();
         const askedSet = new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
         const fresh = pool.filter(q => !askedSet.has(q.text));
+        console.log('[CPU] question pool:', pool.length, 'fresh:', fresh.length);
         if (fresh.length > 0) {
           const q = pickBestCpuQuestion(fresh);
           if (q) {
             cpuQuestionsLeft = Math.max(0, cpuQuestionsLeft - 1);
             pendingCpuQuestion = q;
+            console.log('[CPU] asking question:', q.text);
             showCpuQuestionPanel(q);
             return;
           }
@@ -1767,6 +1777,7 @@
       // ── Roll dice → action points ──
       const roll = Math.floor(Math.random()*6)+1;
       let ap = roll;
+      console.log('[CPU] rolled', roll, '— target:', JSON.stringify(getCpuTarget()));
 
       // ── AP loop: exactly ONE tile (or one dig) per action point ──────────
       // Each iteration either digs (costs 1 AP) or moves one tile (costs 1 AP).
@@ -1785,6 +1796,7 @@
 
       while (ap > 0) {
         const curKey = `${cpuPawn.r},${cpuPawn.c}`;
+        console.log('[CPU] AP loop — ap:', ap, 'pos:', curKey, 'target:', JSON.stringify(getCpuTarget()));
 
         // ── Dig / fish on current tile (costs 1 AP) ──
         if (!cpuInventory.manual && curKey !== lastDigPos && shouldCpuDig()) {
@@ -1816,6 +1828,7 @@
         }
 
         const next = getNextStepToward(target.r, target.c, lastTileThisTurn);
+        console.log('[CPU] getNextStepToward(', target.r, target.c, ') =', next ? `${next.r},${next.c}` : 'null (breaking)');
         if (!next) break; // already at target or no reachable path — done
 
         const prevLabel  = coordLabel(cpuPawn);
