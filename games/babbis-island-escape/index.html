@@ -1044,8 +1044,9 @@
           if (ns) { const k=sk(ns.pr,ns.pc,ns.ib,ns.br,ns.bc); if(!visited.has(k)){visited.add(k);queue.push(ns);} }
         }
       }
-      // Only return land destinations
-      return results.filter(s=>!s.inBoat);
+      // Return all reachable positions — land AND in-boat water tiles
+      // (CPU can fish items placed on water tiles while in its boat)
+      return results;
     }
 
     // ── CPU knowledge system ──────────────────────────────────────────
@@ -1160,38 +1161,59 @@
       }, moves[0]);
     }
 
-    // Pick the CPU question that splits remaining possible tiles most evenly
+    // Pick the CPU question that splits remaining possible tiles most evenly.
+    // pool is pre-filtered to unasked questions by the caller.
     function pickBestCpuQuestion(pool) {
       const item = !cpuInventory.key ? 'key' : 'chest';
       const k = cpuKnowledge[item];
-      const askedSet = new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
 
-      // Prefer unasked questions about current target item with a usable constraint
-      let candidates = pool.filter(q=>!askedSet.has(q.text) && q.text.includes(item) && q.constraint);
-      if (candidates.length===0) candidates = pool.filter(q=>!askedSet.has(q.text));
-      if (candidates.length===0) candidates = pool;
+      // Prefer questions about the current target item with a usable constraint
+      let candidates = pool.filter(q => q.constraint && q.constraint.item === item);
+      if (candidates.length === 0) candidates = pool.filter(q => q.constraint);
+      if (candidates.length === 0) candidates = pool;
 
       if (!k || k.possible.size <= 1) return candidates[Math.floor(Math.random()*candidates.length)];
 
       let bestQ=null, bestScore=Infinity;
       for (const q of candidates) {
-        const con=q.constraint; if (!con) continue;
-        let yes=0;
+        const con = q.constraint; if (!con) continue;
+        let yes = 0;
         for (const t of k.possible) {
-          const [r,c]=t.split(',').map(Number);
-          let m=false;
-          if      (con.type==='land')     m=leftMap[r][c]==='land';
-          else if (con.type==='water')    m=leftMap[r][c]==='water';
-          else if (con.type==='row')      m=r===con.value;
-          else if (con.type==='col')      m=c===con.value;
+          const [r,c] = t.split(',').map(Number);
+          let m = false;
+          if      (con.type==='land')     m = leftMap[r][c]==='land';
+          else if (con.type==='water')    m = leftMap[r][c]==='water';
+          else if (con.type==='row')      m = r===con.value;
+          else if (con.type==='col')      m = c===con.value;
           else if (con.type==='adjacent'){ const adj=new Set(); for(const[dr,dc]of DIRS){const nr=con.pawnR+dr,nc=con.pawnC+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)adj.add(`${nr},${nc}`);}; m=adj.has(t); }
-          else if (con.type==='pinpoint') m=t===`${con.pawnR},${con.pawnC}`;
-          if(m) yes++;
+          else if (con.type==='pinpoint') m = t===`${con.pawnR},${con.pawnC}`;
+          if (m) yes++;
         }
-        const score=Math.abs(yes/k.possible.size - 0.5);
-        if (score<bestScore){ bestScore=score; bestQ=q; }
+        // Score: distance from 50/50 split — lower is better (more information)
+        let score = Math.abs(yes / k.possible.size - 0.5);
+        // Prefer row/col questions — clean half-plane cuts, works well early game
+        if (con.type==='row' || con.type==='col') score -= 0.05;
+        // Slight penalty for purely local questions — save AP for movement
+        if (con.type==='adjacent' || con.type==='pinpoint') score += 0.05;
+        if (score < bestScore) { bestScore=score; bestQ=q; }
       }
       return bestQ || candidates[Math.floor(Math.random()*candidates.length)];
+    }
+
+    // Decide whether CPU should spend its turn asking a question.
+    // Probability is adaptive: higher when fewer possible locations remain
+    // (information is most valuable when close to pinpointing) and when
+    // questions are running out.
+    function cpuShouldAskQuestion() {
+      if (cpuInventory.manual || cpuQuestionsLeft <= 0) return false;
+      const item = cpuInventory.key ? 'chest' : 'key';
+      const k = cpuKnowledge[item];
+      if (!k || k.confirmed) return false; // already know exact position
+      const n = k.possible.size;
+      let prob = n <= 2 ? 0.60 : n <= 5 ? 0.40 : n <= 12 ? 0.30 : 0.20;
+      // Urgency bonus: use remaining questions before they expire
+      if (cpuQuestionsLeft <= 2) prob = Math.min(0.80, prob + 0.25);
+      return Math.random() < prob;
     }
 
     function applyHighlights(tiles, gridId) {
@@ -1650,11 +1672,12 @@
         return;
       }
 
-      // ── PRIORITY 1: Ask a question (entire turn, probability gate) ──
-      if (!cpuInventory.manual && cpuQuestionsLeft > 0 && Math.random() < ASK_PROB) {
+      // ── DECISION: Ask a question (uses the entire turn, no movement) ──
+      // Probability is adaptive based on how many possible locations remain.
+      if (cpuShouldAskQuestion()) {
         const pool = buildCpuQuestionList();
         const askedSet = new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
-        const fresh = pool.filter(q=>!askedSet.has(q.text));
+        const fresh = pool.filter(q => !askedSet.has(q.text));
         if (fresh.length > 0) {
           const q = pickBestCpuQuestion(fresh);
           if (q) {
@@ -1670,45 +1693,52 @@
       const roll = Math.floor(Math.random()*6)+1;
       let ap = roll;
 
-      // ── Step 1: Dig at current position if it's a likely target (costs 1 AP) ──
-      if (!cpuInventory.manual && ap > 0 && shouldCpuDig()) {
-        ap--;
-        cpuAttemptDig();
-        renderLeft();
-        if (checkCpuWin()) return;
-        // Item may have been found; target may have shifted — continue with remaining AP
-      }
+      // ── AP loop: spend every point on dig and/or move in optimal order ──
+      // On each iteration: try to dig on the current tile, then move toward the
+      // target. After moving, loop again so the CPU can dig at the new position
+      // if it lands on a candidate tile — or keep moving if AP remains.
+      // lastDigPos prevents digging the same tile twice in one turn.
+      let lastDigPos = null;
+      while (ap > 0) {
+        const curKey = `${cpuPawn.r},${cpuPawn.c}`;
 
-      // ── Step 2: Move toward next target using remaining AP ──
-      if (ap > 0) {
-        const reachable = getCpuReachable(cpuPawn, cpuBoat, cpuInBoat, ap);
-        if (reachable.length > 0) {
-          const dest = pickBestCpuMove(reachable);
-          const prevLabel = coordLabel(cpuPawn);
-          cpuPawn={r:dest.r,c:dest.c}; cpuInBoat=false;
-          if (dest.boatR!==-1) cpuBoat={r:dest.boatR,c:dest.boatC};
-          ap -= (dest.steps || 1);
-
-          logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
-
-          // Mine landing
-          if (placed.mine && cpuPawn.r===placed.mine.r && cpuPawn.c===placed.mine.c) {
-            const mpos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
-            logGameEvent({type:'mine', text:`💥 Your mine at ${mpos} went off! CPU skips next turn.`});
-            showMessage('💥 Your mine went off — the CPU will skip its next turn!');
-            renderLeft();
-            if (checkCpuWin()) return;
-            handTurnToPlayer(700); return;
-          }
-
+        // Dig/fish on current tile if it is a target candidate
+        if (!cpuInventory.manual && curKey !== lastDigPos && shouldCpuDig()) {
+          lastDigPos = curKey;
+          ap--;
+          const found = cpuAttemptDig();
           renderLeft();
           if (checkCpuWin()) return;
+          // If item was found the target shifts; loop to re-evaluate and move toward next target.
+          // If nothing found the tile is removed from possible set; loop to move on.
+          continue;
         }
-      }
 
-      // ── Step 3: Dig at new position if AP remains and tile is a target ──
-      if (!cpuInventory.manual && ap > 0 && shouldCpuDig()) {
-        cpuAttemptDig();
+        // Move toward current target using remaining AP
+        const reachable = getCpuReachable(cpuPawn, cpuBoat, cpuInBoat, ap);
+        if (reachable.length === 0) break; // no valid moves — done
+
+        const dest = pickBestCpuMove(reachable);
+        const stepsUsed = dest.steps || 1;
+        const prevLabel = coordLabel(cpuPawn);
+        cpuPawn = {r:dest.r, c:dest.c};
+        cpuInBoat = dest.inBoat;           // correctly track boat state
+        if (dest.boatR !== -1) cpuBoat = {r:dest.boatR, c:dest.boatC};
+        ap -= stepsUsed;
+        lastDigPos = null; // new tile — allow dig attempt here next iteration
+
+        logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
+
+        // Mine check
+        if (placed.mine && cpuPawn.r===placed.mine.r && cpuPawn.c===placed.mine.c) {
+          const mpos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
+          logGameEvent({type:'mine', text:`💥 Your mine at ${mpos} went off! CPU skips next turn.`});
+          showMessage('💥 Your mine went off — the CPU will skip its next turn!');
+          renderLeft();
+          if (checkCpuWin()) return;
+          handTurnToPlayer(700); return;
+        }
+
         renderLeft();
         if (checkCpuWin()) return;
       }
