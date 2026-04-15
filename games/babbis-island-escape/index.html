@@ -1840,6 +1840,14 @@
     function cpuTurn() {
       if (gameOver) return;
 
+      // ── Diagnostic logging ──
+      console.log('[CPU] cpuTurn START | state:', getCpuState(),
+        '| keyCands:', cpuKeyCandidates.length,
+        '| chestCands:', cpuChestCandidates.length,
+        '| pawn:', JSON.stringify(cpuPawn),
+        '| inBoat:', cpuInBoat,
+        '| inv:', JSON.stringify(cpuInventory));
+
       // 1. Stunned by mine
       if (cpuSkipNext) {
         cpuSkipNext=false;
@@ -1877,6 +1885,15 @@
       // 4. AP loop
       while (ap > 0) {
         const curState = getCpuState();
+        const _dbgTarget   = getNextCpuTarget();
+        const _dbgCands    = curState === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
+        const _dbgOnCand   = _dbgCands.some(t => t.r===cpuPawn.r && t.c===cpuPawn.c);
+        console.log('[CPU] AP loop | ap:', ap,
+          '| state:', curState,
+          '| pawn:', `${cpuPawn.r},${cpuPawn.c}`,
+          '| target:', `${_dbgTarget.r},${_dbgTarget.c}`,
+          '| onCandidate:', _dbgOnCand,
+          '| action:', curState==='escape' ? 'move(escape)' : _dbgOnCand ? 'dig' : 'move');
 
         // ESCAPE: spend every AP moving toward the star
         if (curState === 'escape') {
