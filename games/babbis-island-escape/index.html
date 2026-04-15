@@ -752,6 +752,7 @@
     let playerLiesLeft    = 1;
     let playerQuestionsLeft = 5;
     let cpuQuestionsLeft    = 5;
+    let cpuVisitHistory     = []; // last 6 positions visited across turns (anti-oscillation)
     const gameLog    = [];
     let pendingCpuQuestion = null;
     let selectedQuestion   = null; // for player ask modal
@@ -919,6 +920,7 @@
       skipNextTurn=false; cpuSkipNext=false; gameOver=false;
       cpuLiesLeft=1; playerLiesLeft=1;
       playerQuestionsLeft=5; cpuQuestionsLeft=5;
+      cpuVisitHistory=[];
       gameLog.length=0; pendingCpuQuestion=null; selectedQuestion=null;
       initCpuKnowledge();
 
@@ -1633,6 +1635,73 @@
     document.getElementById('endTurnBtn').addEventListener('click', ()=>{ if(currentTurn==='player'&&moveState==='moving') endPlayerTurn(); });
     function endPlayerTurn() { handTurnToCpu(900); }
 
+    // ── CPU pathfinding: next single step toward (targetR, targetC) ──────
+    // Uses BFS on leftMap respecting land/water/boat rules.
+    // avoidKey ("r,c") = tile we just moved FROM this turn — never step back there
+    // unless it is the only route to the target.
+    // Cross-turn history tiles (cpuVisitHistory) are soft-avoided: the BFS tries
+    // three passes in order of increasing permissiveness and returns the first hit.
+    function getNextStepToward(targetR, targetC, avoidKey) {
+      if (cpuPawn.r === targetR && cpuPawn.c === targetC) return null;
+
+      const sk = (pr,pc,ib,br,bc) => `${pr},${pc},${ib?1:0},${br},${bc}`;
+      const startKey = sk(cpuPawn.r, cpuPawn.c, cpuInBoat,
+                          cpuBoat ? cpuBoat.r : -1, cpuBoat ? cpuBoat.c : -1);
+      const histSet = new Set(cpuVisitHistory);
+
+      // skipHistory: if true, allow stepping on recently-visited tiles
+      // skipAvoid:   if true, allow stepping back onto avoidKey tile
+      function runBFS(skipHistory, skipAvoid) {
+        const parent = new Map([[startKey, null]]);
+        const queue  = [{
+          pr: cpuPawn.r, pc: cpuPawn.c, ib: cpuInBoat,
+          br: cpuBoat ? cpuBoat.r : -1, bc: cpuBoat ? cpuBoat.c : -1
+        }];
+        while (queue.length) {
+          const {pr,pc,ib,br,bc} = queue.shift();
+          const curKey = sk(pr,pc,ib,br,bc);
+          const or_ = ib ? br : pr, oc = ib ? bc : pc;
+          for (const [dr,dc] of DIRS) {
+            const nr=or_+dr, nc=oc+dc;
+            if (nr<0||nr>=ROWS||nc<0||nc>=COLS) continue;
+            const tile=leftMap[nr][nc];
+            let ns=null;
+            if (!ib) {
+              if (tile==='land') ns={pr:nr,pc:nc,ib:false,br,bc};
+              else if (br!==-1&&nr===br&&nc===bc) ns={pr:nr,pc:nc,ib:true,br,bc};
+            } else {
+              if (tile==='water') ns={pr:nr,pc:nc,ib:true,br:nr,bc:nc};
+              else if (tile==='land') ns={pr:nr,pc:nc,ib:false,br,bc};
+            }
+            if (!ns) continue;
+            const k       = sk(ns.pr,ns.pc,ns.ib,ns.br,ns.bc);
+            if (parent.has(k)) continue;
+            const posKey  = `${ns.pr},${ns.pc}`;
+            const isTgt   = ns.pr===targetR && ns.pc===targetC;
+            // Intra-turn anti-backtrack (hard unless it's the target itself)
+            if (!skipAvoid   && avoidKey && posKey===avoidKey   && !isTgt) continue;
+            // Cross-turn history avoidance (soft — skipped in later passes)
+            if (!skipHistory && histSet.has(posKey)             && !isTgt) continue;
+            parent.set(k, curKey);
+            if (isTgt) {
+              // Trace path back to the single first step from start
+              let cur=k, prev=parent.get(cur);
+              while (prev !== startKey) { cur=prev; prev=parent.get(cur); }
+              const p=cur.split(',');
+              return {r:+p[0], c:+p[1], inBoat:p[2]==='1', boatR:+p[3], boatC:+p[4]};
+            }
+            queue.push(ns);
+          }
+        }
+        return null;
+      }
+
+      // Pass 1: avoid both history tiles and the immediate backtrack tile
+      // Pass 2: allow history tiles, still block the backtrack tile
+      // Pass 3: allow everything (only fallback when truly stuck)
+      return runBFS(false, false) || runBFS(true, false) || runBFS(true, true);
+    }
+
     // ── CPU dig helper — attempts a dig at current position, returns true if item found ──
     function cpuAttemptDig() {
       const pos = coordLabel(cpuPawn);
@@ -1693,39 +1762,68 @@
       const roll = Math.floor(Math.random()*6)+1;
       let ap = roll;
 
-      // ── AP loop: spend every point on dig and/or move in optimal order ──
-      // On each iteration: try to dig on the current tile, then move toward the
-      // target. After moving, loop again so the CPU can dig at the new position
-      // if it lands on a candidate tile — or keep moving if AP remains.
-      // lastDigPos prevents digging the same tile twice in one turn.
-      let lastDigPos = null;
+      // ── AP loop: exactly ONE tile (or one dig) per action point ──────────
+      // Each iteration either digs (costs 1 AP) or moves one tile (costs 1 AP).
+      // This prevents the teleport/oscillation bug that occurred when the old
+      // code consumed multiple AP in a single movement step.
+      //
+      // lastDigPos     — prevents digging the same tile twice per turn
+      // lastTileThisTurn — tile we just left; passed to getNextStepToward so
+      //                    it is never the first-choice next step (anti-oscillation)
+      // prevTargetKey  — detects when the CPU's target shifts; clears visit
+      //                  history so stale avoidances don't block the new route
+      let lastDigPos       = null;
+      let lastTileThisTurn = null;
+      const t0 = getCpuTarget();
+      let prevTargetKey    = `${t0.r},${t0.c}`;
+
       while (ap > 0) {
         const curKey = `${cpuPawn.r},${cpuPawn.c}`;
 
-        // Dig/fish on current tile if it is a target candidate
+        // ── Dig / fish on current tile (costs 1 AP) ──
         if (!cpuInventory.manual && curKey !== lastDigPos && shouldCpuDig()) {
           lastDigPos = curKey;
           ap--;
           const found = cpuAttemptDig();
           renderLeft();
           if (checkCpuWin()) return;
-          // If item was found the target shifts; loop to re-evaluate and move toward next target.
-          // If nothing found the tile is removed from possible set; loop to move on.
+          if (found) {
+            // Item found → target has changed; reset navigation state
+            cpuVisitHistory  = [];
+            lastTileThisTurn = null;
+            const nt = getCpuTarget();
+            prevTargetKey    = `${nt.r},${nt.c}`;
+          }
           continue;
         }
 
-        // Move toward current target using remaining AP
-        const reachable = getCpuReachable(cpuPawn, cpuBoat, cpuInBoat, ap);
-        if (reachable.length === 0) break; // no valid moves — done
+        // ── Move exactly one tile toward target (costs 1 AP) ──
+        const target    = getCpuTarget();
+        const targetKey = `${target.r},${target.c}`;
 
-        const dest = pickBestCpuMove(reachable);
-        const stepsUsed = dest.steps || 1;
-        const prevLabel = coordLabel(cpuPawn);
-        cpuPawn = {r:dest.r, c:dest.c};
-        cpuInBoat = dest.inBoat;           // correctly track boat state
-        if (dest.boatR !== -1) cpuBoat = {r:dest.boatR, c:dest.boatC};
-        ap -= stepsUsed;
-        lastDigPos = null; // new tile — allow dig attempt here next iteration
+        // If the target tile changed (e.g. after a failed dig updated knowledge),
+        // clear history so fresh paths are explored toward the new target.
+        if (targetKey !== prevTargetKey) {
+          cpuVisitHistory  = [];
+          lastTileThisTurn = null;
+          prevTargetKey    = targetKey;
+        }
+
+        const next = getNextStepToward(target.r, target.c, lastTileThisTurn);
+        if (!next) break; // already at target or no reachable path — done
+
+        const prevLabel  = coordLabel(cpuPawn);
+        lastTileThisTurn = curKey; // remember where we came from (anti-backtrack)
+
+        cpuPawn    = {r: next.r, c: next.c};
+        cpuInBoat  = next.inBoat;
+        if (next.boatR !== -1) cpuBoat = {r: next.boatR, c: next.boatC};
+        ap--;
+        lastDigPos = null; // new position — allow dig check on next iteration
+
+        // Record in cross-turn visit history (capped at 6 entries)
+        cpuVisitHistory.push(`${next.r},${next.c}`);
+        if (cpuVisitHistory.length > 6) cpuVisitHistory.shift();
 
         logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
 
