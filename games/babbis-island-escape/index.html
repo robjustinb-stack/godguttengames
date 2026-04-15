@@ -770,6 +770,8 @@
 
     // ── CPU knowledge (deduced from Q&A, NOT direct access to placed) ─
     let cpuKnowledge = {};   // initialised in startGame via initCpuKnowledge()
+    let cpuKeyCandidates   = []; // ordered tiles where key might be (nearest-first)
+    let cpuChestCandidates = []; // ordered land tiles where chest might be (nearest-first)
 
     const HINTS = {
       chest: 'Place your chest on a land tile (green)',
@@ -963,6 +965,16 @@
       gameLog.length=0; pendingCpuQuestion=null; selectedQuestion=null;
       initCpuKnowledge();
 
+      // Initialise candidate arrays sorted nearest-first from CPU start position
+      cpuKeyCandidates=[]; cpuChestCandidates=[];
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        cpuKeyCandidates.push({r,c});
+        if (leftMap[r][c]==='land') cpuChestCandidates.push({r,c});
+      }
+      const cpuDist = t => Math.abs(t.r-cpuPawn.r)+Math.abs(t.c-cpuPawn.c);
+      cpuKeyCandidates.sort((a,b)=>cpuDist(a)-cpuDist(b));
+      cpuChestCandidates.sort((a,b)=>cpuDist(a)-cpuDist(b));
+
       updateInventoryUI(); updateLieStatus();
       document.getElementById('inventoryBar').classList.remove('hidden');
       document.querySelectorAll('#rightGrid td.cell').forEach(td => td.classList.remove('inactive'));
@@ -1053,43 +1065,6 @@
       return moves.filter(({r,c})=>{const k=`${r},${c}`; return seen.has(k)?false:(seen.add(k),true);});
     }
 
-    // ── CPU boat-aware BFS ─────────────────────────────────────────
-    // Returns all land tiles reachable within `steps` steps, with boat final position.
-    function getCpuReachable(startPawn, startBoat, startInBoat, steps) {
-      const sk = (pr,pc,ib,br,bc) => `${pr},${pc},${ib?1:0},${br},${bc}`;
-      const visited = new Set();
-      const init = {
-        pr:startPawn.r, pc:startPawn.c, ib:startInBoat,
-        br:startBoat?startBoat.r:-1, bc:startBoat?startBoat.c:-1, d:0
-      };
-      visited.add(sk(init.pr,init.pc,init.ib,init.br,init.bc));
-      const queue=[init], results=[];
-
-      while (queue.length) {
-        const {pr,pc,ib,br,bc,d} = queue.shift();
-        if (d>0) results.push({r:pr,c:pc,inBoat:ib,boatR:br,boatC:bc,steps:d});
-        if (d>=steps) continue;
-
-        const or_=ib?br:pr, oc=ib?bc:pc;
-        for (const [dr,dc] of DIRS) {
-          const nr=or_+dr, nc=oc+dc;
-          if (nr<0||nr>=ROWS||nc<0||nc>=COLS) continue;
-          const tile=leftMap[nr][nc];
-          let ns=null;
-          if (!ib) {
-            if (tile==='land') ns={pr:nr,pc:nc,ib:false,br,bc,d:d+1};
-            else if (br!==-1&&nr===br&&nc===bc) ns={pr:nr,pc:nc,ib:true,br,bc,d:d+1};
-          } else {
-            if (tile==='water') ns={pr:nr,pc:nc,ib:true,br:nr,bc:nc,d:d+1};
-            else if (tile==='land') ns={pr:nr,pc:nc,ib:false,br,bc,d:d+1};
-          }
-          if (ns) { const k=sk(ns.pr,ns.pc,ns.ib,ns.br,ns.bc); if(!visited.has(k)){visited.add(k);queue.push(ns);} }
-        }
-      }
-      // Return all reachable positions — land AND in-boat water tiles
-      // (CPU can fish items placed on water tiles while in its boat)
-      return results;
-    }
 
     // ── CPU knowledge system ──────────────────────────────────────────
     function initCpuKnowledge() {
@@ -1152,76 +1127,181 @@
       }
     }
 
-    // Returns the tile CPU should move toward (based on knowledge).
-    // When unconfirmed, picks the NEAREST candidate to the CPU's current position,
-    // preferring tiles not in cpuVisitHistory. This avoids the centroid-oscillation
-    // bug where an abstract average point causes the BFS to flip-flop between tiles.
-    function getCpuTarget() {
-      if (cpuInventory.manual) return {r:2, c:0}; // head to star
+    // ── CPU State Machine ──────────────────────────────────────────
+    // States: 'hunt_key' → 'hunt_chest' → 'escape'
+    function getCpuState() {
+      if (cpuInventory.manual) return 'escape';
+      if (cpuInventory.key)    return 'hunt_chest';
+      return 'hunt_key';
+    }
 
-      const item = cpuInventory.key ? 'chest' : 'key';
-      const k = cpuKnowledge[item];
+    // Returns the best next target tile from the relevant candidates array.
+    // Prefers unvisited non-current tiles, then any non-current, then current as last resort.
+    function getNextCpuTarget() {
+      const state = getCpuState();
+      if (state === 'escape') return {r:2, c:0};
 
-      if (k && k.confirmed) return k.confirmed;
+      const cands  = state === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
+      if (cands.length === 0) return {r:2, c:2};
 
-      if (k && k.possible.size > 0) {
-        const curKey  = `${cpuPawn.r},${cpuPawn.c}`;
-        const histSet = new Set(cpuVisitHistory);
-        const all = [...k.possible].map(t => { const [r,c]=t.split(',').map(Number); return {r,c,key:t}; });
+      const histSet = new Set(cpuVisitHistory);
+      const curKey  = `${cpuPawn.r},${cpuPawn.c}`;
 
-        // Priority 1: unvisited tiles that are not the current position
-        const unvisited  = all.filter(p => !histSet.has(p.key) && p.key !== curKey);
-        // Priority 2: any tile that is not the current position (even if visited)
-        const nonCurrent = all.filter(p => p.key !== curKey);
-        // Priority 3: current position only when it is the sole remaining candidate
-        const pool = unvisited.length > 0 ? unvisited
-                   : nonCurrent.length > 0 ? nonCurrent
-                   : all;
-
-        // Among the pool, pick the tile nearest to the CPU's current position
-        let best = null, bd = Infinity;
-        for (const p of pool) {
-          const d = Math.abs(p.r - cpuPawn.r) + Math.abs(p.c - cpuPawn.c);
-          if (d < bd) { bd = d; best = p; }
-        }
-        if (best) return {r: best.r, c: best.c};
+      // Priority 1: unvisited, non-current
+      for (const t of cands) {
+        const k = `${t.r},${t.c}`;
+        if (!histSet.has(k) && k !== curKey) return t;
       }
-      return {r:2, c:2}; // fallback
+      // Priority 2: any non-current
+      for (const t of cands) {
+        if (`${t.r},${t.c}` !== curKey) return t;
+      }
+      // Priority 3: current tile (sole candidate)
+      return cands[0];
     }
 
-    // Returns true if CPU should attempt to dig on its current tile
-    function shouldCpuDig() {
-      const item = !cpuInventory.key ? 'key' : (!cpuInventory.manual ? 'chest' : null);
-      if (!item) return false;
-      const k = cpuKnowledge[item];
-      if (!k) return false;
+    // Single-step BFS on leftMap toward (targetR, targetC).
+    // Returns {r, c, inBoat, boatR, boatC} for the first step, or null.
+    function cpuBFS(targetR, targetC) {
+      if (cpuPawn.r === targetR && cpuPawn.c === targetC) return null;
 
-      const pos = `${cpuPawn.r},${cpuPawn.c}`;
-      if (!k.possible.has(pos)) return false;  // ruled out
+      const sk = (pr,pc,ib,br,bc) => `${pr},${pc},${ib?1:0},${br},${bc}`;
+      const startKey = sk(cpuPawn.r, cpuPawn.c, cpuInBoat,
+                          cpuBoat ? cpuBoat.r : -1, cpuBoat ? cpuBoat.c : -1);
+      const parent = new Map([[startKey, null]]);
+      const queue  = [{
+        pr: cpuPawn.r, pc: cpuPawn.c, ib: cpuInBoat,
+        br: cpuBoat ? cpuBoat.r : -1, bc: cpuBoat ? cpuBoat.c : -1
+      }];
 
-      if (k.confirmed && k.confirmed.r===cpuPawn.r && k.confirmed.c===cpuPawn.c) return true; // certain
-
-      const n = k.possible.size;
-      const prob = n<=1 ? 1.0 : n<=2 ? 0.8 : n<=4 ? 0.6 : 0.4;
-      return Math.random() < prob;
+      while (queue.length) {
+        const {pr,pc,ib,br,bc} = queue.shift();
+        const curKey = sk(pr,pc,ib,br,bc);
+        const or_ = ib ? br : pr, oc = ib ? bc : pc;
+        for (const [dr,dc] of DIRS) {
+          const nr=or_+dr, nc=oc+dc;
+          if (nr<0||nr>=ROWS||nc<0||nc>=COLS) continue;
+          const tile=leftMap[nr][nc];
+          let ns=null;
+          if (!ib) {
+            if (tile==='land') ns={pr:nr,pc:nc,ib:false,br,bc};
+            else if (br!==-1&&nr===br&&nc===bc) ns={pr:nr,pc:nc,ib:true,br,bc};
+          } else {
+            if (tile==='water') ns={pr:nr,pc:nc,ib:true,br:nr,bc:nc};
+            else if (tile==='land') ns={pr:nr,pc:nc,ib:false,br,bc};
+          }
+          if (!ns) continue;
+          const k=sk(ns.pr,ns.pc,ns.ib,ns.br,ns.bc);
+          if (parent.has(k)) continue;
+          parent.set(k, curKey);
+          if (ns.pr===targetR && ns.pc===targetC) {
+            let cur=k, prev=parent.get(cur);
+            while (prev !== startKey) { cur=prev; prev=parent.get(cur); }
+            const p=cur.split(',');
+            return {r:+p[0], c:+p[1], inBoat:p[2]==='1', boatR:+p[3], boatC:+p[4]};
+          }
+          queue.push(ns);
+        }
+      }
+      return null;
     }
 
-    function pickBestCpuMove(moves) {
-      const target = getCpuTarget();
-      return moves.reduce((b,t)=>{
-        const dt=Math.abs(t.r-target.r)+Math.abs(t.c-target.c);
-        const db=Math.abs(b.r-target.r)+Math.abs(b.c-target.c);
-        return dt<db ? t : b;
-      }, moves[0]);
+    // Move CPU one tile toward getNextCpuTarget().
+    // If target unreachable, pops it from candidates and retries.
+    // Returns true on success, 'mine' if mine hit, false if no move possible.
+    function cpuDoMove() {
+      const state = getCpuState();
+      const cands = state === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
+
+      let target = getNextCpuTarget();
+      let next   = cpuBFS(target.r, target.c);
+
+      if (!next && state !== 'escape' && cands.length > 0) {
+        let tries = 0;
+        while (!next && cands.length > 0 && tries < 10) {
+          cands.shift();
+          target = getNextCpuTarget();
+          next   = cpuBFS(target.r, target.c);
+          tries++;
+        }
+      }
+
+      if (!next) return false;
+
+      const prevLabel = coordLabel(cpuPawn);
+      cpuPawn   = {r: next.r, c: next.c};
+      cpuInBoat = next.inBoat;
+      if (next.boatR !== -1) cpuBoat = {r: next.boatR, c: next.boatC};
+
+      cpuVisitHistory.push(`${next.r},${next.c}`);
+      if (cpuVisitHistory.length > 10) cpuVisitHistory.shift();
+
+      logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
+
+      if (placed.mine && cpuPawn.r===placed.mine.r && cpuPawn.c===placed.mine.c) {
+        const mpos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
+        logGameEvent({type:'mine', text:`💥 Your mine at ${mpos} went off! CPU skips next turn.`});
+        showMessage('💥 Your mine went off — the CPU will skip its next turn!');
+        return 'mine';
+      }
+      return true;
     }
 
-    // Pick the CPU question that splits remaining possible tiles most evenly.
-    // pool is pre-filtered to unasked questions by the caller.
-    function pickBestCpuQuestion(pool) {
-      const item = !cpuInventory.key ? 'key' : 'chest';
-      const k = cpuKnowledge[item];
+    // Attempt to dig on the CPU's current tile for the target item.
+    // Returns true if item collected, false if nothing found or not a candidate.
+    function cpuDoDig() {
+      const state = getCpuState();
+      if (state === 'escape') return false;
 
-      // Prefer questions about the current target item with a usable constraint
+      const pos  = coordLabel(cpuPawn);
+      const curR = cpuPawn.r, curC = cpuPawn.c;
+      const cands = state === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
+
+      if (!cands.some(t => t.r===curR && t.c===curC)) return false;
+
+      if (state === 'hunt_key') {
+        if (placed.key && placed.key.r===curR && placed.key.c===curC) {
+          cpuInventory.key=true; placed.key=null;
+          cpuKnowledge.key.confirmed=null; cpuKnowledge.key.possible=new Set();
+          cpuKeyCandidates   = cpuKeyCandidates.filter(t => !(t.r===curR && t.c===curC));
+          cpuChestCandidates = cpuChestCandidates.filter(t => !(t.r===curR && t.c===curC));
+          logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — found the 🗝️ key!`});
+          showMessage('🔴 CPU found the key on your island!');
+          return true;
+        } else {
+          cpuKeyCandidates   = cpuKeyCandidates.filter(t => !(t.r===curR && t.c===curC));
+          cpuChestCandidates = cpuChestCandidates.filter(t => !(t.r===curR && t.c===curC));
+          cpuKnowledge.key.possible.delete(`${curR},${curC}`);
+          cpuKnowledge.chest.possible.delete(`${curR},${curC}`);
+          logGameEvent({type:'dig', text:`🔴 CPU dug at ${pos} — nothing found.`});
+          showMessage(`🔴 CPU dug at ${pos} — nothing there.`);
+          return false;
+        }
+      } else { // hunt_chest
+        if (placed.chest && placed.chest.r===curR && placed.chest.c===curC) {
+          cpuInventory.manual=true; placed.chest=null;
+          cpuKnowledge.chest.confirmed=null; cpuKnowledge.chest.possible=new Set();
+          cpuChestCandidates = cpuChestCandidates.filter(t => !(t.r===curR && t.c===curC));
+          logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — retrieved the 📜 manual!`});
+          showMessage('🔴 CPU retrieved the manual — heading for the ★!');
+          return true;
+        } else {
+          cpuKeyCandidates   = cpuKeyCandidates.filter(t => !(t.r===curR && t.c===curC));
+          cpuChestCandidates = cpuChestCandidates.filter(t => !(t.r===curR && t.c===curC));
+          cpuKnowledge.key.possible.delete(`${curR},${curC}`);
+          cpuKnowledge.chest.possible.delete(`${curR},${curC}`);
+          logGameEvent({type:'dig', text:`🔴 CPU dug at ${pos} — nothing found.`});
+          showMessage(`🔴 CPU dug at ${pos} — nothing there.`);
+          return false;
+        }
+      }
+    }
+
+    // Pick the question from pool that maximises information (closest to 50/50 split).
+    function cpuPickBestQuestion(pool) {
+      const item = getCpuState() === 'hunt_key' ? 'key' : 'chest';
+      const k    = cpuKnowledge[item];
+
       let candidates = pool.filter(q => q.constraint && q.constraint.item === item);
       if (candidates.length === 0) candidates = pool.filter(q => q.constraint);
       if (candidates.length === 0) candidates = pool;
@@ -1243,31 +1323,12 @@
           else if (con.type==='pinpoint') m = t===`${con.pawnR},${con.pawnC}`;
           if (m) yes++;
         }
-        // Score: distance from 50/50 split — lower is better (more information)
         let score = Math.abs(yes / k.possible.size - 0.5);
-        // Prefer row/col questions — clean half-plane cuts, works well early game
         if (con.type==='row' || con.type==='col') score -= 0.05;
-        // Slight penalty for purely local questions — save AP for movement
         if (con.type==='adjacent' || con.type==='pinpoint') score += 0.05;
         if (score < bestScore) { bestScore=score; bestQ=q; }
       }
       return bestQ || candidates[Math.floor(Math.random()*candidates.length)];
-    }
-
-    // Decide whether CPU should spend its turn asking a question.
-    // Probability is adaptive: higher when fewer possible locations remain
-    // (information is most valuable when close to pinpointing) and when
-    // questions are running out.
-    function cpuShouldAskQuestion() {
-      if (cpuInventory.manual || cpuQuestionsLeft <= 0) return false;
-      const item = cpuInventory.key ? 'chest' : 'key';
-      const k = cpuKnowledge[item];
-      if (!k || k.confirmed) return false; // already know exact position
-      const n = k.possible.size;
-      let prob = n <= 2 ? 0.60 : n <= 5 ? 0.40 : n <= 12 ? 0.30 : 0.20;
-      // Urgency bonus: use remaining questions before they expire
-      if (cpuQuestionsLeft <= 2) prob = Math.min(0.80, prob + 0.25);
-      return Math.random() < prob;
     }
 
     function applyHighlights(tiles, gridId) {
@@ -1513,6 +1574,27 @@
       // Update CPU knowledge with what the player actually said (may be dishonest)
       if (pendingCpuQuestion.constraint) {
         applyCpuConstraint(pendingCpuQuestion.constraint, clickedYes);
+        // Also filter the new candidate arrays
+        const con = pendingCpuQuestion.constraint;
+        const filterCands = arr => {
+          const out = arr.filter(t => {
+            const {r,c} = t;
+            let matches;
+            switch (con.type) {
+              case 'land':     matches = leftMap[r][c]==='land'; break;
+              case 'water':    matches = leftMap[r][c]==='water'; break;
+              case 'row':      matches = r===con.value; break;
+              case 'col':      matches = c===con.value; break;
+              case 'adjacent': matches = DIRS.some(([dr,dc])=>con.pawnR+dr===r&&con.pawnC+dc===c); break;
+              case 'pinpoint': matches = r===con.pawnR && c===con.pawnC; break;
+              default: return true;
+            }
+            return clickedYes ? matches : !matches;
+          });
+          return out.length > 0 ? out : arr; // graceful fallback if player lied and emptied array
+        };
+        if (con.item === 'key')   cpuKeyCandidates   = filterCands(cpuKeyCandidates);
+        if (con.item === 'chest') cpuChestCandidates = filterCands(cpuChestCandidates);
       }
 
       logGameEvent({type:'question', who:'cpu', question:pendingCpuQuestion.text, answer:clickedYes?'YES':'NO', lied});
@@ -1754,39 +1836,11 @@
       return runBFS(false, false) || runBFS(true, false) || runBFS(true, true);
     }
 
-    // ── CPU dig helper — attempts a dig at current position, returns true if item found ──
-    function cpuAttemptDig() {
-      const pos = coordLabel(cpuPawn);
-      if (!cpuInventory.key && placed.key && placed.key.r===cpuPawn.r && placed.key.c===cpuPawn.c) {
-        cpuInventory.key=true; placed.key=null;
-        cpuKnowledge.key.confirmed=null; cpuKnowledge.key.possible=new Set();
-        logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — found the 🗝️ key!`});
-        showMessage('🔴 CPU found the key on your island!');
-        return true;
-      }
-      if (cpuInventory.key && !cpuInventory.manual && placed.chest && placed.chest.r===cpuPawn.r && placed.chest.c===cpuPawn.c) {
-        cpuInventory.manual=true;
-        placed.chest=null; // remove chest icon from map now that CPU has the manual
-        cpuKnowledge.chest.confirmed=null; cpuKnowledge.chest.possible=new Set();
-        logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — retrieved the 📜 manual!`});
-        showMessage('🔴 CPU retrieved the manual — heading for the ★!');
-        return true;
-      }
-      // Nothing here — remove from possibility sets
-      cpuKnowledge.key.possible.delete(`${cpuPawn.r},${cpuPawn.c}`);
-      cpuKnowledge.chest.possible.delete(`${cpuPawn.r},${cpuPawn.c}`);
-      logGameEvent({type:'dig', text:`🔴 CPU dug at ${pos} — nothing found.`});
-      showMessage(`🔴 CPU dug at ${pos} — nothing there.`);
-      return false;
-    }
-
-    // ── CPU turn ───────────────────────────────────────────────────
-    // Turn structure mirrors the player: roll dice → spend AP on move+dig in any order.
+    // ── CPU turn (state machine) ───────────────────────────────────
     function cpuTurn() {
-      console.log('[CPU] cpuTurn() start — pos:', cpuPawn, 'inv:', JSON.stringify(cpuInventory), 'gameOver:', gameOver);
       if (gameOver) return;
 
-      // ── Stunned by mine ──
+      // 1. Stunned by mine
       if (cpuSkipNext) {
         cpuSkipNext=false;
         logGameEvent({type:'skip', text:'💨 CPU\'s turn skipped — stunned by your mine.'});
@@ -1795,193 +1849,78 @@
         return;
       }
 
-      // ── ESCAPE SPRINT: manual found — spend EVERY AP moving toward the star ──
-      // No questions, no digging — just move as fast as possible.
-      if (cpuInventory.manual) {
-        const escapeRoll = Math.floor(Math.random()*6)+1;
-        let escapeAp = escapeRoll, escapeLastTile = null;
-        console.log('[CPU] ESCAPE SPRINT rolled', escapeRoll);
-        while (escapeAp > 0) {
-          const next = getNextStepToward(2, 0, escapeLastTile);
-          if (!next) break;
-          const prevLabel = coordLabel(cpuPawn);
-          escapeLastTile  = `${cpuPawn.r},${cpuPawn.c}`;
-          cpuPawn   = {r: next.r, c: next.c};
-          cpuInBoat = next.inBoat;
-          if (next.boatR !== -1) cpuBoat = {r: next.boatR, c: next.boatC};
-          escapeAp--;
-          logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
-          if (placed.mine && cpuPawn.r===placed.mine.r && cpuPawn.c===placed.mine.c) {
-            const mpos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
-            logGameEvent({type:'mine', text:`💥 Your mine at ${mpos} went off! CPU skips next turn.`});
-            showMessage('💥 Your mine went off — the CPU will skip its next turn!');
-            renderLeft(); if (checkCpuWin()) return;
-            handTurnToPlayer(700); return;
-          }
-          renderLeft();
-          if (checkCpuWin()) return;
-        }
-        handTurnToPlayer(700); return;
-      }
-
-      // ── DECISION: Ask a question (uses the entire turn, no movement) ──
-      // Probability is adaptive based on how many possible locations remain.
-      console.log('[CPU] asking check — shouldAsk:', cpuShouldAskQuestion(), 'qLeft:', cpuQuestionsLeft);
-      if (cpuShouldAskQuestion()) {
-        const pool = buildCpuQuestionList();
-        const askedSet = new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
-        const fresh = pool.filter(q => !askedSet.has(q.text));
-        console.log('[CPU] question pool:', pool.length, 'fresh:', fresh.length);
-        if (fresh.length > 0) {
-          const q = pickBestCpuQuestion(fresh);
-          if (q) {
-            cpuQuestionsLeft = Math.max(0, cpuQuestionsLeft - 1);
-            pendingCpuQuestion = q;
-            console.log('[CPU] asking question:', q.text);
-            showCpuQuestionPanel(q);
-            return;
-          }
-        }
-      }
-
-      // ── Roll dice → action points ──
-      const roll = Math.floor(Math.random()*6)+1;
-      let ap = roll;
-      console.log('[CPU] rolled', roll, '— target:', JSON.stringify(getCpuTarget()));
-
-      // ── AP loop: exactly ONE tile (or one dig) per action point ──────────
-      // Each iteration either digs (costs 1 AP) or moves one tile (costs 1 AP).
-      // This prevents the teleport/oscillation bug that occurred when the old
-      // code consumed multiple AP in a single movement step.
-      //
-      // lastDigPos     — prevents digging the same tile twice per turn
-      // lastTileThisTurn — tile we just left; passed to getNextStepToward so
-      //                    it is never the first-choice next step (anti-oscillation)
-      // prevTargetKey  — detects when the CPU's target shifts; clears visit
-      //                  history so stale avoidances don't block the new route
-      let lastDigPos       = null;
-      let lastTileThisTurn = null;
-      let actionTaken      = false; // tracks whether any AP was spent this turn
-      const t0 = getCpuTarget();
-      let prevTargetKey    = `${t0.r},${t0.c}`;
-
-      while (ap > 0) {
-        const curKey = `${cpuPawn.r},${cpuPawn.c}`;
-        console.log('[CPU] AP loop — ap:', ap, 'pos:', curKey, 'target:', JSON.stringify(getCpuTarget()));
-
-        // ── Dig / fish on current tile (costs 1 AP) ──
-        if (!cpuInventory.manual && curKey !== lastDigPos && shouldCpuDig()) {
-          lastDigPos = curKey;
-          ap--;
-          actionTaken = true;
-          const found = cpuAttemptDig();
-          renderLeft();
-          if (checkCpuWin()) return;
-          if (found) {
-            // Item found → target has changed; reset navigation state
-            cpuVisitHistory  = [];
-            lastTileThisTurn = null;
-            const nt = getCpuTarget();
-            prevTargetKey    = `${nt.r},${nt.c}`;
-          }
-          continue;
-        }
-
-        // ── Move exactly one tile toward target (costs 1 AP) ──
-        const target    = getCpuTarget();
-        const targetKey = `${target.r},${target.c}`;
-
-        // If the target tile changed (e.g. after a failed dig updated knowledge),
-        // clear history so fresh paths are explored toward the new target.
-        if (targetKey !== prevTargetKey) {
-          cpuVisitHistory  = [];
-          lastTileThisTurn = null;
-          prevTargetKey    = targetKey;
-        }
-
-        const next = getNextStepToward(target.r, target.c, lastTileThisTurn);
-        console.log('[CPU] getNextStepToward(', target.r, target.c, ') =', next ? `${next.r},${next.c}` : 'null (breaking)');
-        if (!next) break; // already at target or no reachable path — done
-
-        const prevLabel  = coordLabel(cpuPawn);
-        lastTileThisTurn = curKey; // remember where we came from (anti-backtrack)
-
-        cpuPawn    = {r: next.r, c: next.c};
-        cpuInBoat  = next.inBoat;
-        if (next.boatR !== -1) cpuBoat = {r: next.boatR, c: next.boatC};
-        ap--;
-        actionTaken = true;
-        lastDigPos = null; // new position — allow dig check on next iteration
-
-        // Record in cross-turn visit history (capped at 10 entries)
-        cpuVisitHistory.push(`${next.r},${next.c}`);
-        if (cpuVisitHistory.length > 10) cpuVisitHistory.shift();
-
-        logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
-
-        // Mine check
-        if (placed.mine && cpuPawn.r===placed.mine.r && cpuPawn.c===placed.mine.c) {
-          const mpos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
-          logGameEvent({type:'mine', text:`💥 Your mine at ${mpos} went off! CPU skips next turn.`});
-          showMessage('💥 Your mine went off — the CPU will skip its next turn!');
-          renderLeft();
-          if (checkCpuWin()) return;
-          handTurnToPlayer(700); return;
-        }
-
-        renderLeft();
-        if (checkCpuWin()) return;
-
-        // Staleness check: stepped onto target tile but item isn't here — remove from possible set
-        if (!cpuInventory.manual) {
-          const staleItem = cpuInventory.key ? 'chest' : 'key';
-          const staleK    = cpuKnowledge[staleItem];
-          const staleT    = getCpuTarget();
-          if (staleK && !staleK.confirmed &&
-              cpuPawn.r === staleT.r && cpuPawn.c === staleT.c) {
-            const itemHere = staleItem === 'key'
-              ? (placed.key   && placed.key.r   === cpuPawn.r && placed.key.c   === cpuPawn.c)
-              : (placed.chest && placed.chest.r === cpuPawn.r && placed.chest.c === cpuPawn.c);
-            if (!itemHere) {
-              staleK.possible.delete(`${cpuPawn.r},${cpuPawn.c}`);
-              if (staleK.possible.size === 1) {
-                const [sr, sc] = [...staleK.possible][0].split(',').map(Number);
-                staleK.confirmed = {r: sr, c: sc};
-              } else if (staleK.possible.size === 0) {
-                staleK.confirmed = null;
-              }
-              cpuVisitHistory  = [];
-              lastTileThisTurn = null;
-              const nt2 = getCpuTarget();
-              prevTargetKey    = `${nt2.r},${nt2.c}`;
+      // 2. Ask a question? Only if: questions left, not escaping, candidates > 3
+      const state0 = getCpuState();
+      if (state0 !== 'escape' && cpuQuestionsLeft > 0) {
+        const cands0 = state0 === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
+        if (cands0.length > 3) {
+          const pool     = buildCpuQuestionList();
+          const askedSet = new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
+          const fresh    = pool.filter(q => !askedSet.has(q.text));
+          if (fresh.length > 0) {
+            const q = cpuPickBestQuestion(fresh);
+            if (q) {
+              cpuQuestionsLeft = Math.max(0, cpuQuestionsLeft - 1);
+              pendingCpuQuestion = q;
+              showCpuQuestionPanel(q);
+              return;
             }
           }
         }
       }
 
-      // ── Guarantee at least one action per turn ────────────────────────
-      // If the AP loop exited without spending any AP (e.g. target momentarily
-      // unreachable), force one move toward the current target ignoring all
-      // avoidances. If even that is impossible, force a dig on the current tile.
-      if (!actionTaken) {
-        const tgt    = getCpuTarget();
-        const forced = getNextStepToward(tgt.r, tgt.c, null); // null = no backtrack block
-        if (forced) {
-          const prevLabel = coordLabel(cpuPawn);
-          cpuPawn   = {r: forced.r, c: forced.c};
-          cpuInBoat = forced.inBoat;
-          if (forced.boatR !== -1) cpuBoat = {r: forced.boatR, c: forced.boatC};
-          cpuVisitHistory.push(`${forced.r},${forced.c}`);
-          if (cpuVisitHistory.length > 10) cpuVisitHistory.shift();
-          logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
+      // 3. Roll dice
+      const roll = Math.floor(Math.random()*6)+1;
+      let ap = roll;
+      let actionTaken = false;
+
+      // 4. AP loop
+      while (ap > 0) {
+        const curState = getCpuState();
+
+        // ESCAPE: spend every AP moving toward the star
+        if (curState === 'escape') {
+          const res = cpuDoMove();
+          ap--;
+          if (res === 'mine') { renderLeft(); handTurnToPlayer(700); return; }
+          if (res) actionTaken = true;
           renderLeft();
           if (checkCpuWin()) return;
-        } else {
-          // Target genuinely unreachable — dig on current tile as last resort
-          cpuAttemptDig();
-          renderLeft();
-          if (checkCpuWin()) return;
+          continue;
         }
+
+        // On a candidate tile for the current target? Dig.
+        const cands = curState === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
+        if (cands.some(t => t.r===cpuPawn.r && t.c===cpuPawn.c)) {
+          const found = cpuDoDig();
+          ap--;
+          actionTaken = true;
+          renderLeft();
+          if (checkCpuWin()) return;
+          if (found) cpuVisitHistory = []; // reset navigation after state change
+          continue;
+        }
+
+        // Otherwise move toward next target
+        const res = cpuDoMove();
+        ap--;
+        if (res === 'mine') { renderLeft(); handTurnToPlayer(700); return; }
+        if (res) {
+          actionTaken = true;
+        } else {
+          break; // can't move or dig — exit to avoid infinite loop
+        }
+        renderLeft();
+        if (checkCpuWin()) return;
+      }
+
+      // 5. Guarantee at least one action per turn
+      if (!actionTaken) {
+        const res = cpuDoMove();
+        if (res === 'mine') { renderLeft(); handTurnToPlayer(700); return; }
+        if (!res) cpuDoDig(); // last resort
+        renderLeft();
+        if (checkCpuWin()) return;
       }
 
       handTurnToPlayer(700);
