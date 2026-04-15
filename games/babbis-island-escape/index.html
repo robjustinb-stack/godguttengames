@@ -770,8 +770,13 @@
 
     // ── CPU knowledge (deduced from Q&A, NOT direct access to placed) ─
     let cpuKnowledge = {};   // initialised in startGame via initCpuKnowledge()
-    let cpuKeyCandidates   = []; // ordered tiles where key might be (nearest-first)
-    let cpuChestCandidates = []; // ordered land tiles where chest might be (nearest-first)
+    let cpuKeyCandidatesHigh   = []; // High-confidence key candidates (nearest-first)
+    let cpuKeyCandidatesLow    = []; // Low-confidence key candidates
+    let cpuChestCandidatesHigh = []; // High-confidence chest candidates (nearest-first)
+    let cpuChestCandidatesLow  = []; // Low-confidence chest candidates
+    let cpuDugTiles            = []; // All physically attempted digs — never cleared
+    let cpuDetectedPlayerLie   = false;
+    let cpuPlayerAnswerLog     = []; // {constraint, answer} — all player answers to CPU questions
 
     const HINTS = {
       chest: 'Place your chest on a land tile (green)',
@@ -965,15 +970,16 @@
       gameLog.length=0; pendingCpuQuestion=null; selectedQuestion=null;
       initCpuKnowledge();
 
-      // Initialise candidate arrays sorted nearest-first from CPU start position
-      cpuKeyCandidates=[]; cpuChestCandidates=[];
+      // Initialise dual candidate arrays sorted nearest-first from CPU start position
+      cpuDetectedPlayerLie=false; cpuPlayerAnswerLog=[]; cpuDugTiles=[];
+      cpuKeyCandidatesHigh=[]; cpuKeyCandidatesLow=[]; cpuChestCandidatesHigh=[]; cpuChestCandidatesLow=[];
       for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
-        cpuKeyCandidates.push({r,c});
-        if (leftMap[r][c]==='land') cpuChestCandidates.push({r,c});
+        cpuKeyCandidatesHigh.push({r,c});
+        if (leftMap[r][c]==='land') cpuChestCandidatesHigh.push({r,c});
       }
       const cpuDist = t => Math.abs(t.r-cpuPawn.r)+Math.abs(t.c-cpuPawn.c);
-      cpuKeyCandidates.sort((a,b)=>cpuDist(a)-cpuDist(b));
-      cpuChestCandidates.sort((a,b)=>cpuDist(a)-cpuDist(b));
+      cpuKeyCandidatesHigh.sort((a,b)=>cpuDist(a)-cpuDist(b));
+      cpuChestCandidatesHigh.sort((a,b)=>cpuDist(a)-cpuDist(b));
 
       updateInventoryUI(); updateLieStatus();
       document.getElementById('inventoryBar').classList.remove('hidden');
@@ -1135,13 +1141,88 @@
       return 'hunt_key';
     }
 
+    // Safety reset: if both High and Low are empty, repopulate High (excluding physically dug tiles).
+    function cpuEnsureCandidates() {
+      const dugSet = new Set(cpuDugTiles.map(t=>`${t.r},${t.c}`));
+      if (cpuKeyCandidatesHigh.length===0 && cpuKeyCandidatesLow.length===0) {
+        for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+          if (!dugSet.has(`${r},${c}`)) cpuKeyCandidatesHigh.push({r,c});
+        }
+      }
+      if (cpuChestCandidatesHigh.length===0 && cpuChestCandidatesLow.length===0) {
+        for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+          if (leftMap[r][c]==='land' && !dugSet.has(`${r},${c}`)) cpuChestCandidatesHigh.push({r,c});
+        }
+      }
+    }
+
+    // Called when a contradiction proves the player lied. Merges Low back into High and clears Low.
+    function cpuDetectLie() {
+      if (cpuDetectedPlayerLie) return;
+      cpuDetectedPlayerLie = true;
+      console.log('[CPU] Lie detected — restoring candidates');
+      cpuKeyCandidatesHigh   = [...cpuKeyCandidatesHigh,   ...cpuKeyCandidatesLow];
+      cpuChestCandidatesHigh = [...cpuChestCandidatesHigh, ...cpuChestCandidatesLow];
+      cpuKeyCandidatesLow    = [];
+      cpuChestCandidatesLow  = [];
+      const dugSet = new Set(cpuDugTiles.map(t=>`${t.r},${t.c}`));
+      cpuKeyCandidatesHigh   = cpuKeyCandidatesHigh.filter(t=>!dugSet.has(`${t.r},${t.c}`));
+      cpuChestCandidatesHigh = cpuChestCandidatesHigh.filter(t=>!dugSet.has(`${t.r},${t.c}`));
+    }
+
+    // Scans cpuPlayerAnswerLog for logical contradictions; calls cpuDetectLie if found.
+    function cpuCheckContradictions() {
+      if (cpuDetectedPlayerLie) return;
+      const keyLog = cpuPlayerAnswerLog.filter(e => e.constraint && e.constraint.item === 'key');
+      // YES to "key on land" AND YES to "key in water"
+      if (keyLog.some(e=>e.constraint.type==='land'&&e.answer===true) &&
+          keyLog.some(e=>e.constraint.type==='water'&&e.answer===true)) { cpuDetectLie(); return; }
+      // NO to "key on land" AND NO to "key in water"
+      if (keyLog.some(e=>e.constraint.type==='land'&&e.answer===false) &&
+          keyLog.some(e=>e.constraint.type==='water'&&e.answer===false)) { cpuDetectLie(); return; }
+      // YES to "key in row X" AND YES to "key in row Y" where X !== Y
+      const rowYes = keyLog.filter(e=>e.constraint.type==='row'&&e.answer===true).map(e=>e.constraint.value);
+      if (new Set(rowYes).size >= 2) { cpuDetectLie(); return; }
+      // YES to "key in col X" AND YES to "key in col Y" where X !== Y
+      const colYes = keyLog.filter(e=>e.constraint.type==='col'&&e.answer===true).map(e=>e.constraint.value);
+      if (new Set(colYes).size >= 2) { cpuDetectLie(); return; }
+      // Any combination that makes it logically impossible for the key to exist on any tile
+      if (keyLog.length > 0) {
+        let anyValid = false;
+        outer: for (let r=0;r<ROWS;r++) {
+          for (let c=0;c<COLS;c++) {
+            let ok = true;
+            for (const {constraint:con, answer} of keyLog) {
+              let m;
+              switch (con.type) {
+                case 'land':     m = leftMap[r][c]==='land'; break;
+                case 'water':    m = leftMap[r][c]==='water'; break;
+                case 'row':      m = r===con.value; break;
+                case 'col':      m = c===con.value; break;
+                case 'adjacent': m = DIRS.some(([dr,dc])=>con.pawnR+dr===r&&con.pawnC+dc===c); break;
+                case 'pinpoint': m = r===con.pawnR && c===con.pawnC; break;
+                default: m = true;
+              }
+              if (answer !== m) { ok=false; break; }
+            }
+            if (ok) { anyValid=true; break outer; }
+          }
+        }
+        if (!anyValid) { cpuDetectLie(); return; }
+      }
+    }
+
     // Returns the best next target tile from the relevant candidates array.
-    // Prefers unvisited non-current tiles, then any non-current, then current as last resort.
+    // Uses High candidates first, then Low. Prefers unvisited non-current tiles.
     function getNextCpuTarget() {
       const state = getCpuState();
       if (state === 'escape') return {r:2, c:0};
 
-      const cands  = state === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
+      cpuEnsureCandidates();
+
+      const highList = state === 'hunt_key' ? cpuKeyCandidatesHigh : cpuChestCandidatesHigh;
+      const lowList  = state === 'hunt_key' ? cpuKeyCandidatesLow  : cpuChestCandidatesLow;
+      const cands    = highList.length > 0 ? highList : lowList;
       if (cands.length === 0) return {r:2, c:2};
 
       const histSet = new Set(cpuVisitHistory);
@@ -1210,16 +1291,17 @@
     // If target unreachable, pops it from candidates and retries.
     // Returns true on success, 'mine' if mine hit, false if no move possible.
     function cpuDoMove() {
-      const state = getCpuState();
-      const cands = state === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
+      const state    = getCpuState();
+      const highList = state === 'hunt_key' ? cpuKeyCandidatesHigh : cpuChestCandidatesHigh;
+      const lowList  = state === 'hunt_key' ? cpuKeyCandidatesLow  : cpuChestCandidatesLow;
 
       let target = getNextCpuTarget();
       let next   = cpuBFS(target.r, target.c);
 
-      if (!next && state !== 'escape' && cands.length > 0) {
+      if (!next && state !== 'escape' && (highList.length > 0 || lowList.length > 0)) {
         let tries = 0;
-        while (!next && cands.length > 0 && tries < 10) {
-          cands.shift();
+        while (!next && (highList.length > 0 || lowList.length > 0) && tries < 10) {
+          if (highList.length > 0) highList.shift(); else lowList.shift();
           target = getNextCpuTarget();
           next   = cpuBFS(target.r, target.c);
           tries++;
@@ -1239,7 +1321,16 @@
       logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
 
       if (placed.mine && cpuPawn.r===placed.mine.r && cpuPawn.c===placed.mine.c) {
-        const mpos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
+        const mpos=coordLabel(cpuPawn);
+        // Physical check: mine position vs. prior player answers
+        if (!cpuDetectedPlayerLie) {
+          const mr=cpuPawn.r, mc=cpuPawn.c;
+          for (const {constraint:con, answer} of cpuPlayerAnswerLog) {
+            if (!con) continue;
+            if (con.type==='pinpoint' && answer===true && con.pawnR===mr && con.pawnC===mc) { cpuDetectLie(); break; }
+          }
+        }
+        placed.mine=null; cpuSkipNext=true;
         logGameEvent({type:'mine', text:`💥 Your mine at ${mpos} went off! CPU skips next turn.`});
         showMessage('💥 Your mine went off — the CPU will skip its next turn!');
         return 'mine';
@@ -1253,26 +1344,52 @@
       const state = getCpuState();
       if (state === 'escape') return false;
 
-      const pos  = coordLabel(cpuPawn);
-      const curR = cpuPawn.r, curC = cpuPawn.c;
-      const cands = state === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
+      const pos   = coordLabel(cpuPawn);
+      const curR  = cpuPawn.r, curC = cpuPawn.c;
+      const highC = state === 'hunt_key' ? cpuKeyCandidatesHigh : cpuChestCandidatesHigh;
+      const lowC  = state === 'hunt_key' ? cpuKeyCandidatesLow  : cpuChestCandidatesLow;
 
-      if (!cands.some(t => t.r===curR && t.c===curC)) return false;
+      if (!highC.some(t => t.r===curR && t.c===curC) && !lowC.some(t => t.r===curR && t.c===curC)) return false;
+
+      const removeFromAll = () => {
+        cpuKeyCandidatesHigh   = cpuKeyCandidatesHigh.filter(t => !(t.r===curR && t.c===curC));
+        cpuKeyCandidatesLow    = cpuKeyCandidatesLow.filter(t => !(t.r===curR && t.c===curC));
+        cpuChestCandidatesHigh = cpuChestCandidatesHigh.filter(t => !(t.r===curR && t.c===curC));
+        cpuChestCandidatesLow  = cpuChestCandidatesLow.filter(t => !(t.r===curR && t.c===curC));
+        cpuDugTiles.push({r:curR, c:curC});
+      };
 
       if (state === 'hunt_key') {
         if (placed.key && placed.key.r===curR && placed.key.c===curC) {
           cpuInventory.key=true; placed.key=null;
           cpuKnowledge.key.confirmed=null; cpuKnowledge.key.possible=new Set();
-          cpuKeyCandidates   = cpuKeyCandidates.filter(t => !(t.r===curR && t.c===curC));
-          cpuChestCandidates = cpuChestCandidates.filter(t => !(t.r===curR && t.c===curC));
+          removeFromAll();
+          // Physical confirmation: check if key position contradicts prior player answers
+          if (!cpuDetectedPlayerLie) {
+            for (const {constraint:con, answer} of cpuPlayerAnswerLog) {
+              if (!con || con.item !== 'key') continue;
+              let contradiction = false;
+              if (con.type==='land'  && answer===true  && leftMap[curR][curC]==='water') contradiction=true;
+              if (con.type==='row'   && answer===true  && con.value!==curR) contradiction=true;
+              if (con.type==='row'   && answer===false && con.value===curR)  contradiction=true;
+              if (con.type==='col'   && answer===true  && con.value!==curC) contradiction=true;
+              if (con.type==='col'   && answer===false && con.value===curC)  contradiction=true;
+              if (contradiction) { cpuDetectLie(); break; }
+            }
+          }
           logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — found the 🗝️ key!`});
           showMessage('🔴 CPU found the key on your island!');
           return true;
         } else {
-          cpuKeyCandidates   = cpuKeyCandidates.filter(t => !(t.r===curR && t.c===curC));
-          cpuChestCandidates = cpuChestCandidates.filter(t => !(t.r===curR && t.c===curC));
+          removeFromAll();
           cpuKnowledge.key.possible.delete(`${curR},${curC}`);
           cpuKnowledge.chest.possible.delete(`${curR},${curC}`);
+          // Dig confirmed empty: check if player pinpoint-confirmed key here
+          if (!cpuDetectedPlayerLie) {
+            for (const {constraint:con, answer} of cpuPlayerAnswerLog) {
+              if (con && con.item==='key' && con.type==='pinpoint' && answer===true && con.pawnR===curR && con.pawnC===curC) { cpuDetectLie(); break; }
+            }
+          }
           logGameEvent({type:'dig', text:`🔴 CPU dug at ${pos} — nothing found.`});
           showMessage(`🔴 CPU dug at ${pos} — nothing there.`);
           return false;
@@ -1281,15 +1398,20 @@
         if (placed.chest && placed.chest.r===curR && placed.chest.c===curC) {
           cpuInventory.manual=true; placed.chest=null;
           cpuKnowledge.chest.confirmed=null; cpuKnowledge.chest.possible=new Set();
-          cpuChestCandidates = cpuChestCandidates.filter(t => !(t.r===curR && t.c===curC));
+          removeFromAll();
           logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — retrieved the 📜 manual!`});
           showMessage('🔴 CPU retrieved the manual — heading for the ★!');
           return true;
         } else {
-          cpuKeyCandidates   = cpuKeyCandidates.filter(t => !(t.r===curR && t.c===curC));
-          cpuChestCandidates = cpuChestCandidates.filter(t => !(t.r===curR && t.c===curC));
+          removeFromAll();
           cpuKnowledge.key.possible.delete(`${curR},${curC}`);
           cpuKnowledge.chest.possible.delete(`${curR},${curC}`);
+          // Dig confirmed empty: check if player pinpoint-confirmed chest here
+          if (!cpuDetectedPlayerLie) {
+            for (const {constraint:con, answer} of cpuPlayerAnswerLog) {
+              if (con && con.item==='chest' && con.type==='pinpoint' && answer===true && con.pawnR===curR && con.pawnC===curC) { cpuDetectLie(); break; }
+            }
+          }
           logGameEvent({type:'dig', text:`🔴 CPU dug at ${pos} — nothing found.`});
           showMessage(`🔴 CPU dug at ${pos} — nothing there.`);
           return false;
@@ -1574,27 +1696,46 @@
       // Update CPU knowledge with what the player actually said (may be dishonest)
       if (pendingCpuQuestion.constraint) {
         applyCpuConstraint(pendingCpuQuestion.constraint, clickedYes);
-        // Also filter the new candidate arrays
+        cpuPlayerAnswerLog.push({ constraint: pendingCpuQuestion.constraint, answer: clickedYes });
         const con = pendingCpuQuestion.constraint;
-        const filterCands = arr => {
-          const out = arr.filter(t => {
-            const {r,c} = t;
-            let matches;
-            switch (con.type) {
-              case 'land':     matches = leftMap[r][c]==='land'; break;
-              case 'water':    matches = leftMap[r][c]==='water'; break;
-              case 'row':      matches = r===con.value; break;
-              case 'col':      matches = c===con.value; break;
-              case 'adjacent': matches = DIRS.some(([dr,dc])=>con.pawnR+dr===r&&con.pawnC+dc===c); break;
-              case 'pinpoint': matches = r===con.pawnR && c===con.pawnC; break;
-              default: return true;
-            }
-            return clickedYes ? matches : !matches;
-          });
-          return out.length > 0 ? out : arr; // graceful fallback if player lied and emptied array
+        const tileSatisfies = t => {
+          const {r,c} = t;
+          let matches;
+          switch (con.type) {
+            case 'land':     matches = leftMap[r][c]==='land'; break;
+            case 'water':    matches = leftMap[r][c]==='water'; break;
+            case 'row':      matches = r===con.value; break;
+            case 'col':      matches = c===con.value; break;
+            case 'adjacent': matches = DIRS.some(([dr,dc])=>con.pawnR+dr===r&&con.pawnC+dc===c); break;
+            case 'pinpoint': matches = r===con.pawnR && c===con.pawnC; break;
+            default: return true;
+          }
+          return clickedYes ? matches : !matches;
         };
-        if (con.item === 'key')   cpuKeyCandidates   = filterCands(cpuKeyCandidates);
-        if (con.item === 'chest') cpuChestCandidates = filterCands(cpuChestCandidates);
+        const applyFilter = (highArr, lowArr) => {
+          if (cpuDetectedPlayerLie) {
+            // Trusted answer — filter High directly, delete non-matching permanently
+            return { high: highArr.filter(t => tileSatisfies(t)), low: lowArr };
+          }
+          const keepHigh  = highArr.filter(t =>  tileSatisfies(t));
+          const moveToLow = highArr.filter(t => !tileSatisfies(t));
+          const maxMove   = Math.floor(highArr.length * 0.6);
+          if (moveToLow.length > maxMove) {
+            // Cap: only move maxMove tiles to Low, rest stay in High
+            return { high: [...keepHigh, ...moveToLow.slice(maxMove)], low: [...lowArr, ...moveToLow.slice(0, maxMove)] };
+          }
+          // No cap needed — graceful fallback keeps High intact if all tiles would be removed
+          return { high: keepHigh.length > 0 ? keepHigh : highArr, low: keepHigh.length > 0 ? [...lowArr, ...moveToLow] : lowArr };
+        };
+        if (con.item === 'key') {
+          const res = applyFilter(cpuKeyCandidatesHigh, cpuKeyCandidatesLow);
+          cpuKeyCandidatesHigh = res.high; cpuKeyCandidatesLow = res.low;
+        }
+        if (con.item === 'chest') {
+          const res = applyFilter(cpuChestCandidatesHigh, cpuChestCandidatesLow);
+          cpuChestCandidatesHigh = res.high; cpuChestCandidatesLow = res.low;
+        }
+        cpuCheckContradictions();
       }
 
       logGameEvent({type:'question', who:'cpu', question:pendingCpuQuestion.text, answer:clickedYes?'YES':'NO', lied});
@@ -1842,8 +1983,8 @@
 
       // ── Diagnostic logging ──
       console.log('[CPU] cpuTurn START | state:', getCpuState(),
-        '| keyCands:', cpuKeyCandidates.length,
-        '| chestCands:', cpuChestCandidates.length,
+        '| keyCands:', cpuKeyCandidatesHigh.length+cpuKeyCandidatesLow.length,
+        '| chestCands:', cpuChestCandidatesHigh.length+cpuChestCandidatesLow.length,
         '| pawn:', JSON.stringify(cpuPawn),
         '| inBoat:', cpuInBoat,
         '| inv:', JSON.stringify(cpuInventory));
@@ -1860,8 +2001,9 @@
       // 2. Ask a question? Only if: questions left, not escaping, candidates > 3
       const state0 = getCpuState();
       if (state0 !== 'escape' && cpuQuestionsLeft > 0) {
-        const cands0 = state0 === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
-        if (cands0.length > 3) {
+        const cands0H = state0 === 'hunt_key' ? cpuKeyCandidatesHigh : cpuChestCandidatesHigh;
+        const cands0L = state0 === 'hunt_key' ? cpuKeyCandidatesLow  : cpuChestCandidatesLow;
+        if (cands0H.length + cands0L.length > 3) {
           const pool     = buildCpuQuestionList();
           const askedSet = new Set(gameLog.filter(e=>e.type==='question'&&e.who==='cpu').map(e=>e.question));
           const fresh    = pool.filter(q => !askedSet.has(q.text));
@@ -1886,8 +2028,9 @@
       while (ap > 0) {
         const curState = getCpuState();
         const _dbgTarget   = getNextCpuTarget();
-        const _dbgCands    = curState === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
-        const _dbgOnCand   = _dbgCands.some(t => t.r===cpuPawn.r && t.c===cpuPawn.c);
+        const _dbgCandsH   = curState === 'hunt_key' ? cpuKeyCandidatesHigh : cpuChestCandidatesHigh;
+        const _dbgCandsL   = curState === 'hunt_key' ? cpuKeyCandidatesLow  : cpuChestCandidatesLow;
+        const _dbgOnCand   = _dbgCandsH.some(t => t.r===cpuPawn.r && t.c===cpuPawn.c) || _dbgCandsL.some(t => t.r===cpuPawn.r && t.c===cpuPawn.c);
         console.log('[CPU] AP loop | ap:', ap,
           '| state:', curState,
           '| pawn:', `${cpuPawn.r},${cpuPawn.c}`,
@@ -1907,8 +2050,9 @@
         }
 
         // On a candidate tile for the current target? Dig.
-        const cands = curState === 'hunt_key' ? cpuKeyCandidates : cpuChestCandidates;
-        if (cands.some(t => t.r===cpuPawn.r && t.c===cpuPawn.c)) {
+        const candsH = curState === 'hunt_key' ? cpuKeyCandidatesHigh : cpuChestCandidatesHigh;
+        const candsL = curState === 'hunt_key' ? cpuKeyCandidatesLow  : cpuChestCandidatesLow;
+        if (candsH.some(t => t.r===cpuPawn.r && t.c===cpuPawn.c) || candsL.some(t => t.r===cpuPawn.r && t.c===cpuPawn.c)) {
           const found = cpuDoDig();
           ap--;
           actionTaken = true;
