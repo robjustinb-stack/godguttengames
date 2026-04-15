@@ -179,6 +179,13 @@
     .cell:hover { filter: brightness(1.14); z-index: 3; }
     .cell.inactive { cursor: default; opacity: 0.75; }
     .cell.inactive:hover { filter: none; }
+    /* Faded starting-position previews shown during item-placement phase */
+    .start-preview {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.5; pointer-events: none;
+      font-size: 1.3rem; line-height: 1; z-index: 1;
+    }
     .cell.highlighted { outline: 3px solid #ffe000; outline-offset: -3px; z-index: 2; cursor: pointer; animation: pulse-bright 0.85s ease-in-out infinite alternate; }
     @keyframes pulse-bright { from { filter: brightness(1.15); } to { filter: brightness(1.5); } }
     @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 50%{transform:translateX(5px)} 75%{transform:translateX(-3px)} }
@@ -484,7 +491,11 @@
       body.game-active .grid-table th { font-size: 0.65rem; height: 17px; width: var(--cell); }
       body.game-active .star-tile {
         font-size: 1rem; width: var(--cell); height: var(--cell);
-        margin-top: calc(48px + 2 * var(--cell));
+        /* 39px = 2 × (row-C-centre offset from grid-wrap centre).
+           With align-items:center the star centre = flex_centre + margin-top/2.
+           Row C centre is always 19.5 px below the grid-wrap centre
+           regardless of --cell, so margin-top = 39px aligns exactly. */
+        margin-top: 39px;
         border-radius: 7px;
       }
       body.game-active .cell { border-radius: 5px; }
@@ -798,6 +809,28 @@
     buildGrid(document.getElementById('leftGrid'),  leftMap,  true);
     buildGrid(document.getElementById('rightGrid'), rightMap, false);
 
+    // ── Setup-phase start-position previews ────────────────────────
+    // Faded icons (opacity 0.5) show where each pawn and boat begin so
+    // the player can plan item placements around the start positions.
+    // They are removed the moment the game actually starts.
+    function renderSetupPreviews() {
+      const addPrev = (gridId, r, c, icon) => {
+        const cell = document.querySelector(`#${gridId} td[data-row="${r}"][data-col="${c}"]`);
+        if (!cell) return;
+        const span = document.createElement('span');
+        span.className = 'start-preview';
+        span.textContent = icon;
+        cell.appendChild(span);
+      };
+      const lBoat = adjWater(leftMap,  2, 0);
+      const rBoat = adjWater(rightMap, 2, 0);
+      addPrev('leftGrid',  2, 0, '🔴');                                   // CPU pawn — Your Island
+      if (lBoat) addPrev('leftGrid',  lBoat.r, lBoat.c, '⛵');           // CPU boat
+      addPrev('rightGrid', 2, 0, '🔵');                                   // Player pawn — Babbi's Island
+      if (rBoat) addPrev('rightGrid', rBoat.r, rBoat.c, '⛵');           // Player boat
+    }
+    renderSetupPreviews();
+
     // ── Cell click ─────────────────────────────────────────────────
     function onCellClick(e) {
       const td = e.currentTarget;
@@ -832,12 +865,18 @@
       document.getElementById('phaseHint').textContent = 'Click ✓ Confirm to lock in place, or click another tile to move it';
     }
 
-    function place(td, r, c, item, icon) { placed[item]={r,c}; td.innerHTML=`<span class="icon">${icon}</span>`; }
+    function place(td, r, c, item, icon) {
+      placed[item] = {r, c};
+      // Preserve any .start-preview spans — only set the .icon span
+      let iconSpan = td.querySelector('.icon');
+      if (!iconSpan) { iconSpan = document.createElement('span'); iconSpan.className = 'icon'; td.appendChild(iconSpan); }
+      iconSpan.textContent = icon;
+    }
     function clearPlacement(item) {
       if (!placed[item]) return;
-      const {r,c} = placed[item];
+      const {r, c} = placed[item];
       const el = document.querySelector(`#leftGrid td[data-row="${r}"][data-col="${c}"]`);
-      if (el) el.innerHTML = '';
+      if (el) { const iconSpan = el.querySelector('.icon'); if (iconSpan) iconSpan.remove(); }
       placed[item] = null;
     }
     function occupiedBy(r, c) { for (const [k,p] of Object.entries(placed)) if (p&&p.r===r&&p.c===c) return k; return null; }
@@ -928,6 +967,7 @@
       document.getElementById('inventoryBar').classList.remove('hidden');
       document.querySelectorAll('#rightGrid td.cell').forEach(td => td.classList.remove('inactive'));
 
+      document.querySelectorAll('.start-preview').forEach(el => el.remove()); // clear setup previews
       gamePhase='playing'; currentTurn='player'; moveState='idle'; diceVal=0; stepsLeft=0;
       document.body.classList.add('game-active'); // enables mobile game layout
       renderGrids();
@@ -1726,6 +1766,7 @@
       }
       if (cpuInventory.key && !cpuInventory.manual && placed.chest && placed.chest.r===cpuPawn.r && placed.chest.c===cpuPawn.c) {
         cpuInventory.manual=true;
+        placed.chest=null; // remove chest icon from map now that CPU has the manual
         cpuKnowledge.chest.confirmed=null; cpuKnowledge.chest.possible=new Set();
         logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — retrieved the 📜 manual!`});
         showMessage('🔴 CPU retrieved the manual — heading for the ★!');
@@ -1752,6 +1793,35 @@
         showMessage('💨 The CPU is stunned — its turn is skipped!');
         handTurnToPlayer(1800);
         return;
+      }
+
+      // ── ESCAPE SPRINT: manual found — spend EVERY AP moving toward the star ──
+      // No questions, no digging — just move as fast as possible.
+      if (cpuInventory.manual) {
+        const escapeRoll = Math.floor(Math.random()*6)+1;
+        let escapeAp = escapeRoll, escapeLastTile = null;
+        console.log('[CPU] ESCAPE SPRINT rolled', escapeRoll);
+        while (escapeAp > 0) {
+          const next = getNextStepToward(2, 0, escapeLastTile);
+          if (!next) break;
+          const prevLabel = coordLabel(cpuPawn);
+          escapeLastTile  = `${cpuPawn.r},${cpuPawn.c}`;
+          cpuPawn   = {r: next.r, c: next.c};
+          cpuInBoat = next.inBoat;
+          if (next.boatR !== -1) cpuBoat = {r: next.boatR, c: next.boatC};
+          escapeAp--;
+          logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
+          if (placed.mine && cpuPawn.r===placed.mine.r && cpuPawn.c===placed.mine.c) {
+            const mpos=coordLabel(cpuPawn); placed.mine=null; cpuSkipNext=true;
+            logGameEvent({type:'mine', text:`💥 Your mine at ${mpos} went off! CPU skips next turn.`});
+            showMessage('💥 Your mine went off — the CPU will skip its next turn!');
+            renderLeft(); if (checkCpuWin()) return;
+            handTurnToPlayer(700); return;
+          }
+          renderLeft();
+          if (checkCpuWin()) return;
+        }
+        handTurnToPlayer(700); return;
       }
 
       // ── DECISION: Ask a question (uses the entire turn, no movement) ──
@@ -1791,6 +1861,7 @@
       //                  history so stale avoidances don't block the new route
       let lastDigPos       = null;
       let lastTileThisTurn = null;
+      let actionTaken      = false; // tracks whether any AP was spent this turn
       const t0 = getCpuTarget();
       let prevTargetKey    = `${t0.r},${t0.c}`;
 
@@ -1802,6 +1873,7 @@
         if (!cpuInventory.manual && curKey !== lastDigPos && shouldCpuDig()) {
           lastDigPos = curKey;
           ap--;
+          actionTaken = true;
           const found = cpuAttemptDig();
           renderLeft();
           if (checkCpuWin()) return;
@@ -1838,6 +1910,7 @@
         cpuInBoat  = next.inBoat;
         if (next.boatR !== -1) cpuBoat = {r: next.boatR, c: next.boatC};
         ap--;
+        actionTaken = true;
         lastDigPos = null; // new position — allow dig check on next iteration
 
         // Record in cross-turn visit history (capped at 10 entries)
@@ -1883,6 +1956,31 @@
               prevTargetKey    = `${nt2.r},${nt2.c}`;
             }
           }
+        }
+      }
+
+      // ── Guarantee at least one action per turn ────────────────────────
+      // If the AP loop exited without spending any AP (e.g. target momentarily
+      // unreachable), force one move toward the current target ignoring all
+      // avoidances. If even that is impossible, force a dig on the current tile.
+      if (!actionTaken) {
+        const tgt    = getCpuTarget();
+        const forced = getNextStepToward(tgt.r, tgt.c, null); // null = no backtrack block
+        if (forced) {
+          const prevLabel = coordLabel(cpuPawn);
+          cpuPawn   = {r: forced.r, c: forced.c};
+          cpuInBoat = forced.inBoat;
+          if (forced.boatR !== -1) cpuBoat = {r: forced.boatR, c: forced.boatC};
+          cpuVisitHistory.push(`${forced.r},${forced.c}`);
+          if (cpuVisitHistory.length > 10) cpuVisitHistory.shift();
+          logGameEvent({type:'move', text:`🔴 CPU moved from ${prevLabel} to ${coordLabel(cpuPawn)}`});
+          renderLeft();
+          if (checkCpuWin()) return;
+        } else {
+          // Target genuinely unreachable — dig on current tile as last resort
+          cpuAttemptDig();
+          renderLeft();
+          if (checkCpuWin()) return;
         }
       }
 
