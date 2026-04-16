@@ -398,25 +398,25 @@
       }
       body.game-active #gameHud #turnBanner.cpu-turn { background: rgba(232,57,42,0.12); }
 
-      /* Inventory bar — just below turn banner */
+      /* Inventory bar — just below turn banner; single-row, never wraps */
       body.game-active #inventoryBar {
-        position: fixed; top: 28px; left: 0; width: 30%; z-index: 65;
+        position: fixed; top: 28px; left: 0; width: 30%; z-index: 62;
         border-radius: 0; margin: 0; padding: 2px 6px 2px;
-        justify-content: center; flex-wrap: wrap; gap: 3px;
+        justify-content: center; flex-wrap: nowrap; gap: 3px;
         box-shadow: none; background: rgba(253,246,227,0.98);
         border-bottom: 1px solid rgba(0,0,0,0.08);
-        min-height: 22px;
+        height: 24px; overflow: hidden;
       }
-      body.game-active #inventoryBar .inv-item  { font-size: 0.65rem; padding: 1px 5px; }
-      body.game-active #inventoryBar .inv-label { font-size: 0.58rem; }
+      body.game-active #inventoryBar .inv-item  { font-size: 0.65rem; padding: 1px 5px; flex-shrink: 0; }
+      body.game-active #inventoryBar .inv-label { display: none; }
       body.game-active #inventoryBar .inv-empty { font-size: 0.65rem; }
-      body.game-active #inventoryBar .lie-indicator { font-size: 0.65rem; }
+      body.game-active #inventoryBar .lie-indicator { font-size: 0.65rem; flex-shrink: 0; }
       body.game-active #inventoryBar .lie-label { display: none; }
 
-      /* Action controls — middle of left panel */
+      /* Action controls — middle of left panel; starts below inventory bar */
       body.game-active #gameHud {
-        position: fixed; top: 50px; left: 0; width: 30%;
-        bottom: 36vh; z-index: 60;
+        position: fixed; top: 52px; left: 0; width: 30%;
+        bottom: 36vh; z-index: 65;
         margin: 0; padding: 3px 5px; gap: 3px;
         flex-direction: column; flex-wrap: nowrap;
         align-items: stretch; justify-content: flex-start;
@@ -1156,18 +1156,24 @@
       }
     }
 
-    // Called when a contradiction proves the player lied. Merges Low back into High and clears Low.
+    // Called when a contradiction proves the player lied. Restores chest candidates from Low+High and clears Low.
+    // Key candidates are intentionally not restored (key was just found or is irrelevant).
     function cpuDetectLie() {
       if (cpuDetectedPlayerLie) return;
       cpuDetectedPlayerLie = true;
-      console.log('[CPU] Lie detected — restoring candidates');
-      cpuKeyCandidatesHigh   = [...cpuKeyCandidatesHigh,   ...cpuKeyCandidatesLow];
-      cpuChestCandidatesHigh = [...cpuChestCandidatesHigh, ...cpuChestCandidatesLow];
-      cpuKeyCandidatesLow    = [];
-      cpuChestCandidatesLow  = [];
+      console.log('[CPU] Lie detected — restoring chest candidates');
       const dugSet = new Set(cpuDugTiles.map(t=>`${t.r},${t.c}`));
-      cpuKeyCandidatesHigh   = cpuKeyCandidatesHigh.filter(t=>!dugSet.has(`${t.r},${t.c}`));
-      cpuChestCandidatesHigh = cpuChestCandidatesHigh.filter(t=>!dugSet.has(`${t.r},${t.c}`));
+      // Move all Low chest tiles back to High, then remove dug tiles
+      cpuChestCandidatesHigh = [...cpuChestCandidatesHigh, ...cpuChestCandidatesLow]
+        .filter(t => !dugSet.has(`${t.r},${t.c}`));
+      cpuChestCandidatesLow  = [];
+      // If merged result is still empty (lists were already depleted), rebuild from all land tiles minus dug tiles
+      if (cpuChestCandidatesHigh.length === 0) {
+        for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+          if (leftMap[r][c] === 'land' && !dugSet.has(`${r},${c}`)) cpuChestCandidatesHigh.push({r, c});
+        }
+      }
+      console.log(`[CPU] Lie restoration: chestCands restored=${cpuChestCandidatesHigh.length}, keyCands=${cpuKeyCandidatesHigh.length + cpuKeyCandidatesLow.length}`);
     }
 
     // Scans cpuPlayerAnswerLog for logical contradictions; calls cpuDetectLie if found.
@@ -1380,6 +1386,18 @@
           logGameEvent({type:'item', text:`🔴 CPU dug at ${pos} — found the 🗝️ key!`});
           showMessage('🔴 CPU found the key on your island!');
           return true;
+        } else if (placed.chest && placed.chest.r===curR && placed.chest.c===curC) {
+          // Found the chest but don't have the key yet — remember location, don't remove from chest candidates
+          cpuKeyCandidatesHigh = cpuKeyCandidatesHigh.filter(t => !(t.r===curR && t.c===curC));
+          cpuKeyCandidatesLow  = cpuKeyCandidatesLow.filter(t => !(t.r===curR && t.c===curC));
+          cpuDugTiles.push({r:curR, c:curC});
+          // Confirm chest location and move to top of chest High so CPU returns here after finding key
+          cpuKnowledge.chest.confirmed = {r: curR, c: curC};
+          cpuChestCandidatesHigh = [{r:curR, c:curC}, ...cpuChestCandidatesHigh.filter(t => !(t.r===curR && t.c===curC))];
+          cpuChestCandidatesLow  = cpuChestCandidatesLow.filter(t => !(t.r===curR && t.c===curC));
+          logGameEvent({type:'dig', text:`🔴 CPU found the chest at ${pos} — needs the key first!`});
+          showMessage(`🔴 CPU found the chest at ${pos} — needs the key first!`);
+          return false;
         } else {
           removeFromAll();
           cpuKnowledge.key.possible.delete(`${curR},${curC}`);
@@ -2027,6 +2045,12 @@
       // 4. AP loop
       while (ap > 0) {
         const curState = getCpuState();
+        // Ensure candidates are populated before any decision — prevents fallback-tile loop
+        if (curState !== 'escape') {
+          const _ensH = curState === 'hunt_key' ? cpuKeyCandidatesHigh : cpuChestCandidatesHigh;
+          const _ensL = curState === 'hunt_key' ? cpuKeyCandidatesLow  : cpuChestCandidatesLow;
+          if (_ensH.length === 0 && _ensL.length === 0) cpuEnsureCandidates();
+        }
         const _dbgTarget   = getNextCpuTarget();
         const _dbgCandsH   = curState === 'hunt_key' ? cpuKeyCandidatesHigh : cpuChestCandidatesHigh;
         const _dbgCandsL   = curState === 'hunt_key' ? cpuKeyCandidatesLow  : cpuChestCandidatesLow;
