@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mission LUU — Card Library</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:           #0a0d0f;
+      --surface:      #111518;
+      --surface2:     #161c20;
+      --border:       #1e2830;
+      --border-light: #2a3840;
+      --accent:       #4fc4cf;
+      --text:         #d8e8ec;
+      --text-muted:   #5a7a82;
+      --text-dim:     #8aaab2;
+      --gold:         #c8a96e;
+      --danger:       #cf4f6a;
+      --win:          #4fcf8a;
+
+      --rasluu: #cf4f6a;
+      --lagluu: #4fcf8a;
+      --kjeluu: #4f8acf;
+      --gifluu: #9f54cf;
+      --bisluu: #c8a96e;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: 16px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .site-title {
+      font-family: 'Cinzel', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+    }
+    .site-subtitle {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .search-wrap {
+      flex: 1;
+      min-width: 180px;
+      max-width: 440px;
+      margin-left: auto;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border-light);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: 'Crimson Pro', serif;
+      font-size: 15px;
+      padding: 8px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-input:focus    { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--text-muted); }
+
+    /* ── Tabs nav ── */
+    .tabs-nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      padding: 0 32px;
+    }
+    .tab-btn {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      padding: 13px 18px;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover  { color: var(--text-dim); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Tab content ── */
+    .tab-content { display: none; padding: 32px; }
+    .tab-content.active { display: block; }
+    main.searching .tab-content { display: block; }
+
+    /* ── Card grids ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .card-grid-boss {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 16px;
+      margin-top: 0;
+    }
+
+    /* ── Class groups ── */
+    .class-group { margin-top: 36px; }
+    .class-group:first-child { margin-top: 0; }
+    .class-group-header {
+      font-family: 'Cinzel', serif;
+      font-size: 15px;
+      font-weight: 600;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .class-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 400;
+    }
+
+    /* ── Action sections (collapsible) ── */
+    .action-section { margin-top: 28px; }
+    .action-section:first-child { margin-top: 0; }
+    .section-header {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .section-header:hover { color: var(--text-dim); }
+    .section-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+    .toggle-icon {
+      margin-left: auto;
+      font-size: 11px;
+      transition: transform 0.2s;
+      color: var(--text-muted);
+    }
+    .section-header.collapsed .toggle-icon { transform: rotate(-90deg); }
+    .section-body.collapsed { display: none; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      transition: border-color 0.15s;
+    }
+    .card:hover { border-color: var(--border-light); }
+
+    .border-rasluu { border-top: 2px solid var(--rasluu); }
+    .border-lagluu { border-top: 2px solid var(--lagluu); }
+    .border-kjeluu { border-top: 2px solid var(--kjeluu); }
+    .border-gifluu { border-top: 2px solid var(--gifluu); }
+    .border-bisluu { border-top: 2px solid var(--bisluu); }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .card-name {
+      font-family: 'Cinzel', serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .card-class {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+    }
+    .card-desc {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.45;
+      font-style: italic;
+    }
+    .card-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    /* ── Cost ── */
+    .cost {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+    .cost-num { font-size: 20px; }
+    .cost-unit { font-size: 11px; letter-spacing: 0.08em; }
+
+    /* ── Badges ── */
+    .badge {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    .badge-luu      { background: #0f1e12; color: var(--win);    border: 1px solid #1e3a22; }
+    .badge-evolved  { background: #1a0e22; color: #c07de0;       border: 1px solid #36185a; }
+    .badge-rogue    { background: #220a10; color: var(--danger); border: 1px solid #4a1828; }
+    .badge-boss     { background: #1e1508; color: var(--gold);   border: 1px solid #3e2e10; }
+    .badge-t1       { background: #151c20; color: var(--text-dim);  border: 1px solid var(--border-light); }
+    .badge-t2       { background: #0d1e20; color: var(--accent);   border: 1px solid #1a3840; }
+    .badge-t3       { background: #1a1800; color: var(--gold);     border: 1px solid #3a3210; }
+    .badge-t4       { background: #200a10; color: var(--danger);   border: 1px solid #401828; }
+    .badge-immediate { background: #071c1e; color: var(--accent);  border: 1px solid #123438; }
+    .badge-round     { background: #070e1e; color: #7aabda;        border: 1px solid #101e38; }
+    .badge-wave      { background: #0e1808; color: #9ec84a;        border: 1px solid #1e3012; }
+    .badge-sector    { background: #110b1e; color: #b080d8;        border: 1px solid #221438; }
+    .badge-triggered { background: #180710; color: #d8786a;        border: 1px solid #301218; }
+    .badge-permanent { background: #1a1408; color: var(--gold);    border: 1px solid #3a2812; }
+
+    /* ── Stats table ── */
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .stats-table th {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 3px 8px 4px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .stats-table td {
+      padding: 4px 8px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .stats-table tr:last-child td { border-bottom: none; }
+    .cell-level { font-family: 'Cinzel', serif; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .cell-hp    { color: var(--win);    font-weight: 600; }
+    .cell-atk   { color: var(--danger); font-weight: 600; }
+    .cell-xp    { color: var(--gold);   font-family: 'Cinzel', serif; font-size: 12px; }
+    .cell-dash  { color: var(--border-light); }
+    .cell-dim   { color: var(--text-dim); }
+
+    /* ── Ability blocks ── */
+    .ability-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 10px;
+    }
+    .ability-label {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+    .ability-label.trait-label   { color: var(--gold); }
+    .ability-label.passive-label { color: var(--accent); }
+    .ability-label.boss-label    { color: #d880e0; }
+    .ability-text {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+    .ability-trigger {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'Cinzel', serif;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Type advantage ── */
+    .type-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+    .type-label-sm {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-right: 3px;
+    }
+    .type-beats  { color: var(--win); }
+    .type-loses  { color: var(--danger); }
+    .type-neutral { color: var(--text-muted); font-style: italic; }
+
+    /* ── Tags ── */
+    .tags-row { display: flex; gap: 5px; flex-wrap: wrap; }
+    .tag {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      background: var(--surface2);
+      border: 1px solid var(--border-light);
+      color: var(--text-muted);
+      padding: 2px 7px;
+      border-radius: 3px;
+    }
+
+    /* ── Action row ── */
+    .action-line { font-size: 12px; }
+    .free-action { color: var(--gold); font-weight: 600; }
+    .std-action  { color: var(--text-muted); }
+
+    /* ── Evolve note ── */
+    .evolve-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── Boss subtitle ── */
+    .boss-subtitle {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      margin-top: 1px;
+    }
+
+    /* ── Class colour helpers ── */
+    .c-rasluu { color: var(--rasluu); }
+    .c-lagluu { color: var(--lagluu); }
+    .c-kjeluu { color: var(--kjeluu); }
+    .c-gifluu { color: var(--gifluu); }
+    .c-bisluu { color: var(--bisluu); }
+
+    /* ── Search ── */
+    .search-hidden { display: none !important; }
+
+    /* ── Loading / error ── */
+    .loading {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 48px;
+      text-align: center;
+      font-size: 15px;
+    }
+    .load-error { color: var(--danger); }
+
+    /* ── No-results message ── */
+    .no-results-msg {
+      display: none;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 20px 0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <div class="site-title">Mission LUU</div>
+    <div class="site-subtitle">Card Library</div>
+  </div>
+  <div class="search-wrap">
+    <input class="search-input" id="searchInput" type="text"
+           placeholder="Search cards by name or description…" autocomplete="off">
+  </div>
+</header>
+
+<nav class="tabs-nav">
+  <button class="tab-btn active" data-tab="friendly">Friendly Luu</button>
+  <button class="tab-btn" data-tab="actions">Action Cards</button>
+  <button class="tab-btn" data-tab="rogues">Rogue Luu</button>
+  <button class="tab-btn" data-tab="bosses">Bosses</button>
+</nav>
+
+<main id="main">
+  <div class="tab-content active" id="tab-friendly"><div class="loading">Loading card data…</div></div>
+  <div class="tab-content"        id="tab-actions">  <div class="loading">Loading card data…</div></div>
+  <div class="tab-content"        id="tab-rogues">   <div class="loading">Loading card data…</div></div>
+  <div class="tab-content"        id="tab-bosses">   <div class="loading">Loading card data…</div></div>
+</main>
+
+<script>
+// ─────────────────────────────────────────────
+// BOSS DATA — hardcoded (source: js/cards.js)
+// ─────────────────────────────────────────────
+const BOSSES = [
+  {
+    id: 'boss_tjeluu', name: 'Tjeluu', class: 'Bisluu',
+    subtitle: 'Corrupted Symbiont',
+    description: 'The first and most consistent threat — always appears in Sector 1. Saps the combat effectiveness of your strongest Luu every round.',
+    counterLoop: 'Outside counter loop',
+    sectors: [
+      { s: 1, hp: 40,  atk: 6  },
+      { s: 2, hp: 55,  atk: 11 },
+      { s: 3, hp: 72,  atk: 14 },
+      { s: 4, hp: 90,  atk: 17 },
+      { s: 5, hp: 110, atk: 20 }
+    ],
+    passive: {
+      name: 'Symbiotic Drain',
+      description: 'At the start of each round, the friendly Luu with the highest current base attack loses 1 base attack this round.',
+      trigger: 'Round Start'
+    }
+  },
+  {
+    id: 'boss_lynluu', name: 'Lynluu', class: 'Rasluu',
+    subtitle: 'Apex Predator',
+    description: 'A relentless hunter that punishes wounded Luu. Keep your Luu at full health or Lynluu strikes harder.',
+    counterLoop: 'Beats Gifluu · Loses to Lagluu',
+    sectors: [
+      { s: 1, hp: null, atk: null },
+      { s: 2, hp: 45,   atk: 13  },
+      { s: 3, hp: 60,   atk: 17  },
+      { s: 4, hp: 76,   atk: 21  },
+      { s: 5, hp: 93,   atk: 25  }
+    ],
+    passive: {
+      name: 'Wounded Prey',
+      description: 'Deals +2 damage when the attacked Luu has any existing damage counters.',
+      trigger: 'On Attack'
+    }
+  },
+  {
+    id: 'boss_forluu', name: 'Forluu', class: 'Lagluu',
+    subtitle: 'Colony Patriarch',
+    description: 'A boss that heals itself off your own suffering. Damage dealt to your lead Luu fuels its recovery at the end of each round.',
+    counterLoop: 'Beats Rasluu · Loses to Kjeluu',
+    sectors: [
+      { s: 1, hp: null, atk: null },
+      { s: 2, hp: 42,   atk: 9  },
+      { s: 3, hp: 56,   atk: 12 },
+      { s: 4, hp: 70,   atk: 15 },
+      { s: 5, hp: 86,   atk: 18 }
+    ],
+    passive: {
+      name: 'Resilient Core',
+      description: 'At the end of each round, recover 1 HP per damage counter on the leading friendly Luu. Maximum 3 HP per round.',
+      trigger: 'Round End'
+    }
+  },
+  {
+    id: 'boss_fesluu', name: 'Fesluu', class: 'Kjeluu',
+    subtitle: 'Fortress Prime',
+    description: 'A near-impenetrable fortress. Weak attacks bounce off entirely — even strong attacks are reduced on the first hit each round.',
+    counterLoop: 'Beats Lagluu · Loses to Gifluu',
+    sectors: [
+      { s: 1, hp: null, atk: null },
+      { s: 2, hp: 60,   atk: 7  },
+      { s: 3, hp: 80,   atk: 9  },
+      { s: 4, hp: 100,  atk: 12 },
+      { s: 5, hp: 122,  atk: 14 }
+    ],
+    passive: {
+      name: 'Fortress Core',
+      description: 'Attacks dealing 3 or less deal 0 damage. The first hit each round above the threshold is reduced by 1.',
+      trigger: 'On Damaged'
+    }
+  },
+  {
+    id: 'boss_toxluu', name: 'Toxluu', class: 'Gifluu',
+    subtitle: 'Phantom Sovereign',
+    description: 'An evasive phantom that punishes high-damage attacks. Every strike risks a costly rebound back to the attacker.',
+    counterLoop: 'Beats Kjeluu · Loses to Rasluu',
+    sectors: [
+      { s: 1, hp: null, atk: null },
+      { s: 2, hp: 48,   atk: 9  },
+      { s: 3, hp: 63,   atk: 12 },
+      { s: 4, hp: 79,   atk: 15 },
+      { s: 5, hp: 97,   atk: 18 }
+    ],
+    passive: {
+      name: 'Toxic Aura',
+      description: 'When attacked, roll a d6. On a 5 or 6, evade all damage and deal rebound damage equal to half the evaded attack (rounded up).',
+      trigger: 'On Damaged'
+    }
+  }
+];
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+
+function clsCss(cls) {
+  return { Rasluu:'c-rasluu', Lagluu:'c-lagluu', Kjeluu:'c-kjeluu', Gifluu:'c-gifluu', Bisluu:'c-bisluu' }[cls] || '';
+}
+function borderCss(cls) {
+  return { Rasluu:'border-rasluu', Lagluu:'border-lagluu', Kjeluu:'border-kjeluu', Gifluu:'border-gifluu', Bisluu:'border-bisluu' }[cls] || '';
+}
+function classDiamond(cls) {
+  return `<span class="${clsCss(cls)}" style="font-size:18px;line-height:1">◆</span>`;
+}
+
+function getDuration(card) {
+  if (!card.effects || !card.effects.length) return 'Immediate';
+  const e = card.effects[0];
+  const dc = e.discardCondition, t = e.timing;
+  if (dc === 'immediate'  || t === 'immediate')        return 'Immediate';
+  if (dc === 'manual'     || t === 'permanent')         return 'Permanent';
+  if (dc === 'endOfRound' || t === 'thisRound')         return 'Round';
+  if (dc === 'endOfWave'  || t === 'thisWave')          return 'Wave';
+  if (dc === 'endOfSector'|| t === 'thisSector')        return 'Sector';
+  if (dc === 'onTrigger'  || dc === 'onKill' || t === 'untilTriggered') return 'Triggered';
+  return 'Immediate';
+}
+function durBadge(dur) {
+  return { Immediate:'badge-immediate', Permanent:'badge-permanent', Round:'badge-round',
+           Wave:'badge-wave', Sector:'badge-sector', Triggered:'badge-triggered' }[dur] || 'badge-immediate';
+}
+
+function traitBlock(trait) {
+  if (!trait || !trait.name) return '';
+  return `<div class="ability-block">
+    <div class="ability-label trait-label">Trait — ${trait.name}</div>
+    <div class="ability-text">${trait.description}</div>
+  </div>`;
+}
+function passiveBlock(passive) {
+  if (!passive || !passive.name) return '';
+  return `<div class="ability-block">
+    <div class="ability-label passive-label">Passive — ${passive.name}</div>
+    <div class="ability-text">${passive.description}</div>
+  </div>`;
+}
+function typeRow(ta) {
+  if (!ta) return '';
+  const beats  = ta.beats   ? `<span class="type-beats"><span class="type-label-sm">Beats </span>${ta.beats}</span>` : '';
+  const loses  = ta.losesTo ? `<span class="type-loses"><span class="type-label-sm">Loses to </span>${ta.losesTo}</span>` : '';
+  const neutral= (!ta.beats && !ta.losesTo) ? `<span class="type-neutral">Outside counter loop</span>` : '';
+  return `<div class="type-row">${beats}${loses}${neutral}</div>`;
+}
+
+// ─────────────────────────────────────────────
+// TAB 1 — FRIENDLY LUU
+// ─────────────────────────────────────────────
+function renderFriendlyLuu(cards) {
+  const container = document.getElementById('tab-friendly');
+  container.innerHTML = '';
+
+  const CLASSES = ['Rasluu','Lagluu','Kjeluu','Gifluu','Bisluu'];
+
+  for (const cls of CLASSES) {
+    const base    = cards.filter(c => c.class === cls && c.cardType === 'Luu');
+    const evolved = cards.filter(c => c.class === cls && c.cardType === 'LuuEvolved');
+    const all = [...base, ...evolved];
+    if (!all.length) continue;
+
+    const group = document.createElement('div');
+    group.className = 'class-group';
+    group.innerHTML = `
+      <div class="class-group-header">
+        ${classDiamond(cls)}
+        <span class="${clsCss(cls)}" style="font-family:'Cinzel',serif;">${cls}</span>
+      </div>
+      <div class="card-grid"></div>
+    `;
+    const grid = group.querySelector('.card-grid');
+
+    for (const card of all) {
+      const isEvo    = card.cardType === 'LuuEvolved';
+      const minLvl   = card.levelTrack.min;
+      const levels   = [minLvl, minLvl + 1, minLvl + 2];
+
+      const statsRows = levels.map((lvl, i) => `<tr>
+        <td class="cell-level">L${lvl}</td>
+        <td class="cell-hp">${card.stats.health[i]}</td>
+        <td class="cell-atk">${card.stats.baseAttack[i]}</td>
+      </tr>`).join('');
+
+      const typeBadge = isEvo
+        ? `<span class="badge badge-evolved">Evolved</span>`
+        : `<span class="badge badge-luu">Luu</span>`;
+      const costHtml = `<div class="cost"><span class="cost-num">${card.cost}</span> <span class="cost-unit">LTX</span></div>`;
+      const evolveNote = isEvo
+        ? `<div class="evolve-note">Evolves a ${card.playCondition.targetClass} at L${card.playCondition.targetMinLevel}+</div>`
+        : '';
+
+      const searchText = [card.name, card.class, card.description,
+        card.passive?.name, card.passive?.description,
+        card.trait?.name,   card.trait?.description].filter(Boolean).join(' ').toLowerCase();
+
+      const el = document.createElement('div');
+      el.className = `card ${borderCss(cls)} searchable`;
+      el.dataset.search = searchText;
+      el.innerHTML = `
+        <div class="card-header">
+          <div>
+            <div class="card-name">${card.name}</div>
+            <div class="card-class ${clsCss(cls)}">${card.class}</div>
+          </div>
+          <div class="card-meta">${typeBadge}${costHtml}</div>
+        </div>
+        ${card.description ? `<div class="card-desc">${card.description}</div>` : ''}
+        ${evolveNote}
+        <table class="stats-table">
+          <thead><tr><th>Level</th><th>HP</th><th>Base ATK</th></tr></thead>
+          <tbody>${statsRows}</tbody>
+        </table>
+        ${traitBlock(card.trait)}
+        ${passiveBlock(card.passive)}
+        ${typeRow(card.typeAdvantage)}
+      `;
+      grid.appendChild(el);
+    }
+
+    container.appendChild(group);
+  }
+}
+
+// ─────────────────────────────────────────────
+// TAB 2 — ACTION CARDS
+// ─────────────────────────────────────────────
+const TAG_ORDER = [
+  'Attack Enhancement','Defence Enhancement','Resource Generation',
+  'Card Draw','XP Boost','Healing','Movement','Damage Control','Conversion','Class Synergy'
+];
+
+function renderActionCards(cards) {
+  const container = document.getElementById('tab-actions');
+  container.innerHTML = '';
+
+  // Group each card by its first tag
+  const groups = {};
+  for (const t of TAG_ORDER) groups[t] = [];
+
+  for (const card of cards) {
+    const primary = card.tags?.[0];
+    if (primary && groups[primary] !== undefined) {
+      groups[primary].push(card);
+    } else {
+      // fallback: find first matching tag
+      const match = TAG_ORDER.find(t => card.tags?.includes(t));
+      if (match) groups[match].push(card);
+    }
+  }
+
+  for (const tag of TAG_ORDER) {
+    const group = groups[tag];
+    if (!group.length) continue;
+
+    const section = document.createElement('div');
+    section.className = 'action-section';
+
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    header.innerHTML = `
+      <span>${tag}</span>
+      <span class="section-count">${group.length} card${group.length !== 1 ? 's' : ''}</span>
+      <span class="toggle-icon">▼</span>
+    `;
+
+    const body = document.createElement('div');
+    body.className = 'section-body';
+
+    const grid = document.createElement('div');
+    grid.className = 'card-grid';
+    grid.style.cssText = 'margin-top:14px;margin-bottom:4px';
+
+    for (const card of group) {
+      const dur     = getDuration(card);
+      const durCls  = durBadge(dur);
+      const isFree  = card.consumesAction === false;
+      const searchText = [card.name, card.description, ...(card.tags || [])].join(' ').toLowerCase();
+
+      const el = document.createElement('div');
+      el.className = 'card searchable';
+      el.dataset.search = searchText;
+      el.innerHTML = `
+        <div class="card-header">
+          <div class="card-name">${card.name}</div>
+          <div class="card-meta">
+            <div class="cost"><span class="cost-num">${card.cost}</span> <span class="cost-unit">LTX</span></div>
+            <span class="badge ${durCls}">${dur}</span>
+          </div>
+        </div>
+        <div class="tags-row">${(card.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        ${card.description ? `<div class="card-desc">${card.description}</div>` : ''}
+        <div class="action-line ${isFree ? 'free-action' : 'std-action'}">
+          ${isFree ? '✦ Free action — does not consume Luu action' : 'Consumes Luu action'}
+        </div>
+      `;
+      grid.appendChild(el);
+    }
+
+    body.appendChild(grid);
+    header.addEventListener('click', () => {
+      header.classList.toggle('collapsed');
+      body.classList.toggle('collapsed');
+    });
+    section.appendChild(header);
+    section.appendChild(body);
+    container.appendChild(section);
+  }
+}
+
+// ─────────────────────────────────────────────
+// TAB 3 — ROGUE LUU
+// ─────────────────────────────────────────────
+function renderRogueLuu(cards) {
+  const container = document.getElementById('tab-rogues');
+  container.innerHTML = '';
+
+  const CLASSES = ['Rasluu','Lagluu','Kjeluu','Gifluu','Bisluu'];
+
+  for (const cls of CLASSES) {
+    const clsCards = cards.filter(c => c.class === cls).sort((a, b) => a.tier - b.tier);
+    if (!clsCards.length) continue;
+
+    const group = document.createElement('div');
+    group.className = 'class-group';
+    group.innerHTML = `
+      <div class="class-group-header">
+        ${classDiamond(cls)}
+        <span class="${clsCss(cls)}" style="font-family:'Cinzel',serif;">Rogue ${cls}</span>
+        <span class="class-sub">T1 – T4</span>
+      </div>
+      <div class="card-grid"></div>
+    `;
+    const grid = group.querySelector('.card-grid');
+
+    for (const card of clsCards) {
+      const searchText = [card.name, card.class, card.description,
+        card.trait?.name, card.trait?.description].filter(Boolean).join(' ').toLowerCase();
+
+      const el = document.createElement('div');
+      el.className = `card ${borderCss(cls)} searchable`;
+      el.dataset.search = searchText;
+      el.innerHTML = `
+        <div class="card-header">
+          <div>
+            <div class="card-name">${card.name}</div>
+            <div class="card-class ${clsCss(cls)}">${card.class}</div>
+          </div>
+          <span class="badge badge-t${card.tier}">T${card.tier}</span>
+        </div>
+        ${card.description ? `<div class="card-desc">${card.description}</div>` : ''}
+        <table class="stats-table">
+          <thead><tr><th>HP</th><th>Base ATK</th><th>XP on Defeat</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="cell-hp">${card.stats.health}</td>
+              <td class="cell-atk">${card.stats.baseAttack}</td>
+              <td class="cell-xp">${card.xpOnDefeat} XP</td>
+            </tr>
+          </tbody>
+        </table>
+        ${traitBlock(card.trait)}
+        ${typeRow(card.typeAdvantage)}
+      `;
+      grid.appendChild(el);
+    }
+
+    container.appendChild(group);
+  }
+}
+
+// ─────────────────────────────────────────────
+// TAB 4 — BOSSES
+// ─────────────────────────────────────────────
+function renderBosses() {
+  const container = document.getElementById('tab-bosses');
+  container.innerHTML = '';
+
+  const grid = document.createElement('div');
+  grid.className = 'card-grid-boss';
+
+  for (const boss of BOSSES) {
+    const statsRows = boss.sectors.map(s => {
+      if (s.hp === null) {
+        return `<tr>
+          <td class="cell-level">S${s.s}</td>
+          <td class="cell-dash">—</td>
+          <td class="cell-dash">—</td>
+        </tr>`;
+      }
+      const note = (boss.id === 'boss_tjeluu' && s.s === 1) ? ' <span style="color:var(--text-muted);font-size:10px">(always)</span>' : '';
+      return `<tr>
+        <td class="cell-level">S${s.s}${note}</td>
+        <td class="cell-hp">${s.hp}</td>
+        <td class="cell-atk">${s.atk}</td>
+      </tr>`;
+    }).join('');
+
+    const searchText = [boss.name, boss.class, boss.subtitle, boss.description,
+      boss.passive.name, boss.passive.description, boss.counterLoop].join(' ').toLowerCase();
+
+    const el = document.createElement('div');
+    el.className = `card ${borderCss(boss.class)} searchable`;
+    el.dataset.search = searchText;
+    el.innerHTML = `
+      <div class="card-header">
+        <div>
+          <div class="card-name">${boss.name}</div>
+          <div class="boss-subtitle">${boss.subtitle}</div>
+          <div class="card-class ${clsCss(boss.class)}" style="margin-top:3px">${boss.class}</div>
+        </div>
+        <span class="badge badge-boss">Boss</span>
+      </div>
+      <div class="card-desc">${boss.description}</div>
+      <div style="font-size:12px;color:var(--text-muted)">
+        <span class="type-label-sm">Counter loop: </span>${boss.counterLoop}
+      </div>
+      <table class="stats-table">
+        <thead><tr><th>Sector</th><th>HP</th><th>Base ATK</th></tr></thead>
+        <tbody>${statsRows}</tbody>
+      </table>
+      <div class="ability-block">
+        <div class="ability-label boss-label">Passive — ${boss.passive.name}</div>
+        <div class="ability-text">${boss.passive.description}</div>
+        <div class="ability-trigger">Trigger: ${boss.passive.trigger}</div>
+      </div>
+    `;
+    grid.appendChild(el);
+  }
+
+  container.appendChild(grid);
+}
+
+// ─────────────────────────────────────────────
+// SEARCH
+// ─────────────────────────────────────────────
+const mainEl = document.getElementById('main');
+
+document.getElementById('searchInput').addEventListener('input', function () {
+  const query = this.value.trim().toLowerCase();
+
+  // Filter individual cards
+  document.querySelectorAll('.searchable').forEach(card => {
+    const match = !query || (card.dataset.search || '').includes(query);
+    card.classList.toggle('search-hidden', !match);
+  });
+
+  // Show/hide action sections with no visible cards
+  document.querySelectorAll('.action-section').forEach(sec => {
+    const visible = sec.querySelectorAll('.searchable:not(.search-hidden)').length;
+    sec.style.display = (query && !visible) ? 'none' : '';
+  });
+
+  // Show/hide class groups with no visible cards
+  document.querySelectorAll('.class-group').forEach(grp => {
+    const visible = grp.querySelectorAll('.searchable:not(.search-hidden)').length;
+    grp.style.display = (query && !visible) ? 'none' : '';
+  });
+
+  // When searching: show all tab panels; when not: restore active-only
+  if (query) {
+    mainEl.classList.add('searching');
+  } else {
+    mainEl.classList.remove('searching');
+    // Restore active tab
+    const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    if (activeTab) document.getElementById('tab-' + activeTab)?.classList.add('active');
+  }
+});
+
+// ─────────────────────────────────────────────
+// TAB SWITCHING
+// ─────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Only switch displayed panel when not searching
+    if (!mainEl.classList.contains('searching')) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + btn.dataset.tab)?.classList.add('active');
+    }
+  });
+});
+
+// ─────────────────────────────────────────────
+// INIT — FETCH JSON DATA
+// ─────────────────────────────────────────────
+async function init() {
+  try {
+    const [luuRes, actionRes] = await Promise.all([
+      fetch('data/luu-cards.json'),
+      fetch('data/luu-action-cards.json')
+    ]);
+    if (!luuRes.ok || !actionRes.ok) throw new Error('HTTP error fetching JSON');
+    const luuData    = await luuRes.json();
+    const actionData = await actionRes.json();
+
+    const friendly = luuData.cards.filter(c => c.cardType === 'Luu' || c.cardType === 'LuuEvolved');
+    const rogues   = luuData.cards.filter(c => c.cardType === 'RogueLuu');
+
+    renderFriendlyLuu(friendly);
+    renderActionCards(actionData.cards);
+    renderRogueLuu(rogues);
+    renderBosses();
+  } catch (err) {
+    document.querySelectorAll('.loading').forEach(el => {
+      el.classList.add('load-error');
+      el.textContent = 'Failed to load card data. Open this file via Live Server (not file://).';
+    });
+    console.error('[card-library] Load error:', err);
+  }
+}
+
+init();
+</script>
+</body>
+</html>

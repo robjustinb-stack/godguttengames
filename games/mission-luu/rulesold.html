@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUU — Rules v1.0</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+  :root {
+    --bg: #0a0d0f;
+    --surface: #111518;
+    --surface2: #161c20;
+    --border: #1e2830;
+    --border-light: #2a3840;
+    --accent: #4fc4cf;
+    --accent2: #2a7a82;
+    --accent-glow: rgba(79, 196, 207, 0.15);
+    --text: #d8e8ec;
+    --text-muted: #5a7a82;
+    --text-dim: #8aaab2;
+    --gold: #c8a96e;
+    --gold-dim: #6b5530;
+    --danger: #cf4f6a;
+    --win: #4fcf8a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Organic background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(79,196,207,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(79,196,207,0.03) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 60% at 50% 50%, rgba(10,20,25,0.8) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Animated cell-like particles */
+  .particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(79,196,207,0.08);
+    animation: drift linear infinite;
+  }
+
+  @keyframes drift {
+    0% { transform: translateY(100vh) scale(0.8); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-100px) scale(1.2); opacity: 0; }
+  }
+
+  /* Layout */
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 32px 100px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .masthead {
+    text-align: center;
+    margin-bottom: 64px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .masthead::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 1px;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+  }
+
+  .version-tag {
+    font-family: 'Crimson Pro', serif;
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: block;
+  }
+
+  h1.game-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(64px, 12vw, 110px);
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    line-height: 1;
+    color: var(--text);
+    text-shadow:
+      0 0 40px rgba(79,196,207,0.3),
+      0 0 80px rgba(79,196,207,0.1);
+    margin-bottom: 16px;
+  }
+
+  .game-title span {
+    color: var(--accent);
+  }
+
+  .tagline {
+    font-style: italic;
+    font-size: 18px;
+    color: var(--text-dim);
+    font-weight: 300;
+    margin-top: 12px;
+  }
+
+  .player-info {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+
+  .info-pill {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
+    padding: 6px 16px;
+    border-radius: 20px;
+  }
+
+  .info-pill span { color: var(--accent); }
+
+  /* Nav */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 28px 32px;
+    margin-bottom: 56px;
+  }
+
+  .toc-title {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .toc-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 6px 24px;
+    list-style: none;
+  }
+
+  .toc-list a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s;
+  }
+
+  .toc-list a::before {
+    content: '—';
+    color: var(--accent2);
+    font-size: 12px;
+  }
+
+  .toc-list a:hover { color: var(--accent); }
+
+  /* Sections */
+  .section {
+    margin-bottom: 56px;
+    animation: fadeIn 0.6s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 0.2em;
+    min-width: 28px;
+  }
+
+  h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+
+  h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 28px 0 12px;
+  }
+
+  p { margin-bottom: 14px; color: var(--text-dim); }
+  p:last-child { margin-bottom: 0; }
+
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--gold); font-style: italic; }
+
+  /* Class cards */
+  .class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .class-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .class-card:hover {
+    border-color: var(--border-light);
+    transform: translateY(-2px);
+  }
+
+  .class-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .class-card.rasluu::before { background: linear-gradient(90deg, #cf4f4f, transparent); }
+  .class-card.lagluu::before { background: linear-gradient(90deg, #4fcf6a, transparent); }
+  .class-card.kjeluu::before { background: linear-gradient(90deg, #c8a96e, transparent); }
+  .class-card.gifluu::before { background: linear-gradient(90deg, #9b4fcf, transparent); }
+  .class-card.bisluu::before { background: linear-gradient(90deg, #4fc4cf, transparent); }
+
+  .class-name {
+    font-family: 'Cinzel', serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
+  }
+
+  .class-card.rasluu .class-name { color: #cf4f4f; }
+  .class-card.lagluu .class-name { color: #4fcf6a; }
+  .class-card.kjeluu .class-name { color: #c8a96e; }
+  .class-card.gifluu .class-name { color: #9b4fcf; }
+  .class-card.bisluu .class-name { color: #4fc4cf; }
+
+  .class-type {
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+
+  .class-counter {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+
+  .beats { color: var(--win); }
+  .loses { color: var(--danger); }
+
+  .passive-block {
+    background: var(--surface);
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-top: 8px;
+    font-size: 14px;
+  }
+
+  .passive-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .passive-label.base { color: var(--text-muted); }
+  .passive-label.evolved { color: var(--gold); }
+  .passive-label.trait { color: var(--accent); }
+
+  .passive-name {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .passive-desc {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 16px 0;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+
+  thead th {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 12px 16px;
+    text-align: left;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(79,196,207,0.02); }
+
+  td strong { color: var(--text); }
+  td.accent { color: var(--accent); font-family: 'Cinzel', serif; font-size: 14px; }
+  td.num { color: var(--gold); font-family: 'Cinzel', serif; text-align: center; }
+
+  /* Action blocks */
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .action-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .action-name {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .action-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Turn sequence */
+  .turn-sequence {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 16px 0;
+  }
+
+  .turn-step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .turn-step:last-child { border-bottom: none; }
+
+  .step-num {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 24px;
+    padding-top: 2px;
+  }
+
+  .step-content { flex: 1; }
+
+  .step-title {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .step-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+
+  /* Win/Lose */
+  .condition-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .condition-block {
+    border-radius: 6px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .condition-block.win {
+    background: rgba(79,207,138,0.06);
+    border: 1px solid rgba(79,207,138,0.2);
+  }
+
+  .condition-block.lose {
+    background: rgba(207,79,106,0.06);
+    border: 1px solid rgba(207,79,106,0.2);
+  }
+
+  .condition-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .condition-block.win .condition-label { color: var(--win); }
+  .condition-block.lose .condition-label { color: var(--danger); }
+
+  .condition-text {
+    font-size: 16px;
+    font-style: italic;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Card types */
+  .card-type-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+  }
+
+  .card-type-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 3px;
+    background: var(--surface2);
+    border: 1px solid var(--border-light);
+    color: var(--text-dim);
+  }
+
+  .card-type-tag.optional {
+    border-color: var(--gold-dim);
+    color: var(--gold);
+  }
+
+  /* Callout boxes */
+  .callout {
+    background: var(--accent-glow);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+
+  .callout strong { color: var(--accent); }
+
+  /* Footer */
+  footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .page { padding: 40px 20px 60px; }
+    .class-grid { grid-template-columns: 1fr; }
+    .condition-grid { grid-template-columns: 1fr; }
+    .action-grid { grid-template-columns: 1fr 1fr; }
+    h1.game-title { font-size: 72px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<div class="page">
+
+  <!-- Masthead -->
+  <header class="masthead">
+    <span class="version-tag">Rules Summary — Version 1.0</span>
+    <h1 class="game-title">L<span>U</span>U</h1>
+    <p class="tagline">Cultivate. Evolve. Reclaim.</p>
+    <div class="player-info">
+      <div class="info-pill"><span>1–4</span> Players</div>
+      <div class="info-pill"><span>45–60</span> Minutes</div>
+      <div class="info-pill">Cooperative</div>
+      <div class="info-pill">Challenging</div>
+    </div>
+  </header>
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <ul class="toc-list">
+      <li><a href="#theme">Theme</a></li>
+      <li><a href="#classes">The Five Classes</a></li>
+      <li><a href="#progression">Progression & Evolution</a></li>
+      <li><a href="#setup">Setup</a></li>
+      <li><a href="#sectors">Sector Structure</a></li>
+      <li><a href="#turns">Turn Structure</a></li>
+      <li><a href="#actions">Actions</a></li>
+      <li><a href="#formation">Formation</a></li>
+      <li><a href="#resources">Resources</a></li>
+      <li><a href="#deck">Deck Mechanics</a></li>
+      <li><a href="#conditions">Win & Lose</a></li>
+    </ul>
+  </nav>
+
+  <!-- Theme -->
+  <section class="section" id="theme">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2>Theme</h2>
+    </div>
+    <p><strong>Planet Luu</strong> is home to a remarkable species of small creatures — the <strong>Luu</strong>. Each Luu produces a natural secretion known as <strong>Luutex</strong>, a rare and potent clean energy source. A team of human colonists has travelled to Planet Luu to harvest Luutex and send it back to Earth — but they can only harvest in areas free of hostile Luu.</p>
+    <p>A parasitic infection has spread through part of the Luu population, turning infected individuals — the <strong>Rogue Luu</strong> — violently hostile toward both the colonists and healthy Luu alike. The friendly Luu fight back to protect their freedom and their home.</p>
+    <p>Players cultivate and lead friendly Luu to drive back the Rogue variants sector by sector. Clear every sector to reclaim Planet Luu. Lose all your Luu and the mission fails.</p>
+  </section>
+
+  <!-- Classes -->
+  <section class="section" id="classes">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2>The Five Classes</h2>
+    </div>
+    <p>Each Luu belongs to one of five classes. Four classes form a counter loop — each beats one and loses to one. <strong>Bisluu</strong> sits outside the loop as a pure support class.</p>
+    <p>Each class has up to three layers of ability: a <strong>Class Trait</strong> (a structural rule that applies at all levels), a <strong>Base Passive</strong> (active at levels 1–3), and an <strong>Evolved Passive</strong> (replaces the base passive at levels 4–5). Rasluu and Bisluu have no Class Trait — their identity is expressed entirely through their passives.</p>
+    <div class="callout"><strong>Type modifier:</strong> When a friendly Luu attacks a Rogue Luu of a class it counters, deal <strong>+1 damage</strong>. When attacking a class that counters it, deal <strong>−1 damage</strong> (minimum 0). Bisluu has no counter relationship and receives no modifier in either direction. This applies to both friendly and Rogue Luu attacks.</div>
+
+    <div class="class-grid">
+
+      <div class="class-card rasluu">
+        <div class="class-name">Rasluu</div>
+        <div class="class-type">Apex — Aggressive Predator</div>
+        <div class="class-counter">
+          <span class="beats">▲ Beats Gifluu</span>
+          <span class="loses">▼ Loses to Lagluu</span>
+        </div>
+        <div class="passive-block">
+          <div class="passive-label base">Base Passive</div>
+          <div class="passive-name">Predatory Strike</div>
+          <div class="passive-desc">+1 damage when attacking a target that has already been hit by another friendly Luu earlier this round.</div>
+        </div>
+        <div class="passive-block" style="margin-top:8px">
+          <div class="passive-label evolved">Evolved Passive</div>
+          <div class="passive-name">Apex Predator</div>
+          <div class="passive-desc">+2 damage when attacking a target that has already been hit by another friendly Luu earlier this round.</div>
+        </div>
+      </div>
+
+      <div class="class-card lagluu">
+        <div class="class-name">Lagluu</div>
+        <div class="class-type">Pack — Colony Organism</div>
+        <div class="class-counter">
+          <span class="beats">▲ Beats Rasluu</span>
+          <span class="loses">▼ Loses to Kjeluu</span>
+          <div class="passive-desc">At the end of each round, this Lagluu recovers 1 HP for each other Lagluu in play. Cannot recover from 0 HP. Cannot exceed base HP for current level.</div>
+        </div>
+        <div class="passive-block" style="margin-top:8px">
+          <div class="passive-label base">Base Passive</div>
+          <div class="passive-name">Colony Strength</div>
+          <div class="passive-desc">+1 defence for each other Lagluu in play.</div>
+        </div>
+        <div class="passive-block" style="margin-top:8px">
+          <div class="passive-label evolved">Evolved Passive</div>
+          <div class="passive-name">Swarm Mind</div>
+          <div class="passive-desc">+2 defence and +1 attack for each other Lagluu in play.</div>
+        </div>
+      </div>
+
+      <div class="class-card kjeluu">
+        <div class="class-name">Kjeluu</div>
+        <div class="class-type">Colossus — Armoured Defender</div>
+        <div class="class-counter">
+          <span class="beats">▲ Beats Lagluu</span>
+          <span class="loses">▼ Loses to Gifluu</span>
+        </div>
+        <div class="passive-block">
+          <div class="passive-label trait">Class Trait</div>
+          <div class="passive-name">Impervious</div>
+          <div class="passive-desc">Any attack dealing 2 or less damage to Kjeluu deals 0 instead. Kjeluu takes no damage from weak hits.</div>
+        </div>
+        <div class="passive-block" style="margin-top:8px">
+          <div class="passive-label base">Base Passive</div>
+          <div class="passive-name">Hardened Shell</div>
+          <div class="passive-desc">Reduce all incoming damage to Kjeluu by 1.</div>
+        </div>
+        <div class="passive-block" style="margin-top:8px">
+          <div class="passive-label evolved">Evolved Passive</div>
+          <div class="passive-name">Fortress Form</div>
+          <div class="passive-desc">Reduce incoming damage to Kjeluu by 2, and to adjacent friendly Luu by 1.</div>
+        </div>
+      </div>
+
+      <div class="class-card gifluu">
+        <div class="class-name">Gifluu</div>
+        <div class="class-type">Phantom — Toxic Evader</div>
+        <div class="class-counter">
+          <span class="beats">▲ Beats Kjeluu</span>
+          <span class="loses">▼ Loses to Rasluu</span>
+        </div>
+        <div class="passive-block">
+          <div class="passive-label trait">Class Trait</div>
+          <div class="passive-name">Phase Shift</div>
+          <div class="passive-desc">When a Rogue Luu attacks, roll a d6 for each active Gifluu. On a 6, that Gifluu evades all damage from that attack. Evasion is rolled per attacker. If evasion succeeds, Toxic Rebound does not trigger.</div>
+        </div>
+        <div class="passive-block" style="margin-top:8px">
+          <div class="passive-label base">Base Passive</div>
+          <div class="passive-name">Toxic Rebound</div>
+          <div class="passive-desc">When Gifluu defends, the attacker takes 1 damage.</div>
+        </div>
+        <div class="passive-block" style="margin-top:8px">
+          <div class="passive-label evolved">Evolved Passive</div>
+          <div class="passive-name">Venom Surge</div>
+          <div class="passive-desc">When Gifluu defends, the attacker takes 2 damage.</div>
+        </div>
+      </div>
+
+      <div class="class-card bisluu">
+        <div class="class-name">Bisluu</div>
+        <div class="class-type">Symbiont — Cooperative Amplifier</div>
+        <div class="class-counter">
+          <span style="color: var(--accent);">◆ Outside counter loop</span>
+        </div>
+        <div class="passive-block">
+          <div class="passive-label base">Base Passive</div>
+          <div class="passive-name">Bonded Boost</div>
+          <div class="passive-desc">All Luu immediately adjacent to Bisluu in the queue gain +1 attack, +1 defence, and +1 Luutex when they take the Gather action this turn.</div>
+        </div>
+        <div class="passive-block" style="margin-top:8px">
+          <div class="passive-label evolved">Evolved Passive</div>
+          <div class="passive-name">Deep Bond</div>
+          <div class="passive-desc">All Luu immediately adjacent to Bisluu in the queue gain +2 attack, +2 defence, +1 XP, and +1 Luutex when they take the Gather action this turn.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Progression -->
+  <section class="section" id="progression">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2>Progression & Evolution</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Level</th>
+            <th>Form</th>
+            <th>Attack Modifier</th>
+            <th>Passive</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">1</td><td>Base</td><td class="num">—</td><td class="accent">Base passive</td></tr>
+          <tr><td class="num">2</td><td>Base</td><td class="num">+1</td><td class="accent">Base passive</td></tr>
+          <tr><td class="num">3</td><td>Base</td><td class="num">+2</td><td class="accent">Base passive</td></tr>
+          <tr><td class="num">4</td><td><strong>Evolved</strong></td><td class="num">+4</td><td style="color:var(--gold)">Evolved passive</td></tr>
+          <tr><td class="num">5</td><td><strong>Evolved</strong></td><td class="num">+5</td><td style="color:var(--gold)">Evolved passive</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>XP</strong> is earned by defeating Rogue Luu and bosses. Certain cards provide XP bonuses.</p>
+    <div class="callout"><strong>Attack modifier vs absolute values:</strong> The progression table above shows attack modifiers relative to a Luu's base attack at Level 1. Card definitions list absolute attack values per level. The rules engine uses absolute values from the card — the modifier table is a reference for understanding the scaling curve.</div>
+    <div class="callout"><strong>Level up:</strong> When a Luu reaches 5 XP it levels up immediately. Its maximum HP increases to the new level's value — damage counters remain unchanged. A Luu that has taken no damage gains the full new HP maximum. A Luu that has taken damage retains those damage counters against the new higher maximum. XP resets to 0 on level up.</div>
+    <div class="callout"><strong>Rogue Luu XP:</strong> When a friendly Luu lands the killing blow on a Rogue Luu, that Luu alone receives the XP printed on the Rogue's card. XP is not shared.</div>
+    <div class="callout" style="margin-top:8px"><strong>Boss XP:</strong> Defeating a sector boss grants <strong>5 XP to each player</strong>, regardless of which Luu dealt the killing blow. Each player distributes their 5 XP freely among their own Luu in any combination they choose. XP given to a Luu already at L3 is wasted if that Luu has not yet evolved — evolution resets XP to 0, so players should evolve before distributing boss XP where possible.</div>
+    <div class="callout" style="margin-top:8px"><strong>Evolution:</strong> Play an evolved Luu card from hand onto an eligible L3 Luu at no Luutex cost. The Luu immediately becomes its evolved form, keeping its current level (L3) but gaining the evolved card's improved L3 stats and evolved passive. Health adjusts to the evolved L3 value — if current HP was lower, it stays lower (damage counters remain). XP carries over: if the Luu had 5 XP banked at the moment of evolution, it immediately levels up to L4 evolved. Evolution cards must be included in your deck during the building phase.</div>
+  </section>
+
+  <!-- Setup -->
+  <section class="section" id="setup">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2>Setup</h2>
+    </div>
+    <div class="turn-sequence">
+      <div class="turn-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Sector Order</div>
+          <div class="step-desc">Shuffle all sector boss cards and place them face down. The sector order is randomised each game.</div>
+        </div>
+      </div>
+      <div class="turn-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Starting Luu</div>
+          <div class="step-desc">Each player draws a random starting Luu. No two players may begin with the same class. Each player places their starting Luu at the front of their queue.</div>
+        </div>
+      </div>
+      <div class="turn-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Deck Building</div>
+          <div class="step-desc">Players collectively draft a deck of <strong>50 cards</strong> across 10 rounds. Each round, 7 action cards and 3 Luu cards are revealed — players collectively pick 5 of the 10. Unpicked cards are removed from the game (unpicked base Luu cards are set aside in a reserved pool for the Purification card). A suggested base deck is available for new players bypassing the draft.</div>
+        </div>
+      </div>
+      <div class="turn-step">
+        <div class="step-num">3b</div>
+        <div class="step-content">
+          <div class="step-title">Opening Hand Mulligan <span style="color:var(--gold);font-size:11px;letter-spacing:0.1em;margin-left:8px">SOLO ONLY</span></div>
+          <div class="step-desc">After drawing your opening hand, if you have no Luu cards in hand, you may shuffle your hand back into the deck and draw again. You must keep the second hand regardless of its contents.</div>
+        </div>
+      </div>
+      <div class="turn-step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Enemy Deck</div>
+          <div class="step-desc">Shuffle the Rogue Luu card deck. The enemy deck is tiered by difficulty — harder Rogue Luu appear in later waves.</div>
+        </div>
+      </div>
+      <div class="turn-step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <div class="step-title">First Sector</div>
+          <div class="step-desc">Reveal the first sector boss card. The first sector begins.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sector Structure -->
+  <section class="section" id="sectors">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2>Sector Structure</h2>
+    </div>
+    <p>Each sector consists of <strong>3 waves</strong> of Rogue Luu followed by <strong>1 boss</strong>. Enemy difficulty increases across waves within a sector.</p>
+    <p>The number of Rogue Luu per wave is always <strong>one more than the number of players</strong>. Rogue Luu have random class typing but receive <strong>+1 base attack</strong> if their class matches the sector boss.</p>
+
+    <h3>Dice Scaling by Sector</h3>
+    <p>The dice rolled for Rogue Luu attacks escalate with each sector, increasing both average damage and variance as the game progresses.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Sector</th><th>Dice Rolled</th><th>Min</th><th>Avg</th><th>Max</th></tr></thead>
+        <tbody>
+          <tr><td class="accent">S1</td><td>d4</td><td class="num">1</td><td class="num">2.5</td><td class="num">4</td></tr>
+          <tr><td class="accent">S2</td><td>d6</td><td class="num">1</td><td class="num">3.5</td><td class="num">6</td></tr>
+          <tr><td class="accent">S3</td><td>d8</td><td class="num">1</td><td class="num">4.5</td><td class="num">8</td></tr>
+          <tr><td class="accent">S4</td><td>d4 + d6</td><td class="num">2</td><td class="num">6.0</td><td class="num">10</td></tr>
+          <tr><td class="accent">S5</td><td>d4 + d8</td><td class="num">2</td><td class="num">7.0</td><td class="num">12</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>These values are added to the Rogue Luu's base attack, then divided by the number of players and rounded up. In solo play the full dice value applies — difficulty is intentionally high and swingy.</p>
+    <div class="callout"><strong>Between sectors:</strong> One new boss card is drawn from the remaining pool and revealed alongside the boss card that was not chosen in the previous sector selection. Players choose one of these two as the next sector boss. The unchosen boss carries forward to the next selection. In Sector 5 no choice is offered — only one boss remains. No boss type is repeated — all five boss types must be cleared to win.</div>
+  </section>
+
+  <!-- Turn Structure -->
+  <section class="section" id="turns">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2>Turn Structure</h2>
+    </div>
+
+    <h3>Start of Sector</h3>
+    <p>Each player draws cards up to their hand limit. Only draw if below the limit — no discard required at sector start.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Players</th><th>Hand Limit</th></tr></thead>
+        <tbody>
+          <tr><td>1 player</td><td class="num">5 cards</td></tr>
+          <tr><td>2 players</td><td class="num">4 cards</td></tr>
+          <tr><td>3 players</td><td class="num">3 cards</td></tr>
+          <tr><td>4 players</td><td class="num">2 cards</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>During a Wave</h3>
+    <p>There is no hand limit enforced during a wave. Cards drawn from effects (Combat Harvest, Core Cascade etc.) may temporarily take your hand above the limit.</p>
+
+    <h3>Each Player's Turn</h3>
+    <p>Luu act in queue order — Position 1 first, then Position 2, and so on. Each Luu completes its full turn (play cards + choose action) before the next Luu acts. You cannot use a later Luu's action to reposition before an earlier Luu has taken its turn.</p>
+    <div class="turn-sequence">
+      <div class="turn-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Play Cards</div>
+          <div class="step-desc">Play one or more cards from hand by spending resources. Cards enhance attacks, provide resources, grant XP, move formation, or trigger other effects.</div>
+        </div>
+      </div>
+      <div class="turn-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Choose One Action</div>
+          <div class="step-desc">Attack, Defend, Gather, or Move. See Actions section.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>After All Players Have Acted</h3>
+    <p>Each Rogue Luu attacks. Each Rogue Luu has a <strong>base damage value</strong> printed on its card. In addition, roll a number of dice equal to the number of players, sum the results, divide by the number of players, and <strong>round up</strong>. Add this to the base damage for the total damage each player takes. Damage is applied to the front Luu in each player's queue — if that Luu is knocked out, remaining damage carries to the next in line.</p>
+    <div class="callout">
+      <strong>Damage scaling by player count:</strong> The base damage component is fixed per Rogue Luu. The dice component scales with player count — more dice rolled in larger groups keeps average dice damage per player roughly consistent while adding natural variance. Solo play is swingy and high-risk. Multiplayer damage is more predictable but the larger wave size (always players + 1 Rogue Luu) ensures pressure scales with group size. Rounding always goes up — the planet does not forgive.
+    </div>
+
+    <h3>After Each Wave is Defeated</h3>
+    <p>Each player draws <strong>1 card</strong>, then discards down to their hand limit. Player chooses which cards to discard. Certain cards allow additional draws before discarding down.</p>
+  </section>
+
+  <!-- Actions -->
+  <section class="section" id="actions">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2>Actions</h2>
+    </div>
+    <div class="action-grid">
+      <div class="action-block">
+        <div class="action-name">⚔ Attack</div>
+        <div class="action-desc">Deal damage to one Rogue Luu. Damage = base attack value + dice roll. Die size increases each round.</div>
+      </div>
+      <div class="action-block">
+        <div class="action-name">🛡 Defend</div>
+        <div class="action-desc">Reduce incoming damage by 2 from the first Rogue Luu attack that lands this turn. Subsequent attacks are unaffected.</div>
+      </div>
+      <div class="action-block">
+        <div class="action-name">◆ Gather</div>
+        <div class="action-desc">Collect Luutex secreted by your Luu. Add 1 Luutex to your persistent pool.</div>
+      </div>
+      <div class="action-block">
+        <div class="action-name">↕ Move</div>
+        <div class="action-desc">Shift one Luu one position forward or backward in your queue. Cards may allow multiple position moves.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Formation -->
+  <section class="section" id="formation">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2>Formation</h2>
+    </div>
+    <p>Each player maintains their own <strong>Luu queue</strong> ordered front to back. Rogue Luu damage is applied to the front Luu first. If the front Luu is knocked out, damage carries to the next in queue.</p>
+    <p>The maximum number of Luu each player may have in their queue at any time scales with player count:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Players</th><th>Max Luu per Player</th></tr></thead>
+        <tbody>
+          <tr><td>1 player</td><td class="num">5</td></tr>
+          <tr><td>2 players</td><td class="num">4</td></tr>
+          <tr><td>3 players</td><td class="num">3</td></tr>
+          <tr><td>4 players</td><td class="num">2</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A Luu card or Purification conversion cannot be played if the player's queue is already at its limit.</p>
+    <p>Positioning is a core skill. Placing a heavily armoured Kjeluu at the front protects fragile or evolved Luu behind it. A Bisluu placed behind your strongest attacker amplifies their output each turn.</p>
+    <div class="callout"><strong>New Luu placement:</strong> When a Luu card is played from hand, the new Luu is always placed at the back of the queue. It cannot be placed directly into any other position. The newly placed Luu may act in the same round it is played — it will take its turn after all previously queued Luu have acted. Use the Move action on subsequent turns to reposition it forward.</div>
+    <div class="callout" style="margin-top:8px"><strong>Formation changes:</strong> Standard Move action shifts one Luu one position. Certain cards allow multiple position shifts in a single turn.</div>
+  </section>
+
+  <!-- Resources -->
+  <section class="section" id="resources">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <h2>Resources</h2>
+    </div>
+    <p><strong>Luutex</strong> — the secretion produced by friendly Luu — is the resource used to play cards. It persists across turns and accumulates until spent. Each Luu produces Luutex naturally; the Gather action collects it.</p>
+    <p>There is no cap on Luutex — it accumulates freely until spent. Losing Luu reduces your combat power but does not restrict your resource pool.</p>
+    <p>Luutex is spent to play cards from hand.</p>
+  </section>
+
+  <!-- Deck Mechanics -->
+  <section class="section" id="deck">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <h2>Deck Mechanics</h2>
+    </div>
+
+    <p>Players share one deck of <strong>50 cards</strong>, built collectively before play begins.</p>
+
+    <h3>Card Types</h3>
+    <p>Every card is one of two types:</p>
+    <div class="card-type-list">
+      <span class="card-type-tag">Luu</span>
+      <span class="card-type-tag">Action Card</span>
+    </div>
+    <p style="font-size:14px; margin-top:8px;">Luu cards include base Luu and their evolved forms. Action Cards cover all playable effects. Action Cards are further categorised by tags for deck building reference:</p>
+    <div class="card-type-list">
+      <span class="card-type-tag">Attack Enhancement</span>
+      <span class="card-type-tag">Defence Enhancement</span>
+      <span class="card-type-tag">Resource Generation</span>
+      <span class="card-type-tag">XP Boost</span>
+      <span class="card-type-tag">Healing</span>
+      <span class="card-type-tag">Card Draw</span>
+      <span class="card-type-tag">Movement</span>
+      <span class="card-type-tag">Damage Control</span>
+      <span class="card-type-tag">Class Synergy</span>
+      <span class="card-type-tag">Conversion</span>
+      <span class="card-type-tag optional">Event Cards ✦ Optional</span>
+    </div>
+    <p style="font-size:14px; margin-top:8px;">Event cards favour the enemy and are added as an optional difficulty modifier for experienced players.</p>
+
+    <h3>Deck Cycling</h3>
+    <p>When the deck is exhausted it is reshuffled. Before reshuffling, <strong>1 random card is visibly removed</strong> from the discard pile permanently. This creates late-game scarcity — players cannot rely on cycling to find specific cards.</p>
+
+    <h3>Enemy Deck</h3>
+    <p>The enemy deck contains only Rogue Luu cards, tiered by difficulty. No card removal mechanic applies to the enemy deck.</p>
+  </section>
+
+  <!-- Win & Lose -->
+  <section class="section" id="conditions">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <h2>Win & Lose Conditions</h2>
+    </div>
+    <div class="condition-grid">
+      <div class="condition-block win">
+        <div class="condition-label">Victory</div>
+        <div class="condition-text">Clear all sectors by defeating every wave and boss.</div>
+      </div>
+      <div class="condition-block lose">
+        <div class="condition-label">Defeat</div>
+        <div class="condition-text">All friendly Luu are defeated.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    LUU — Cooperative Card Game &nbsp;·&nbsp; Rules v2.2 &nbsp;·&nbsp; Stage 3 In Progress
+  </footer>
+
+</div>
+
+<script>
+  // Generate floating cell particles
+  const container = document.getElementById('particles');
+  const count = 18;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 20 + Math.random() * 80;
+    p.style.cssText = `
+      width: ${size}px;
+      height: ${size}px;
+      left: ${Math.random() * 100}%;
+      animation-duration: ${12 + Math.random() * 20}s;
+      animation-delay: ${-Math.random() * 20}s;
+      opacity: ${0.3 + Math.random() * 0.4};
+    `;
+    container.appendChild(p);
+  }
+
+  // Stagger section animations
+  const sections = document.querySelectorAll('.section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.animationPlayState = 'running';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  sections.forEach((s, i) => {
+    s.style.animationDelay = `${i * 0.05}s`;
+    s.style.animationPlayState = 'paused';
+    observer.observe(s);
+  });
+</script>
+</body>
+</html>

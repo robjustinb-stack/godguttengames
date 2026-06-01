@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUU — Master Card Library v3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+  :root {
+    --bg:#0a0d0f;--surface:#111518;--surface2:#161c20;--border:#1e2830;--border-light:#2a3840;
+    --accent:#4fc4cf;--accent2:#2a7a82;--accent-glow:rgba(79,196,207,0.12);
+    --text:#d8e8ec;--text-muted:#5a7a82;--text-dim:#8aaab2;
+    --gold:#c8a96e;--gold-dim:#6b5530;--danger:#cf4f6a;--win:#4fcf8a;
+    --chaos:#cf4fa8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',Georgia,serif;font-size:16px;line-height:1.6;min-height:100vh;padding:40px 20px 80px}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 40% at 15% 15%,rgba(79,196,207,0.05) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 85% 85%,rgba(79,196,207,0.03) 0%,transparent 50%);pointer-events:none;z-index:0}
+  .page{max-width:1400px;margin:0 auto;position:relative;z-index:1}
+  header{text-align:center;margin-bottom:40px;padding-bottom:28px;border-bottom:1px solid var(--border);position:relative}
+  header::after{content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:80px;height:1px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .version-tag{font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:10px}
+  h1{font-family:'Cinzel',serif;font-size:clamp(26px,4vw,44px);font-weight:900;letter-spacing:0.12em;color:var(--text);text-shadow:0 0 30px rgba(79,196,207,0.2)}
+  h1 span{color:var(--accent)}
+  .subtitle{font-style:italic;color:var(--text-muted);font-size:14px;margin-top:8px}
+  .stats-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+  .stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:10px 16px;display:flex;flex-direction:column;align-items:center;min-width:80px}
+  .stat-pill-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px}
+  .stat-pill-value{font-family:'Cinzel',serif;font-size:18px;font-weight:600;color:var(--accent)}
+  .breakdown{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+  .breakdown-chip{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:5px 10px;font-size:12px;color:var(--text-dim)}
+  .chip-dot{width:7px;height:7px;border-radius:1px;flex-shrink:0}
+  .chip-count{font-family:'Cinzel',serif;color:var(--accent);margin-left:4px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .search-wrap{position:relative;flex:1;min-width:180px;max-width:280px}
+  .search-input{width:100%;background:var(--surface2);border:1px solid var(--border-light);border-radius:3px;color:var(--text);font-family:'Crimson Pro',serif;font-size:14px;padding:7px 10px 7px 30px;outline:none;transition:border-color 0.15s}
+  .search-input:focus{border-color:var(--accent2)}
+  .search-input::placeholder{color:var(--text-muted)}
+  .search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:12px;pointer-events:none}
+  .filter-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;padding:6px 12px;border-radius:3px;border:1px solid var(--border-light);background:var(--surface);color:var(--text-muted);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+  .filter-btn:hover{border-color:var(--accent2);color:var(--text-dim)}
+  .filter-btn.active{background:var(--accent-glow);border-color:var(--accent);color:var(--accent)}
+  .sort-select{background:var(--surface2);border:1px solid var(--border-light);border-radius:3px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.1em;padding:7px 10px;outline:none;cursor:pointer}
+  .results-label{font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
+  .table-wrap{border:1px solid var(--border);border-radius:6px;overflow:hidden;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:960px}
+  thead th{font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);padding:11px 12px;text-align:left;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
+  thead th:hover{color:var(--accent)}
+  thead th.sorted{color:var(--accent)}
+  .sort-arrow{margin-left:4px;opacity:0.6}
+  tbody tr{border-bottom:1px solid var(--border);transition:background 0.12s}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:rgba(79,196,207,0.02)}
+  tbody td{padding:9px 12px;color:var(--text-dim);vertical-align:middle}
+  td.card-num{font-family:'Cinzel',serif;font-size:11px;color:var(--text-muted);width:44px}
+  .type-badge{display:inline-block;font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;padding:3px 7px;border-radius:2px;white-space:nowrap}
+  .pool-badge{display:inline-block;font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 5px;border-radius:2px;margin-top:3px;white-space:nowrap}
+  .type-luu{background:rgba(79,196,207,0.12);color:#4fc4cf;border:1px solid rgba(79,196,207,0.25)}
+  .type-evolved{background:rgba(200,169,110,0.12);color:#c8a96e;border:1px solid rgba(200,169,110,0.25)}
+  .type-core{background:rgba(79,196,207,0.08);color:#4fc4cf;border:1px solid rgba(79,196,207,0.2)}
+  .type-power{background:rgba(200,169,110,0.12);color:#c8a96e;border:1px solid rgba(200,169,110,0.25)}
+  .type-chaos{background:rgba(207,79,168,0.12);color:#cf4fa8;border:1px solid rgba(207,79,168,0.25)}
+  .type-rogue{background:rgba(207,79,106,0.12);color:#cf4f6a;border:1px solid rgba(207,79,106,0.25)}
+  .pool-core{background:rgba(79,196,207,0.06);color:var(--text-muted);border:1px solid rgba(79,196,207,0.15)}
+  .pool-power{background:rgba(200,169,110,0.06);color:var(--gold-dim);border:1px solid rgba(200,169,110,0.2)}
+  .dur-immediate{font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent2)}
+  .dur-persistent{font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold)}
+  .dur-triggered{font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#cf4fa8}
+  .cost-val{font-family:'Cinzel',serif;font-size:13px;color:var(--gold)}
+  .cost-free{font-family:'Cinzel',serif;font-size:10px;color:var(--text-muted);font-style:italic}
+  td.name-cell{color:var(--text);font-weight:600;min-width:140px}
+  td.desc-cell{font-size:13px;max-width:360px}
+  .version-cell{font-family:'Cinzel',serif;font-size:10px;color:var(--text-muted);white-space:nowrap}
+  footer{margin-top:48px;text-align:center;font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted)}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <span class="version-tag">Master Reference — All Cards — v3.2</span>
+    <h1>L<span>U</span>U — Card Library</h1>
+    <p class="subtitle">Complete record of every designed card · 10 Luu · 60 Action · 10 Chaos · 20 Rogue</p>
+  </header>
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-pill"><div class="stat-pill-label">Total Cards</div><div class="stat-pill-value" id="statTotal">0</div></div>
+    <div class="stat-pill"><div class="stat-pill-label">Core Action</div><div class="stat-pill-value" id="statCore">0</div></div>
+    <div class="stat-pill"><div class="stat-pill-label">Power Action</div><div class="stat-pill-value" style="color:var(--gold)" id="statPow">0</div></div>
+    <div class="stat-pill"><div class="stat-pill-label">Avg Cost</div><div class="stat-pill-value" id="statAvg">—</div></div>
+    <div class="stat-pill"><div class="stat-pill-label">Chaos</div><div class="stat-pill-value" style="color:var(--chaos)" id="statChaos">0</div></div>
+  </div>
+  <div class="breakdown" id="breakdown"></div>
+  <div class="controls">
+    <div class="search-wrap"><span class="search-icon">⌕</span><input class="search-input" id="searchInput" type="text" placeholder="Search cards…" oninput="render()"></div>
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('luu',this)">Luu</button>
+    <button class="filter-btn" onclick="setFilter('core',this)">Core</button>
+    <button class="filter-btn" onclick="setFilter('power',this)">Power</button>
+    <button class="filter-btn" onclick="setFilter('chaos',this)">Chaos</button>
+    <button class="filter-btn" onclick="setFilter('rogue',this)">Rogue</button>
+    <button class="filter-btn" onclick="setFilter('tag:Attack Enhancement',this)">Attack</button>
+    <button class="filter-btn" onclick="setFilter('tag:Defence Enhancement',this)">Defence</button>
+    <button class="filter-btn" onclick="setFilter('tag:Resource Generation',this)">Resource</button>
+    <button class="filter-btn" onclick="setFilter('tag:Healing',this)">Healing</button>
+    <button class="filter-btn" onclick="setFilter('tag:XP Boost',this)">XP</button>
+    <button class="filter-btn" onclick="setFilter('tag:Card Draw',this)">Draw</button>
+    <button class="filter-btn" onclick="setFilter('tag:Movement',this)">Movement</button>
+    <button class="filter-btn" onclick="setFilter('tag:Class Synergy',this)">Synergy</button>
+    <button class="filter-btn" onclick="setFilter('tag:Damage Control',this)">Damage Control</button>
+    <button class="filter-btn" onclick="setFilter('tag:Luu Recovery',this)">Luu Recovery</button>
+    <select class="sort-select" id="sortSelect" onchange="render()">
+      <option value="id">Sort: Card #</option>
+      <option value="pool">Sort: Pool</option>
+      <option value="cost">Sort: Cost</option>
+      <option value="name">Sort: Name</option>
+    </select>
+  </div>
+  <div class="results-label" id="resultsLabel"></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('id')"># <span class="sort-arrow" id="arr-id">↕</span></th>
+          <th onclick="sortBy('pool')">Type / Pool <span class="sort-arrow" id="arr-pool">↕</span></th>
+          <th>Tags</th>
+          <th onclick="sortBy('name')">Name <span class="sort-arrow" id="arr-name">↕</span></th>
+          <th>Duration</th>
+          <th onclick="sortBy('cost')">Cost <span class="sort-arrow" id="arr-cost">↕</span></th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody id="cardTable"></tbody>
+    </table>
+  </div>
+  <footer>LUU — Cooperative Card Game &nbsp;·&nbsp; Master Card Library v3.2 &nbsp;·&nbsp; 10 Luu · 40 Core · 20 Power · 10 Chaos · 20 Rogue</footer>
+</div>
+<script>
+const TAG_META = {
+  'Evolution':{'color':'#c8a96e'},'Attack Enhancement':{'color':'#cf4f4f'},'Defence Enhancement':{'color':'#4fcf6a'},
+  'Resource Generation':{'color':'#9b4fcf'},'XP Boost':{'color':'#4f8bcf'},'Healing':{'color':'#4fcf8a'},
+  'Card Draw':{'color':'#cf4fa8'},'Movement':{'color':'#cfb44f'},'Class Synergy':{'color':'#4fcfb4'},
+  'Damage Control':{'color':'#cf8a4f'},'Luu Recovery':{'color':'#4fcfb4'},'Conversion':{'color':'#cf4f9b'},
+};
+
+const CARDS = [
+// ── BASE LUU ──────────────────────────────────────────────────────────────────
+{pool:'luu',name:'Rasluu',tags:['Evolution'],duration:'Persistent',cost:2,
+ desc:'HP 15/20/25 (L1-3). Base attack 1/3/5. Trait: Call the Shot — once per sector, choose your attack dice value instead of rolling (must be within sector range). Passive: Predatory Strike — +1 damage when attacking a target already hit by another friendly Luu this round.'},
+{pool:'luu',name:'Lagluu',tags:['Evolution'],duration:'Persistent',cost:2,
+ desc:'HP 12/16/20 (L1-3). Base attack 0/2/4. Trait: Pack Recovery — at end of each round, recover 1 HP per other Lagluu in your queue. Passive: Colony Strength — +1 defence reduction per other Lagluu in play.'},
+{pool:'luu',name:'Kjeluu',tags:['Evolution'],duration:'Persistent',cost:2,
+ desc:'HP 20/27/34 (L1-3). Base attack 0/2/4. Trait: Impervious — attacks dealing ≤2 damage deal 0 instead. Passive: Hardened Shell — reduce all incoming damage by 1.'},
+{pool:'luu',name:'Gifluu',tags:['Evolution'],duration:'Persistent',cost:2,
+ desc:'HP 15/20/25 (L1-3). Base attack 0/2/3. Trait: Phase Shift — when attacked, roll d6; on a 6 evade all damage (rolled per attacker). Passive: Toxic Rebound — when Gifluu defends and an attack lands, attacker takes ceil(damage dealt ÷ 4) damage.'},
+{pool:'luu',name:'Bisluu',tags:['Evolution'],duration:'Persistent',cost:2,
+ desc:'HP 15/20/25 (L1-3). Base attack 0/2/4. No class trait. Passive: Bonded Boost — all adjacent Luu gain +1 attack, +1 defence, and +1 Luutex on their Gather action this turn.'},
+// ── EVOLVED LUU ──────────────────────────────────────────────────────────────
+{pool:'evolved',name:'Rasluu (Evolved)',tags:['Evolution'],duration:'Immediate',cost:0,
+ desc:'Play onto L3 Rasluu at no cost. HP 27/30/35 (L3-5). Attack 6/7/9. Trait unchanged: Call the Shot. Passive upgrades to Apex Predator — +2 damage when attacking a target already hit this round.'},
+{pool:'evolved',name:'Lagluu (Evolved)',tags:['Evolution'],duration:'Immediate',cost:0,
+ desc:'Play onto L3 Lagluu at no cost. HP 22/26/30 (L3-5). Attack 5/6/7. Trait unchanged: Pack Recovery. Passive upgrades to Swarm Mind — +2 defence per other Lagluu; heal 2 HP per ally at round end.'},
+{pool:'evolved',name:'Kjeluu (Evolved)',tags:['Evolution'],duration:'Immediate',cost:0,
+ desc:'Play onto L3 Kjeluu at no cost. HP 36/40/46 (L3-5). Attack 5/6/8. Trait: Impervious threshold increases with level (L3:2, L4:3, L5:4). Passive upgrades to Fortress Form — self -2 damage, adjacent Luu -1 damage.'},
+{pool:'evolved',name:'Gifluu (Evolved)',tags:['Evolution'],duration:'Immediate',cost:0,
+ desc:'Play onto L3 Gifluu at no cost. HP 27/30/35 (L3-5). Attack 4/5/6. Trait unchanged: Phase Shift. Passive upgrades to Venom Surge — when defending and an attack lands, attacker takes ceil(damage dealt ÷ 2) damage.'},
+{pool:'evolved',name:'Bisluu (Evolved)',tags:['Evolution'],duration:'Immediate',cost:0,
+ desc:'Play onto L3 Bisluu at no cost. HP 27/30/35 (L3-5). Attack 5/6/8. Passive upgrades to Deep Bond — adjacent Luu gain +2 attack, +2 defence, +1 XP, and +1 Luutex on their Gather action.'},
+// ── CORE ACTION CARDS ─────────────────────────────────────────────────────────
+{pool:'core',name:'Luutex Flare',tags:['Attack Enhancement'],duration:'Immediate',cost:1,
+ desc:'One chosen Luu deals +1 damage on their next attack this turn.'},
+{pool:'core',name:'Combat Harvest',tags:['Card Draw'],duration:'Persistent',cost:4,
+ desc:'Draw one card every time a Rogue Luu is knocked out this game. Multiple copies stack. Permanent rest of game.'},
+{pool:'core',name:'Luutex Reclaim',tags:['Resource Generation'],duration:'Immediate',cost:0,
+ desc:'Discard one card from hand. Gain 3 Luutex immediately.'},
+{pool:'core',name:'Shell Reflex',tags:['Defence Enhancement'],duration:'Persistent',cost:2,
+ desc:'Attach to one Luu. For rest of wave, when this Luu takes damage, roll d6 — on a 1, prevent all damage. Stacks with Phase Shift.'},
+{pool:'core',name:'Pack Call',tags:['Card Draw','Class Synergy'],duration:'Immediate',cost:2,
+ desc:'Search deck for a Lagluu card, add to hand. If a Lagluu is already in play, the found Lagluu may be played this turn at no Luutex cost. Shuffle deck.'},
+{pool:'core',name:'Luutex Pulse',tags:['Card Draw'],duration:'Persistent',cost:3,
+ desc:'Once per round, pay 1 Luutex to roll d4 — on a 1 or 2, draw one card. Permanent rest of game. Multiple copies stack.'},
+{pool:'core',name:'Pack Mending',tags:['Healing'],duration:'Persistent',cost:2,
+ desc:'At end of this round, remove 1 damage counter from every friendly Luu in play. Cannot restore a Luu at 0 HP.'},
+{pool:'core',name:'Override',tags:['Movement'],duration:'Persistent',cost:3,
+ desc:'This round, your Luu may take their actions in any order. Queue positions unchanged. Does not consume action.'},
+{pool:'core',name:'Evolution Drive',tags:['XP Boost'],duration:'Until Triggered',cost:2,
+ desc:'Attach to one Luu. The next Rogue that Luu eliminates grants +2 bonus XP to that Luu. Discards after the kill.'},
+{pool:'core',name:'Emergency Mend',tags:['Damage Control'],duration:'Immediate',cost:3,
+ desc:'Reallocate any damage dealt this turn among your Luu in any combination. Damage may be fully moved off one Luu. Kjeluu Impervious applies to reallocated damage.'},
+{pool:'core',name:'Shell Bond',tags:['Defence Enhancement','Class Synergy'],duration:'Persistent',cost:3,
+ desc:'Attach to one specific Luu. While an adjacent Kjeluu is in play, that Luu gains Kjeluu\'s damage reduction passive. Ends if Kjeluu moves away or is KO\'d. Lasts rest of wave.'},
+{pool:'core',name:'Shared Hunt',tags:['XP Boost'],duration:'Persistent',cost:3,
+ desc:'Attach to one Luu. For rest of wave, that Luu gains XP equal to any defeated Rogue\'s XP value regardless of who lands the kill. The killing Luu also receives XP normally.'},
+{pool:'core',name:'Colony Triumph',tags:['XP Boost'],duration:'Until Triggered',cost:2,
+ desc:'The next Rogue defeated this wave grants 1 XP to every friendly Luu in play, in addition to normal kill XP. Discards after triggering.'},
+{pool:'core',name:'Reawakening',tags:['Card Draw','Luu Recovery'],duration:'Immediate',cost:2,
+ desc:'Search the discard pile or knocked-out pool for any base or evolved Luu card. Add it to your hand.'},
+{pool:'core',name:'Last Lesson',tags:['Card Draw'],duration:'Persistent',cost:1,
+ desc:'Permanent rest of game. When a friendly Luu is knocked out, select one card from the discard pile and add it to your hand.'},
+{pool:'core',name:'Shield Resonance',tags:['Defence Enhancement'],duration:'Persistent',cost:3,
+ desc:'One chosen Luu takes -2 damage from all attacks this wave. Discards at end of wave.'},
+{pool:'core',name:'Hardened Instinct',tags:['Defence Enhancement'],duration:'Immediate',cost:4,
+ desc:'One chosen Luu has Impervious this round — attacks dealing 2 or less deal 0 damage.'},
+{pool:'core',name:'Apex Focus',tags:['Attack Enhancement'],duration:'Immediate',cost:3,
+ desc:'One chosen Luu doubles their base attack on their next attack this round.'},
+{pool:'core',name:'Shell Guard',tags:['Defence Enhancement'],duration:'Immediate',cost:1,
+ desc:'One chosen Luu takes -1 damage from the next attack this round.'},
+{pool:'core',name:'Shell Shift',tags:['Defence Enhancement'],duration:'Persistent',cost:3,
+ desc:'One chosen Luu immediately ignores all type disadvantages for the rest of this round.'},
+{pool:'core',name:'Luutex Cache',tags:['Resource Generation'],duration:'Persistent',cost:1,
+ desc:'Place 3 Luutex into a reserve. Gain 1 Luutex at the start of each round for 3 rounds.'},
+{pool:'core',name:'Luutex Flow',tags:['Resource Generation'],duration:'Persistent',cost:2,
+ desc:'Gain 2 Luutex immediately. If this Luu takes the Gather action this turn, gain 1 additional Luutex.'},
+{pool:'core',name:'Core Surge',tags:['Card Draw','Resource Generation'],duration:'Immediate',cost:2,
+ desc:'Draw 2 cards. Discard 1 card.'},
+{pool:'core',name:'Hunter\'s Edge',tags:['Attack Enhancement'],duration:'Immediate',cost:3,
+ desc:'One chosen Luu gains +2 attack on their next attack this round.'},
+{pool:'core',name:'Luutex Tap',tags:['Resource Generation'],duration:'Persistent',cost:3,
+ desc:'This wave, each time this Luu deals damage to a Rogue they haven\'t hit before, gain 1 Luutex. Once per Rogue per round.'},
+{pool:'core',name:'Shell Regrowth',tags:['Healing'],duration:'Immediate',cost:3,
+ desc:'Remove all damage counters from one chosen Luu. Fully restored to maximum HP.'},
+{pool:'core',name:'Quick Mend',tags:['Healing'],duration:'Immediate',cost:1,
+ desc:'Remove 2 damage counters from one chosen Luu.'},
+{pool:'core',name:'Formation Override',tags:['Movement'],duration:'Immediate',cost:3,
+ desc:'Move any Luu to any queue position. All other positions adjust. Does not consume action.'},
+{pool:'core',name:'Tactical Shift',tags:['Movement'],duration:'Persistent',cost:3,
+ desc:'Once per wave, swap any two Luu in the queue. Does not consume action.'},
+{pool:'core',name:'Core Cascade',tags:['Card Draw'],duration:'Immediate',cost:3,
+ desc:'Draw 3 cards. Discard 2.'},
+{pool:'core',name:'Damage Response',tags:['Defence Enhancement','Damage Control'],duration:'Persistent',cost:3,
+ desc:'Attach to one Luu. Once per round, when this Luu takes damage, deal the same amount back to the attacking Rogue.'},
+{pool:'core',name:'Luu Search',tags:['Card Draw','Luu Recovery'],duration:'Immediate',cost:3,
+ desc:'Search deck for any Luu or evolved Luu card. Add to hand. Shuffle deck.'},
+{pool:'core',name:'Passive Harvest',tags:['Resource Generation'],duration:'Immediate',cost:0,
+ desc:'Gain 1 Luutex. Does not consume action. Can be played alongside any other action.'},
+{pool:'core',name:'Hunting Ground',tags:['Attack Enhancement','Class Synergy'],duration:'Persistent',cost:3,
+ desc:'Attach to one Rasluu. That Rasluu\'s Predatory Strike deals +1 additional damage permanently.'},
+{pool:'core',name:'Hardened Core',tags:['Defence Enhancement','Class Synergy'],duration:'Persistent',cost:3,
+ desc:'Attach to one Kjeluu. That Kjeluu\'s damage reduction passive increases by 1 permanently (Hardened Shell: -1→-2; Fortress Form: self -2→-3, adjacent -1→-2).'},
+{pool:'core',name:'Double Phase',tags:['Defence Enhancement','Class Synergy'],duration:'Persistent',cost:3,
+ desc:'Attach to one Gifluu. That Gifluu rolls twice when checking Phase Shift evasion. If either roll succeeds, all damage is evaded. Permanent.'},
+{pool:'core',name:'Colony Bond',tags:['Class Synergy'],duration:'Persistent',cost:4,
+ desc:'Attach to one Bisluu. That Bisluu\'s passive now applies to all friendly Luu in queue, not just adjacent. Permanent.'},
+{pool:'core',name:'Dampening Wave',tags:['Damage Control'],duration:'Persistent',cost:3,
+ desc:'This round, all damage dealt to any friendly Luu is halved (rounded down), applied after Phase Shift and Impervious.'},
+{pool:'core',name:'Regenerative Pulse',tags:['Healing'],duration:'Persistent',cost:3,
+ desc:'At the end of each wave cleared, all friendly Luu heal HP equal to the current sector number. Lasts rest of game.'},
+{pool:'core',name:'Last Stand',tags:['Luu Recovery','Defence Enhancement'],duration:'Persistent',cost:3,
+ desc:'Attach to one Luu. When that Luu is knocked out, both its base and evolved cards are placed into your hand. Permanent.'},
+// ── POWER ACTION CARDS ────────────────────────────────────────────────────────
+{pool:'power',name:'Salvage Protocol',tags:['Card Draw'],duration:'Immediate',cost:4,
+ desc:'Search the discard pile for any card of your choice and add it to your hand.'},
+{pool:'power',name:'Purification',tags:['Conversion'],duration:'Immediate',cost:5,
+ desc:'Remove one Rogue Luu from the current wave. Take one base Luu of the same class from the reserved starter pool and place it at the back of your queue at L1. Cannot be played if no reserved Luu of that class remains.'},
+{pool:'power',name:'Shield Spread',tags:['Defence Enhancement'],duration:'Persistent',cost:4,
+ desc:'After each individual Rogue attack, distribute the damage among all friendly Luu. Lead Luu must take at least 1. Kjeluu Impervious applies. Lasts rest of wave.'},
+{pool:'power',name:'Split Strike',tags:['Attack Enhancement'],duration:'Immediate',cost:4,
+ desc:'Distribute this Luu\'s attack damage freely among any number of Rogues in the wave. Damage must total exactly the calculated attack value. Type advantages apply per target.'},
+{pool:'power',name:'Rebirth',tags:['Luu Recovery'],duration:'Immediate',cost:5,
+ desc:'Resurrect one knocked-out Luu from your colony\'s knocked-out pool. Rejoins queue at back at saved level with full HP. XP resets to 0.'},
+{pool:'power',name:'Termination',tags:['Attack Enhancement'],duration:'Immediate',cost:7,
+ desc:'Instantly knock out one target Rogue Luu regardless of remaining HP. No XP awarded for this kill.'},
+{pool:'power',name:'Forced Evolution',tags:['XP Boost'],duration:'Immediate',cost:5,
+ desc:'One chosen Luu immediately gains one level regardless of XP. HP adjusts to new level maximum (damage counters preserved). XP resets to 0.'},
+{pool:'power',name:'Full Restore',tags:['Healing'],duration:'Immediate',cost:6,
+ desc:'Fully restore all friendly Luu (all players) to maximum HP. Remove all damage counters.'},
+{pool:'power',name:'Overdrive',tags:['Attack Enhancement'],duration:'Persistent',cost:3,
+ desc:'Attach to one Luu. This round, that Luu deals double damage on their attack, applied after all other calculations. Expires end of round.'},
+{pool:'power',name:'Species Ward',tags:['Defence Enhancement'],duration:'Persistent',cost:6,
+ desc:'Choose one Rogue class. For the rest of this sector, all damage dealt by Rogues of that class is halved (rounded down), applied after all other calculations.'},
+{pool:'power',name:'Tenacity',tags:['Defence Enhancement'],duration:'Until Triggered',cost:3,
+ desc:'Attach to one Luu. If that Luu would be knocked out, it instead survives at 1 HP. All overflow damage from the killing blow is absorbed. Discards after triggering.'},
+{pool:'power',name:'Suppression Field',tags:['Damage Control'],duration:'Persistent',cost:4,
+ desc:'This round, all enemy dice rolls are treated as a minimum of 1. Dice are still rolled normally — only results below 1 are suppressed. Expires end of round.'},
+{pool:'power',name:'Vital Drain',tags:['Healing'],duration:'Persistent',cost:7,
+ desc:'Attach to one Luu. Permanent rest of game. At the end of each round, that Luu recovers HP equal to half the damage it dealt this round (rounded down, cannot exceed max HP).'},
+{pool:'power',name:'Colony Harvest',tags:['Resource Generation'],duration:'Immediate',cost:5,
+ desc:'Gain 1 Luutex for each friendly Luu currently in play. Then draw 1 card.'},
+{pool:'power',name:'Surge Protocol',tags:['Resource Generation','Card Draw'],duration:'Immediate',cost:5,
+ desc:'Gain Luutex equal to the current wave number (W1: 1, W2: 2, W3: 3, Boss: 4). Draw 1 card.'},
+{pool:'power',name:'Death Defiance',tags:['Defence Enhancement'],duration:'Until Triggered',cost:5,
+ desc:'Attach to one Luu. When that Luu is knocked out by a Rogue, the attacking Rogue is also immediately knocked out (regardless of HP). If the attacker is a boss, deal 10 damage instead. The attached Luu still dies. Discards after triggering.'},
+{pool:'power',name:'Neural Cascade',tags:['Card Draw'],duration:'Persistent',cost:4,
+ desc:'Persistent. Once per wave, activate to discard one card from hand and immediately draw one replacement card.'},
+{pool:'power',name:'Rising Tide',tags:['Resource Generation'],duration:'Immediate',cost:3,
+ desc:'Gain 1 Luutex for each wave already cleared this sector (W1 cleared: +1, W2 cleared: +2, W3 cleared: +3).'},
+{pool:'power',name:'Tactical Command',tags:['Movement'],duration:'Persistent',cost:5,
+ desc:'Permanent rest of game. At the start of each round, choose the order your Luu take their actions this round. Queue positions do not change — only action order is affected.'},
+{pool:'power',name:'Resonance Surge',tags:['Attack Enhancement','Resource Generation'],duration:'Immediate',cost:5,
+ desc:'If a Kjeluu and Gifluu are both in play, gain 3 Luutex and deal 3 bonus damage on this Luu\'s next attack this round.'},
+// ── CHAOS CARDS ───────────────────────────────────────────────────────────────
+{pool:'chaos',name:'Colony Fracture',tags:['Damage Control'],duration:'Immediate',cost:0,
+ desc:'CHAOS — Immediate when drawn. The lead Luu of the player who drew this card is immediately knocked out. If this is their only remaining Luu, it survives at 1 HP instead.'},
+{pool:'chaos',name:'Surge Protocol (Chaos)',tags:['Damage Control'],duration:'Until Triggered',cost:0,
+ desc:'CHAOS — Immediate when drawn. In the next enemy attack phase, all enemies use the maximum possible dice value for the current sector (S1:4, S2:6, S3:8, S4:10, S5:12).'},
+{pool:'chaos',name:'Rogue Resurgence',tags:['Damage Control'],duration:'Immediate',cost:0,
+ desc:'CHAOS — Immediate when drawn. All active Rogue Luu are immediately restored to full HP. Any damage dealt this wave is undone.'},
+{pool:'chaos',name:'Corrupted Vanguard',tags:['Damage Control'],duration:'Until Triggered',cost:0,
+ desc:'CHAOS — Delayed trigger. When the boss wave begins this sector, one additional Rogue of the boss class joins (T1/S1, T2/S2, T3/S3, T4/S4+S5). If already in boss wave, fires immediately.'},
+{pool:'chaos',name:'Toxic Pulse',tags:['Damage Control'],duration:'Immediate',cost:0,
+ desc:'CHAOS — Immediate when drawn. All active friendly Luu (all players) take 3 damage. Normal damage rules apply.'},
+{pool:'chaos',name:'Luutex Drain',tags:['Damage Control'],duration:'Immediate',cost:0,
+ desc:'CHAOS — Immediate when drawn. All players lose half of their current Luutex, rounded down.'},
+{pool:'chaos',name:'Queue Collapse',tags:['Damage Control'],duration:'Immediate',cost:0,
+ desc:'CHAOS — Immediate when drawn. All players\' Luu queues are fully reversed. The Luu at the back moves to position 1. Positions reassigned accordingly.'},
+{pool:'chaos',name:'Blackout',tags:['Damage Control'],duration:'Until Triggered',cost:0,
+ desc:'CHAOS — Immediate when drawn. For the next complete round, no Luu may use the Attack action. Defend, Gather, and Move are unaffected.'},
+{pool:'chaos',name:'Signal Jam',tags:['Damage Control'],duration:'Until Triggered',cost:0,
+ desc:'CHAOS — Immediate when drawn. No player may play action cards from hand for the remainder of the current wave or boss wave.'},
+{pool:'chaos',name:'Memory Wipe',tags:['Damage Control'],duration:'Immediate',cost:0,
+ desc:'CHAOS — Immediate when drawn. The XP of all active friendly Luu (all players) is immediately reset to 0. Levels and HP are unaffected.'},
+// ── ROGUE LUU (Reference) ─────────────────────────────────────────────────────
+{pool:'rogue',name:'Rogue Rasluu T1',tags:['Attack Enhancement'],duration:'Persistent',cost:0,desc:'HP 10 · Atk 1 · XP 1. Trait: Predatory Strike — +1 damage when attacking a Luu already hit this round.'},
+{pool:'rogue',name:'Rogue Rasluu T2',tags:['Attack Enhancement'],duration:'Persistent',cost:0,desc:'HP 12 · Atk 2 · XP 2. Trait: Predatory Strike — +1 damage when target already hit this round.'},
+{pool:'rogue',name:'Rogue Rasluu T3',tags:['Attack Enhancement'],duration:'Persistent',cost:0,desc:'HP 20 · Atk 5 · XP 3. Trait: Predatory Strike — +2 damage when target already hit this round.'},
+{pool:'rogue',name:'Rogue Rasluu T4',tags:['Attack Enhancement'],duration:'Persistent',cost:0,desc:'HP 30 · Atk 7 · XP 4. Trait: Predatory Strike — +3 damage when target already hit this round.'},
+{pool:'rogue',name:'Rogue Lagluu T1',tags:['Healing'],duration:'Persistent',cost:0,desc:'HP 12 · Atk 1 · XP 1. Trait: Pack Recovery — recover 1 HP per other Rogue Lagluu alive in wave at round end.'},
+{pool:'rogue',name:'Rogue Lagluu T2',tags:['Healing'],duration:'Persistent',cost:0,desc:'HP 15 · Atk 1 · XP 2. Trait: Pack Recovery — recover 1 HP per other Rogue Lagluu at round end.'},
+{pool:'rogue',name:'Rogue Lagluu T3',tags:['Healing'],duration:'Persistent',cost:0,desc:'HP 20 · Atk 3 · XP 3. Trait: Pack Recovery — recover 2 HP per other Rogue Lagluu at round end.'},
+{pool:'rogue',name:'Rogue Lagluu T4',tags:['Healing'],duration:'Persistent',cost:0,desc:'HP 26 · Atk 5 · XP 4. Trait: Pack Recovery — recover 3 HP per other Rogue Lagluu at round end.'},
+{pool:'rogue',name:'Rogue Kjeluu T1',tags:['Defence Enhancement'],duration:'Persistent',cost:0,desc:'HP 16 · Atk 1 · XP 1. Trait: Impervious — attacks of ≤2 deal 0 damage.'},
+{pool:'rogue',name:'Rogue Kjeluu T2',tags:['Defence Enhancement'],duration:'Persistent',cost:0,desc:'HP 20 · Atk 2 · XP 2. Trait: Impervious — attacks of ≤2 deal 0 damage.'},
+{pool:'rogue',name:'Rogue Kjeluu T3',tags:['Defence Enhancement'],duration:'Persistent',cost:0,desc:'HP 28 · Atk 4 · XP 3. Trait: Impervious — attacks of ≤3 deal 0 damage.'},
+{pool:'rogue',name:'Rogue Kjeluu T4',tags:['Defence Enhancement'],duration:'Persistent',cost:0,desc:'HP 38 · Atk 6 · XP 4. Trait: Impervious — attacks of ≤4 deal 0 damage.'},
+{pool:'rogue',name:'Rogue Gifluu T1',tags:['Defence Enhancement'],duration:'Persistent',cost:0,desc:'HP 12 · Atk 1 · XP 1. Trait: Phase Shift — on a 6, evade all damage and deal 1 rebound to attacker.'},
+{pool:'rogue',name:'Rogue Gifluu T2',tags:['Defence Enhancement'],duration:'Persistent',cost:0,desc:'HP 15 · Atk 2 · XP 2. Trait: Phase Shift — on a 6, evade all damage and deal 1 rebound to attacker.'},
+{pool:'rogue',name:'Rogue Gifluu T3',tags:['Defence Enhancement'],duration:'Persistent',cost:0,desc:'HP 20 · Atk 3 · XP 3. Trait: Phase Shift — on a 6, evade all damage and deal 2 rebound to attacker.'},
+{pool:'rogue',name:'Rogue Gifluu T4',tags:['Defence Enhancement'],duration:'Persistent',cost:0,desc:'HP 26 · Atk 4 · XP 4. Trait: Phase Shift — on a 6, evade all damage and deal 3 rebound to attacker.'},
+{pool:'rogue',name:'Rogue Bisluu T1',tags:['Attack Enhancement'],duration:'Persistent',cost:0,desc:'HP 10 · Atk 1 · XP 1. Trait: Bonded Boost — at round start, adjacent Rogues gain +1 attack this round.'},
+{pool:'rogue',name:'Rogue Bisluu T2',tags:['Attack Enhancement'],duration:'Persistent',cost:0,desc:'HP 12 · Atk 2 · XP 2. Trait: Bonded Boost — at round start, adjacent Rogues gain +1 attack this round.'},
+{pool:'rogue',name:'Rogue Bisluu T3',tags:['Attack Enhancement'],duration:'Persistent',cost:0,desc:'HP 18 · Atk 3 · XP 3. Trait: Bonded Boost — at round start, adjacent Rogues gain +2 attack this round.'},
+{pool:'rogue',name:'Rogue Bisluu T4',tags:['Attack Enhancement'],duration:'Persistent',cost:0,desc:'HP 24 · Atk 5 · XP 4. Trait: Bonded Boost — at round start, adjacent Rogues gain +3 attack this round.'},
+];
+
+let activeFilter='all', sortKey='id', sortDir=1;
+
+function setFilter(f,btn){
+  activeFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+function sortBy(key){
+  if(sortKey===key)sortDir*=-1;else{sortKey=key;sortDir=1;}
+  ['id','pool','name','cost'].forEach(k=>{const el=document.getElementById('arr-'+k);if(el)el.textContent=k===sortKey?(sortDir===1?'↑':'↓'):'↕';});
+  render();
+}
+function getFiltered(){
+  const q=document.getElementById('searchInput').value.toLowerCase().trim();
+  let list=CARDS.map((c,i)=>({...c,_idx:i}));
+  if(activeFilter.startsWith('tag:'))list=list.filter(c=>(c.tags||[]).includes(activeFilter.slice(4)));
+  else if(activeFilter!=='all')list=list.filter(c=>c.pool===activeFilter);
+  if(q)list=list.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.desc||'').toLowerCase().includes(q)||(c.pool||'').toLowerCase().includes(q)||(c.tags||[]).join(' ').toLowerCase().includes(q));
+  list.sort((a,b)=>{
+    const ORDER={luu:0,evolved:1,core:2,power:3,chaos:4,rogue:5};
+    let av,bv;
+    if(sortKey==='id'){av=a._idx;bv=b._idx;}
+    else if(sortKey==='pool'){av=ORDER[a.pool]??9;bv=ORDER[b.pool]??9;}
+    else if(sortKey==='name'){av=(a.name||'').toLowerCase();bv=(b.name||'').toLowerCase();}
+    else if(sortKey==='cost'){av=a.cost||0;bv=b.cost||0;}
+    if(av<bv)return-1*sortDir;if(av>bv)return 1*sortDir;return 0;
+  });
+  return list;
+}
+function typeBadge(pool){
+  const MAP={
+    luu:['type-luu','Luu'],evolved:['type-evolved','Evolved'],
+    core:['type-core','Core'],power:['type-power','Power'],
+    chaos:['type-chaos','Chaos'],rogue:['type-rogue','Rogue']
+  };
+  const [cls,label]=MAP[pool]||['type-core','?'];
+  return`<span class="type-badge ${cls}">${label}</span>`;
+}
+function renderStats(){
+  document.getElementById('statTotal').textContent=CARDS.length;
+  document.getElementById('statCore').textContent=CARDS.filter(c=>c.pool==='core').length;
+  document.getElementById('statPow').textContent=CARDS.filter(c=>c.pool==='power').length;
+  document.getElementById('statChaos').textContent=CARDS.filter(c=>c.pool==='chaos').length;
+  const costed=CARDS.filter(c=>c.cost>0&&(c.pool==='core'||c.pool==='power'));
+  document.getElementById('statAvg').textContent=costed.length?(costed.reduce((s,c)=>s+c.cost,0)/costed.length).toFixed(1):'—';
+}
+function renderBreakdown(){
+  const el=document.getElementById('breakdown');el.innerHTML='';
+  const pools=[['luu','#4fc4cf','Luu'],['evolved','#c8a96e','Evolved'],['core','#4fc4cf','Core Action'],['power','#c8a96e','Power Action'],['chaos','#cf4fa8','Chaos'],['rogue','#cf4f6a','Rogue']];
+  pools.forEach(([p,color,label])=>{
+    const n=CARDS.filter(c=>c.pool===p).length;if(!n)return;
+    const chip=document.createElement('div');chip.className='breakdown-chip';
+    chip.innerHTML=`<div class="chip-dot" style="background:${color}"></div>${label}<span class="chip-count">${n}</span>`;
+    el.appendChild(chip);
+  });
+  const tagCounts={};
+  CARDS.forEach(c=>(c.tags||[]).forEach(t=>{tagCounts[t]=(tagCounts[t]||0)+1;}));
+  Object.entries(TAG_META).forEach(([tag,meta])=>{
+    if(!tagCounts[tag])return;
+    const chip=document.createElement('div');chip.className='breakdown-chip';
+    chip.innerHTML=`<div class="chip-dot" style="background:${meta.color}"></div>${tag}<span class="chip-count">${tagCounts[tag]}</span>`;
+    el.appendChild(chip);
+  });
+}
+function renderTable(){
+  const tbody=document.getElementById('cardTable');tbody.innerHTML='';
+  const list=getFiltered();
+  document.getElementById('resultsLabel').textContent=`Showing ${list.length} of ${CARDS.length} card${CARDS.length!==1?'s':''}`;
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);font-style:italic">No cards found.</td></tr>`;return;}
+  list.forEach(card=>{
+    const tr=document.createElement('tr');
+    const durClass=card.duration==='Immediate'?'dur-immediate':card.duration==='Until Triggered'?'dur-triggered':'dur-persistent';
+    const costHtml=(!card.cost||card.cost==0)?'<span class="cost-free">—</span>':`<span class="cost-val">${card.cost}</span>`;
+    const tagsHtml=(card.tags||[]).map(t=>{const color=TAG_META[t]?.color||'#888';return`<span style="display:inline-block;font-family:Cinzel,serif;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;border-radius:2px;background:${color}22;color:${color};border:1px solid ${color}44;margin:1px">${t}</span>`;}).join('');
+    tr.innerHTML=`
+      <td class="card-num">${String(card._idx+1).padStart(3,'0')}</td>
+      <td>${typeBadge(card.pool)}</td>
+      <td style="min-width:140px">${tagsHtml}</td>
+      <td class="name-cell">${card.name||'—'}</td>
+      <td><span class="${durClass}">${card.duration}</span></td>
+      <td>${costHtml}</td>
+      <td class="desc-cell">${card.desc||'—'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+function render(){renderStats();renderBreakdown();renderTable();}
+render();
+</script>
+</body>
+</html>
