@@ -1474,6 +1474,22 @@ const UI = (() => {
     selectedCardIndex = null;
     activeAction = null;
     _buildDOM(state);
+
+    // Turn indicator for multiplayer
+    const indicator = document.getElementById('turnIndicator');
+    if (indicator && typeof LuuSession !== 'undefined') {
+      const identity = LuuSession.getIdentity();
+      if (identity && identity.playerIndex !== undefined && state.config.playerCount > 1) {
+        const myTurn = LuuSession.isMyTurn(state);
+        indicator.style.display      = 'block';
+        indicator.style.background   = myTurn ? 'rgba(79,196,207,0.15)' : 'rgba(207,79,106,0.15)';
+        indicator.style.borderBottom = myTurn ? '1px solid rgba(79,196,207,0.4)' : '1px solid rgba(207,79,106,0.4)';
+        indicator.style.color        = myTurn ? '#4fc4cf' : '#cf4f6a';
+        indicator.textContent        = myTurn ? '✦ Your Turn' : '⏳ Waiting for opponent...';
+      } else {
+        indicator.style.display = 'none';
+      }
+    }
   }
 
   function _buildDOM(state) {
@@ -1513,6 +1529,12 @@ const UI = (() => {
       tip.className = 'tooltip';
       document.body.appendChild(tip);
     }
+
+    // Recreate turn indicator (body was wiped above)
+    const indicator = document.createElement('div');
+    indicator.id = 'turnIndicator';
+    indicator.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; z-index:999; padding:8px 16px; text-align:center; font-family:Cinzel,serif; font-size:12px; letter-spacing:0.2em; text-transform:uppercase;';
+    document.body.appendChild(indicator);
   }
 
   // ─── Enemy Zone ────────────────────────────
