@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUU — Starter Deck Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+  :root {
+    --bg: #0a0d0f;
+    --surface: #111518;
+    --surface2: #161c20;
+    --border: #1e2830;
+    --border-light: #2a3840;
+    --accent: #4fc4cf;
+    --accent2: #2a7a82;
+    --accent-glow: rgba(79,196,207,0.12);
+    --text: #d8e8ec;
+    --text-muted: #5a7a82;
+    --text-dim: #8aaab2;
+    --gold: #c8a96e;
+    --gold-dim: #6b5530;
+    --danger: #cf4f6a;
+    --win: #4fcf8a;
+
+    --type-luu: #4fc4cf;
+    --type-evo: #c8a96e;
+    --type-atk: #cf4f4f;
+    --type-def: #4fcf6a;
+    --type-res: #9b4fcf;
+    --type-xp:  #4f8bcf;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 40% at 15% 15%, rgba(79,196,207,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 85% 85%, rgba(79,196,207,0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 50%;
+    transform: translateX(-50%);
+    width: 80px; height: 1px;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+  }
+
+  .version-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    color: var(--text);
+    text-shadow: 0 0 30px rgba(79,196,207,0.2);
+  }
+
+  h1 span { color: var(--accent); }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    align-items: stretch;
+  }
+
+  .stat-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 90px;
+  }
+
+  .stat-pill-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .stat-pill-value {
+    font-family: 'Cinzel', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .stat-pill-value.warn { color: var(--danger); }
+  .stat-pill-value.ok { color: var(--win); }
+
+  /* Type ratio bar */
+  .ratio-section {
+    margin-bottom: 28px;
+  }
+
+  .ratio-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .ratio-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    gap: 2px;
+    margin-bottom: 10px;
+  }
+
+  .ratio-seg {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .ratio-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 3px;
+    border: 1px solid var(--border-light);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover { border-color: var(--accent2); color: var(--text-dim); }
+  .filter-btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+  .add-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 3px;
+    border: 1px solid var(--accent2);
+    background: var(--accent-glow);
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: auto;
+  }
+
+  .add-btn:hover { background: rgba(79,196,207,0.2); }
+
+  /* Table */
+  .table-wrap {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 800px;
+  }
+
+  thead th {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 12px 14px;
+    text-align: left;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(79,196,207,0.02); }
+
+  tbody td {
+    padding: 10px 14px;
+    color: var(--text-dim);
+    vertical-align: middle;
+  }
+
+  td.card-num {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--text-muted);
+    width: 48px;
+  }
+
+  /* Type badge */
+  .type-badge {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .type-luu      { background: rgba(79,196,207,0.12); color: var(--type-luu); border: 1px solid rgba(79,196,207,0.25); }
+  .type-action   { background: rgba(200,169,110,0.12); color: var(--type-evo); border: 1px solid rgba(200,169,110,0.25); }
+
+  /* Duration badge */
+  .dur-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .dur-immediate { color: var(--accent2); }
+  .dur-persistent { color: var(--gold); }
+  .dur-triggered { color: #cf4fa8; }
+
+  /* Cost */
+  .cost-val {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--gold);
+  }
+
+  .cost-free {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* Description */
+  td.desc { color: var(--text-dim); font-size: 13px; max-width: 320px; }
+
+  /* Edit / delete */
+  .row-actions {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  tbody tr:hover .row-actions { opacity: 1; }
+
+  .btn-icon {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    border: 1px solid var(--border-light);
+    background: var(--surface2);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.12s;
+  }
+
+  .btn-icon:hover { border-color: var(--accent2); color: var(--accent); }
+  .btn-icon.del:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 28px 32px;
+    width: 100%;
+    max-width: 520px;
+    position: relative;
+  }
+
+  .modal-title {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-row.full { grid-template-columns: 1fr; }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .form-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .form-input, .form-select, .form-textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Crimson Pro', serif;
+    font-size: 14px;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent2);
+  }
+
+  .form-select option { background: var(--surface2); }
+
+  .form-textarea { resize: vertical; min-height: 72px; }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  .btn-cancel {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 8px 18px;
+    border-radius: 3px;
+    border: 1px solid var(--border-light);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .btn-save {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 8px 18px;
+    border-radius: 3px;
+    border: 1px solid var(--accent2);
+    background: var(--accent-glow);
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-save:hover { background: rgba(79,196,207,0.2); }
+
+  /* Empty state */
+  .empty-row td {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 14px;
+  }
+
+  footer {
+    margin-top: 48px;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <span class="version-tag">Stage 2 — Card Design</span>
+    <h1>L<span>U</span>U — Starter Deck</h1>
+  </header>
+
+  <!-- Stats bar -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-pill">
+      <div class="stat-pill-label">Total Cards</div>
+      <div class="stat-pill-value" id="statTotal">0</div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-label">Target</div>
+      <div class="stat-pill-value">20</div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-label">Remaining</div>
+      <div class="stat-pill-value" id="statRemaining">20</div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-label">Avg Cost</div>
+      <div class="stat-pill-value" id="statAvgCost">—</div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-label">Starting Luutex</div>
+      <div class="stat-pill-value" style="color:var(--gold)">5</div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-pill-label">Gather Rate</div>
+      <div class="stat-pill-value" style="color:var(--gold)">1 / action</div>
+    </div>
+  </div>
+
+  <!-- Type ratio -->
+  <div class="ratio-section">
+    <div class="ratio-label">Deck composition — target ratio</div>
+    <div class="ratio-bar" id="ratioBar"></div>
+    <div class="ratio-legend" id="ratioLegend"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('Luu', this)">Luu</button>
+    <button class="filter-btn" onclick="setFilter('Action Card', this)">Action Cards</button>
+    <button class="filter-btn" onclick="setFilter('tag:Evolution', this)">Evolution</button>
+    <button class="filter-btn" onclick="setFilter('tag:Attack Enhancement', this)">Attack</button>
+    <button class="filter-btn" onclick="setFilter('tag:Defence Enhancement', this)">Defence</button>
+    <button class="filter-btn" onclick="setFilter('tag:Resource Generation', this)">Resource</button>
+    <button class="filter-btn" onclick="setFilter('tag:XP Boost', this)">XP</button>
+    <button class="filter-btn" onclick="setFilter('tag:Healing', this)">Healing</button>
+    <button class="filter-btn" onclick="setFilter('tag:Card Draw', this)">Draw</button>
+    <button class="filter-btn" onclick="setFilter('tag:Movement', this)">Movement</button>
+    <button class="filter-btn" onclick="setFilter('tag:Class Synergy', this)">Class Synergy</button>
+    <button class="filter-btn" onclick="setFilter('tag:Damage Control', this)">Damage Control</button>
+    <button class="add-btn" onclick="openModal()">+ Add Card</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Tags</th>
+          <th>Name</th>
+          <th>Duration</th>
+          <th>Cost (Luutex)</th>
+          <th>Description</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="cardTable"></tbody>
+    </table>
+  </div>
+
+  <footer style="margin-top:40px">
+    LUU — Cooperative Card Game &nbsp;·&nbsp; Starter Deck Design &nbsp;·&nbsp; Stage 2
+  </footer>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Add Card</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Card Type</label>
+        <select class="form-select" id="fType">
+          <option value="Luu">Luu</option>
+          <option value="Action Card">Action Card</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duration</label>
+        <select class="form-select" id="fDuration">
+          <option value="Immediate">Immediate</option>
+          <option value="Persistent">Persistent</option>
+          <option value="Until Triggered">Until Triggered</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label class="form-label">Tags (select all that apply)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" id="fTags">
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer"><input type="checkbox" value="Evolution"> Evolution</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer"><input type="checkbox" value="Attack Enhancement"> Attack Enhancement</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer"><input type="checkbox" value="Defence Enhancement"> Defence Enhancement</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer"><input type="checkbox" value="Resource Generation"> Resource Generation</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer"><input type="checkbox" value="XP Boost"> XP Boost</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer"><input type="checkbox" value="Healing"> Healing</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer"><input type="checkbox" value="Card Draw"> Card Draw</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer"><input type="checkbox" value="Movement"> Movement</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer"><input type="checkbox" value="Class Synergy"> Class Synergy</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer"><input type="checkbox" value="Damage Control"> Damage Control</label>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Card Name</label>
+        <input class="form-input" id="fName" type="text" placeholder="e.g. Rasluu, Venom Strike…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Resource Cost (Luutex)</label>
+        <input class="form-input" id="fCost" type="number" min="0" max="10" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" id="fDesc" placeholder="Short description of effect…"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveCard()">Save Card</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TYPE_COLORS = {
+  'Luu':         { cls: 'type-luu',    color: '#4fc4cf', label: 'Luu' },
+  'Action Card': { cls: 'type-action', color: '#c8a96e', label: 'Action Card' },
+};
+
+const TAG_COLORS = {
+  'Evolution':            { color: '#c8a96e' },
+  'Attack Enhancement':   { color: '#cf4f4f' },
+  'Defence Enhancement':  { color: '#4fcf6a' },
+  'Resource Generation':  { color: '#9b4fcf' },
+  'XP Boost':             { color: '#4f8bcf' },
+  'Healing':              { color: '#4fcf8a' },
+  'Card Draw':            { color: '#cf4fa8' },
+  'Movement':             { color: '#cfb44f' },
+  'Class Synergy':       { color: '#4fcf8a' },
+  'Damage Control':      { color: '#cf8a4f' },
+  'Luu Recovery':        { color: '#4fcfb4' },
+  'Conversion':          { color: '#cf4f9b' },
+};
+
+const TARGET = { 'Luu': 10, 'Action Card': 10 };
+const STORAGE_KEY = 'luu_deck_v2';
+const TARGET_TOTAL = 20;
+
+let cards = [];
+let editIdx = null;
+let activeFilter = 'all';
+
+const DEFAULT_CARDS = [
+  { cardType:'Luu', tags:['Evolution'], duration:'Persistent', name:'Rasluu', cost:2, desc:'Place Rasluu in your queue. HP 15/20/25 (L1-3). Base attack 1/3/5. Passive: Predatory Strike — +1 dmg when attacking a target already hit by another friendly Luu this round.' },
+  { cardType:'Luu', tags:['Evolution'], duration:'Persistent', name:'Lagluu', cost:2, desc:'Place Lagluu in your queue. HP 12/16/20 (L1-3). Base attack 0/2/4. Trait: Pack Recovery — recover 1 HP per other Lagluu in play at end of round. Passive: Colony Strength — +1 defence per other Lagluu in play.' },
+  { cardType:'Luu', tags:['Evolution'], duration:'Persistent', name:'Kjeluu', cost:2, desc:'Place Kjeluu in your queue. HP 20/27/34 (L1-3). Base attack 0/2/4. Trait: Impervious — attacks of ≤2 deal 0 damage. Passive: Hardened Shell — reduce all incoming damage by 1.' },
+  { cardType:'Luu', tags:['Evolution'], duration:'Persistent', name:'Gifluu', cost:2, desc:'Place Gifluu in your queue. HP 15/20/25 (L1-3). Base attack 0/2/3. Trait: Phase Shift — roll d6 when attacked; on a 6 evade all damage. Passive: Toxic Rebound — attacker takes 1 damage when Gifluu defends.' },
+  { cardType:'Luu', tags:['Evolution'], duration:'Persistent', name:'Bisluu', cost:2, desc:'Place Bisluu in your queue. HP 15/20/25 (L1-3). Base attack 0/2/4. Passive: Bonded Boost — all Luu immediately adjacent to Bisluu gain +1 attack, +1 defence, and +1 Luutex when they Gather this turn.' },
+  { cardType:'Luu', tags:['Evolution'], duration:'Immediate', name:'Rasluu Evolution', cost:0, desc:'Play onto a L3 Rasluu at no cost. Luu stays at L3 with improved stats: HP 27/30/35 (L3/4/5), Attack 6/7/9. Passive upgrades to Apex Predator. XP carries over — 5 XP banked at evolution triggers immediate level up to L4.' },
+  { cardType:'Luu', tags:['Evolution'], duration:'Immediate', name:'Lagluu Evolution', cost:0, desc:'Play onto a L3 Lagluu at no cost. Luu stays at L3 with improved stats: HP 22/26/30 (L3/4/5), Attack 5/6/7. Passive upgrades to Swarm Mind. XP carries over — 5 XP banked at evolution triggers immediate level up to L4.' },
+  { cardType:'Luu', tags:['Evolution'], duration:'Immediate', name:'Kjeluu Evolution', cost:0, desc:'Play onto a L3 Kjeluu at no cost. Luu stays at L3 with improved stats: HP 36/40/46 (L3/4/5), Attack 5/6/8. Passive upgrades to Fortress Form. XP carries over — 5 XP banked at evolution triggers immediate level up to L4.' },
+  { cardType:'Luu', tags:['Evolution'], duration:'Immediate', name:'Gifluu Evolution', cost:0, desc:'Play onto a L3 Gifluu at no cost. Luu stays at L3 with improved stats: HP 27/30/35 (L3/4/5), Attack 4/5/6. Passive upgrades to Venom Surge. XP carries over — 5 XP banked at evolution triggers immediate level up to L4.' },
+  { cardType:'Luu', tags:['Evolution'], duration:'Immediate', name:'Bisluu Evolution', cost:0, desc:'Play onto a L3 Bisluu at no cost. Luu stays at L3 with improved stats: HP 27/30/35 (L3/4/5), Attack 5/6/8. Passive upgrades to Deep Bond. XP carries over — 5 XP banked at evolution triggers immediate level up to L4.' },
+  { cardType:'Action Card', tags:['Attack Enhancement'], duration:'Immediate', name:'Luutex Flare', cost:1, desc:'One chosen Luu channels a burst of combat energy. Deals +1 damage on their next attack this turn.' },
+  { cardType:'Action Card', tags:['Attack Enhancement'], duration:'Immediate', name:'Shield Resonance', cost:3, desc:'A coordinated pulse ripples through the colony\'s outer shells. All friendly Luu deal +1 damage this turn.' },
+  { cardType:'Action Card', tags:['Attack Enhancement'], duration:'Persistent', name:'Hardened Instinct', cost:4, desc:'Sustained combat exposure sharpens a Luu\'s fighting edge. One chosen Luu deals +1 damage for the remainder of this sector.' },
+  { cardType:'Action Card', tags:['Attack Enhancement'], duration:'Persistent', name:'Apex Focus', cost:5, desc:'One chosen Luu hones its natural type advantage. When it attacks a class it counters this sector, that bonus is increased by +1. No effect without type advantage.' },
+  { cardType:'Action Card', tags:['Defence Enhancement'], duration:'Immediate', name:'Shell Guard', cost:2, desc:'One Luu\'s outer shell hardens in response to incoming threat. Reduce total incoming damage to the leading Luu by 2 this turn, applied after all Rogue attacks.' },
+  { cardType:'Action Card', tags:['Defence Enhancement'], duration:'Persistent', name:'Shell Shift', cost:4, desc:'One chosen Luu\'s shell adapts to mask its class signature. No longer suffers -1 type disadvantage for the remainder of this sector. Discard at end of sector.' },
+  { cardType:'Action Card', tags:['Resource Generation'], duration:'Immediate', name:'Luutex Cache', cost:1, desc:'A concentrated reserve of Luutex is released. Gain 2 Luutex immediately.' },
+  { cardType:'Action Card', tags:['Resource Generation'], duration:'Persistent', name:'Luutex Flow', cost:2, desc:'One chosen Luu\'s secretion rate increases. Gains +1 additional Luutex whenever it takes the Gather action, for the remainder of this sector.' },
+  { cardType:'Action Card', tags:['XP Boost'], duration:'Immediate', name:'Core Surge', cost:2, desc:'A Luu\'s inner core pulses with sudden intensity. One chosen Luu gains 2 XP immediately.' },
+  { cardType:'Action Card', tags:['XP Boost'], duration:'Persistent', name:'Hunter's Edge's Edge', cost:3, desc:'Sharpened predatory instincts reward every kill. For the rest of this wave, one chosen Luu gains +1 additional XP on killing blow or boss defeat.' },
+  { cardType:'Action Card', tags:['Resource Generation'], duration:'Persistent', name:'Luutex Tap', cost:3, desc:'This Luu drains trace Luutex from every enemy it strikes. Gain 1 Luutex for each separate Rogue Luu this Luu deals damage to this round. Gifluu recoil damage counts. Lasts rest of wave.' },
+  { cardType:'Action Card', tags:['Healing'], duration:'Immediate', name:'Shell Regrowth', cost:3, desc:'A Luu\'s outer shell rapidly regenerates. Remove up to 5 damage counters from one chosen Luu.' },
+  { cardType:'Action Card', tags:['Healing'], duration:'Persistent', name:'Pack Mending', cost:4, desc:'A wave of restorative energy passes through the colony. At end of this round, remove 1 damage counter from every friendly Luu in play. Cannot restore a Luu at 0 HP.' },
+  { cardType:'Action Card', tags:['Healing'], duration:'Immediate', name:'Quick Mend', cost:1, desc:'A fast patch to a Luu\'s damaged shell. Remove 1 damage counter from one active Luu.' },
+  { cardType:'Action Card', tags:['Card Draw'], duration:'Persistent', name:'Luutex Pulse', cost:3, desc:'Once per round, pay 1 Luutex to send a signal through the colony. Roll a d4 — on a 1 or 2, draw one card. Multiple copies stack. Lasts rest of game.' },
+  { cardType:'Action Card', tags:['Card Draw'], duration:'Persistent', name:'Combat Harvest', cost:4, desc:'Each Rogue defeated releases knowledge for the colony. Draw one card every time a Rogue Luu is knocked out. Multiple copies stack. Lasts rest of game.' },
+  { cardType:'Action Card', tags:['Movement'], duration:'Immediate', name:'Formation Override', cost:3, desc:'Rearrange your entire Luu queue in any order you choose. Does not consume your Luu action this turn.' },
+  { cardType:'Action Card', tags:['Movement'], duration:'Persistent', name:'Tactical Shift', cost:3, desc:'Shared effect. Once per wave, any player may move one Luu from its current position to any other position in the queue. Does not consume a Luu action. Lasts rest of sector.' },
+  { cardType:'Action Card', tags:['Card Draw'], duration:'Immediate', name:'Core Cascade', cost:3, desc:'A chain reaction surges through the colony\'s cores. Draw 3 cards, then discard 1 of your choice. Hand limit applies at end of wave.' },
+  { cardType:'Action Card', tags:['Card Draw'], duration:'Persistent', name:'Damage Response', cost:3, desc:'Each time this Luu takes damage, draw one card. Multiple copies on same Luu stack. Lasts rest of sector.' },
+  { cardType:'Action Card', tags:['Card Draw'], duration:'Immediate', name:'Luu Search', cost:3, desc:'Scan the colony\'s reserves for reinforcements. Search the deck for any Luu card, add it to your hand, then shuffle the deck.' },
+  { cardType:'Action Card', tags:['Card Draw','Class Synergy'], duration:'Immediate', name:'Pack Call', cost:2, desc:'The colony calls for Lagluu backup. Search the deck for a Lagluu card. If a Lagluu is already in play, the found Lagluu may be played this turn at no Luutex cost. Shuffle the deck.' },
+  { cardType:'Action Card', tags:['Movement'], duration:'Immediate', name:'Override', cost:3, desc:'Tactical instinct overrides normal formation protocol. This turn, your Luu may take their actions in any order you choose. Queue positions do not change. Does not consume a Luu action.' },
+  { cardType:'Action Card', tags:['Attack Enhancement'], duration:'Immediate', name:'Split Strike', cost:4, desc:'One Luu distributes its attack across multiple targets. Roll dice first, then declare split. Type advantages, disadvantages, and Rogue traits apply per target after allocation.' },
+  { cardType:'Action Card', tags:['XP Boost'], duration:'Until Triggered', name:'Evolution Drive', cost:2, desc:'Intense pressure accelerates a Luu\'s development. The next Rogue this Luu eliminates awards double XP. Discarded immediately after the kill.' },
+  { cardType:'Action Card', tags:['Defence Enhancement'], duration:'Persistent', name:'Shell Reflex', cost:2, desc:'A Luu\'s shell reacts instinctively to incoming strikes. For the rest of this wave, when this Luu would take damage, roll a d6. On a 1, prevent all damage. Stacks with Gifluu\'s Phase Shift — roll separately.'s Phase Shift — roll separately for each effect.' },
+  { cardType:'Action Card', tags:['Defence Enhancement'], duration:'Persistent', name:'Shield Spread', cost:4, desc:'Incoming damage to the leading Luu may be distributed among all friendly Luu. Resolved after each individual Rogue attack. Leading Luu must take at least 1 damage. Kjeluu Impervious applies to allocated damage. Lasts rest of wave.' },
+  { cardType:'Action Card', tags:['Defence Enhancement','Class Synergy'], duration:'Persistent', name:'Shell Bond', cost:3, desc:'Choose a Luu. While a Kjeluu is adjacent to that Luu, it benefits from Kjeluu\'s damage reduction passive (Hardened Shell -1, or Fortress Form -2 if evolved). Effect is attached to the chosen Luu — not the lead Luu. Follows that Luu if it moves. Effect ends if Kjeluu is no longer adjacent to that specific Luu, or Kjeluu is knocked out. Lasts rest of wave.'s current damage reduction passive (Hardened Shell -1, or Fortress Form -2 if evolved). Effect ends if Kjeluu moves or is knocked out. Lasts rest of wave.' },
+  { cardType:'Action Card', tags:['Resource Generation'], duration:'Immediate', name:'Luutex Reclaim', cost:0, desc:'Discard one card from your hand. Reclaim its latent Luutex energy — gain 3 Luutex immediately.' },
+  { cardType:'Action Card', tags:['Resource Generation'], duration:'Immediate', name:'Passive Harvest', cost:0, desc:'Your Luu secretes Luutex without interrupting its action. Gain 1 Luutex. Does not consume your Luu action this turn.' },
+  { cardType:'Action Card', tags:['Damage Control'], duration:'Immediate', name:'Emergency Mend', cost:3, desc:'Rapid triage redistributes damage across the colony. Reallocate any damage already dealt this turn among your Luu in any combination. Damage may be fully moved off one Luu. Kjeluu Impervious applies to reallocated damage.' },
+  { cardType:'Action Card', tags:['XP Boost'], duration:'Persistent', name:'Shared Hunt', cost:4, desc:'One chosen Luu gains XP equal to any defeated Rogue\'s XP value for the rest of this wave, regardless of who lands the killing blow. The killing Luu also receives XP as normal.' },
+  { cardType:'Action Card', tags:['XP Boost'], duration:'Until Triggered', name:'Colony Triumph', cost:2, desc:'The next Rogue defeated this wave grants 1 XP to every friendly Luu in play, in addition to normal kill XP. Discarded immediately after triggering.' },
+  { cardType:'Action Card', tags:['Card Draw','Luu Recovery'], duration:'Immediate', name:'Reawakening', cost:3, desc:'Search the discard pile for any base or evolved Luu card and add it to your hand.' },
+  { cardType:'Action Card', tags:['Card Draw'], duration:'Immediate', name:'Salvage Protocol', cost:4, desc:'Search the discard pile for any card of your choice and add it to your hand.' },
+  { cardType:'Action Card', tags:['Card Draw'], duration:'Persistent', name:'Last Lesson', cost:3, desc:'Persistent whole game. When a friendly Luu is knocked out, select one card from the discard pile (not including the knocked-out Luu) and add it to your hand.' },
+  { cardType:'Action Card', tags:['Conversion'], duration:'Immediate', name:'Purification', cost:5, desc:'Remove a Rogue Luu from the current wave. Take one undrafted base Luu of the same class from the removed cards pool and place it at the back of your queue as a L1 friendly Luu. Cannot be played if no undrafted Luu of that class exists.' },
+];
+
+function loadCards() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    cards = stored ? JSON.parse(stored) : DEFAULT_CARDS.map(c => ({...c}));
+    if (!stored) saveCards();
+  } catch { cards = DEFAULT_CARDS.map(c => ({...c})); }
+}
+
+function saveCards() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function typeClass(type) {
+  return TYPE_COLORS[type]?.cls || 'type-luu';
+}
+
+function renderRatioBars() {
+  const luuCount = cards.filter(c => c.cardType === 'Luu').length;
+  const actionCount = cards.filter(c => c.cardType === 'Action Card').length;
+  const bar = document.getElementById('ratioBar');
+  const legend = document.getElementById('ratioLegend');
+  bar.innerHTML = ''; legend.innerHTML = '';
+  [['Luu', luuCount, '#4fc4cf'], ['Action Card', actionCount, '#c8a96e']].forEach(([label, count, color]) => {
+    const seg = document.createElement('div');
+    seg.className = 'ratio-seg';
+    seg.style.width = '50%';
+    seg.style.background = color;
+    seg.style.opacity = count >= TARGET_TOTAL/2 ? '1' : '0.35';
+    bar.appendChild(seg);
+    const li = document.createElement('div');
+    li.className = 'legend-item';
+    li.innerHTML = `<div class="legend-dot" style="background:${color}"></div>${label} <span style="color:var(--accent);margin-left:4px">${count}/${TARGET_TOTAL/2}</span>`;
+    legend.appendChild(li);
+  });
+  const tagCounts = {};
+  cards.forEach(c => (c.tags||[]).forEach(t => { tagCounts[t] = (tagCounts[t]||0)+1; }));
+  Object.entries(TAG_COLORS).forEach(([tag, meta]) => {
+    if (!tagCounts[tag]) return;
+    const li = document.createElement('div');
+    li.className = 'legend-item';
+    li.innerHTML = `<div class="legend-dot" style="background:${meta.color}"></div>${tag} <span style="color:var(--accent);margin-left:4px">${tagCounts[tag]}</span>`;
+    legend.appendChild(li);
+  });
+}
+
+function renderStats() {
+  const total = cards.length;
+  document.getElementById('statTotal').textContent = total;
+  const rem = TARGET_TOTAL - total;
+  const remEl = document.getElementById('statRemaining');
+  remEl.textContent = rem;
+  remEl.className = 'stat-pill-value' + (rem === 0 ? ' ok' : rem < 0 ? ' warn' : '');
+  const costed = cards.filter(c => c.cost > 0);
+  const avg = costed.length ? (costed.reduce((s,c) => s + c.cost, 0) / costed.length).toFixed(1) : '—';
+  document.getElementById('statAvgCost').textContent = avg;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('cardTable');
+  tbody.innerHTML = '';
+  const filtered = cards.filter(c => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter.startsWith('tag:')) return (c.tags||[]).includes(activeFilter.slice(4));
+    return c.cardType === activeFilter;
+  });
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No cards yet — click + Add Card to begin.</td></tr>`;
+    return;
+  }
+  filtered.forEach((card) => {
+    const realIdx = cards.indexOf(card);
+    const tr = document.createElement('tr');
+    const durClass = card.duration === 'Immediate' ? 'dur-immediate' : card.duration === 'Until Triggered' ? 'dur-triggered' : 'dur-persistent';
+    const costDisplay = card.cost == 0 ? '<span class="cost-free">Free</span>' : `<span class="cost-val">${card.cost}</span>`;
+    const typeCls = card.cardType === 'Luu' ? 'type-luu' : 'type-action';
+    const tagsHtml = (card.tags||[]).map(t => {
+      const color = TAG_COLORS[t]?.color || '#888';
+      return `<span style="display:inline-block;font-family:Cinzel,serif;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;border-radius:2px;background:${color}22;color:${color};border:1px solid ${color}44;margin:1px">${t}</span>`;
+    }).join('');
+    tr.innerHTML = `
+      <td class="card-num">${String(realIdx+1).padStart(2,'0')}</td>
+      <td><span class="type-badge ${typeCls}">${card.cardType}</span></td>
+      <td style="min-width:110px">${tagsHtml}</td>
+      <td style="color:var(--text);font-weight:600">${card.name||'—'}</td>
+      <td><span class="dur-badge ${durClass}">${card.duration}</span></td>
+      <td>${costDisplay}</td>
+      <td class="desc">${card.desc||'—'}</td>
+      <td><div class="row-actions">
+        <button class="btn-icon" onclick="editCard(${realIdx})">Edit</button>
+        <button class="btn-icon del" onclick="deleteCard(${realIdx})">✕</button>
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function render() { renderStats(); renderRatioBars(); renderTable(); }
+
+function openModal(idx = null) {
+  editIdx = idx;
+  document.getElementById('modalTitle').textContent = idx !== null ? 'Edit Card' : 'Add Card';
+  const card = idx !== null ? cards[idx] : {};
+  document.getElementById('fType').value = card.cardType || 'Luu';
+  document.getElementById('fDuration').value = card.duration || 'Immediate';
+  document.getElementById('fName').value = card.name || '';
+  document.getElementById('fCost').value = card.cost !== undefined ? card.cost : '';
+  document.getElementById('fDesc').value = card.desc || '';
+  document.querySelectorAll('#fTags input[type=checkbox]').forEach(cb => { cb.checked = (card.tags||[]).includes(cb.value); });
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('fName').focus();
+}
+
+function editCard(idx) { openModal(idx); }
+
+function deleteCard(idx) {
+  if (!confirm('Remove this card?')) return;
+  cards.splice(idx, 1); saveCards(); render();
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  editIdx = null;
+}
+
+function saveCard() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { document.getElementById('fName').focus(); return; }
+  const tags = Array.from(document.querySelectorAll('#fTags input[type=checkbox]:checked')).map(cb => cb.value);
+  const card = {
+    cardType: document.getElementById('fType').value,
+    duration: document.getElementById('fDuration').value,
+    tags, name,
+    cost: parseInt(document.getElementById('fCost').value) || 0,
+    desc: document.getElementById('fDesc').value.trim(),
+  };
+  if (editIdx !== null) cards[editIdx] = card;
+  else cards.push(card);
+  saveCards(); closeModal(); render();
+}
+
+// Close modal on overlay click
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+loadCards();
+render();
+</script>
+</body>
+</html>

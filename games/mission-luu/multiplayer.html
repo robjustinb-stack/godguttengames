@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multiplayer &ndash; Mission: LUU</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0a1a1e;
+      --surface:   #0f2228;
+      --surface2:  #132a32;
+      --border:    rgba(79,196,207,0.12);
+      --border-light: rgba(79,196,207,0.25);
+      --accent:    #4fc4cf;
+      --gold:      #c8a96e;
+      --danger:    #cf4f6a;
+      --text:      #e8f4f6;
+      --text-dim:  #8ab4bc;
+      --text-muted:#4a7a84;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Crimson Pro', serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .back-link {
+      position: fixed;
+      top: 20px;
+      left: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover { color: var(--accent); }
+    .back-link::before { content: '\2190'; font-size: 12px; }
+
+    .lobby {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .lobby-title {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .lobby-heading {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    /* -- Tabs -- */
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+
+    .tab-btn {
+      background: var(--surface);
+      border: none;
+      padding: 14px;
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s;
+    }
+
+    .tab-btn.active {
+      background: var(--surface2);
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: var(--surface2);
+      color: var(--text-dim);
+    }
+
+    /* -- Panels -- */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* -- Form elements -- */
+    .field {
+      margin-bottom: 20px;
+    }
+
+    .field-label {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .field-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-family: 'Cinzel', serif;
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.18s;
+    }
+
+    .field-input:focus { border-color: var(--accent); }
+    .field-input::placeholder { color: var(--text-muted); }
+
+    .field-input.code-input {
+      font-size: 20px;
+      letter-spacing: 0.35em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .field-hint {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    /* -- Player count toggle -- */
+    .player-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .player-opt {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .player-opt.selected {
+      border-color: var(--accent);
+      background: var(--surface2);
+    }
+
+    .player-opt-num {
+      font-family: 'Cinzel', serif;
+      font-size: 20px;
+      color: var(--accent);
+      display: block;
+    }
+
+    .player-opt-label {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* -- Action button -- */
+    .action-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #4fc4cf, #3aa8b2);
+      border: none;
+      border-radius: 6px;
+      padding: 15px;
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: white;
+      cursor: pointer;
+      transition: opacity 0.18s, transform 0.18s;
+      margin-top: 8px;
+    }
+
+    .action-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .action-btn:active { transform: translateY(0); }
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* -- Result box (join code display) -- */
+    .result-box {
+      display: none;
+      background: var(--surface2);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 28px;
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .result-box.visible { display: block; }
+
+    .result-label {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .result-code {
+      font-family: 'Cinzel', serif;
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: 0.35em;
+      color: var(--accent);
+      text-shadow: 0 0 20px rgba(79,196,207,0.4);
+      margin-bottom: 12px;
+    }
+
+    .result-hint {
+      font-size: 15px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+
+    .waiting-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .waiting-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    .waiting-dot:nth-child(2) { animation-delay: 0.2s; }
+    .waiting-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+      40%           { opacity: 1;   transform: scale(1); }
+    }
+
+    /* -- Error message -- */
+    .error-msg {
+      display: none;
+      background: rgba(207,79,106,0.1);
+      border: 1px solid rgba(207,79,106,0.3);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #e08898;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    .error-msg.visible { display: block; }
+
+    /* -- Divider -- */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+
+    /* -- Solo save/resume section -- */
+    .solo-section-title {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">Mission: LUU</a>
+
+<div class="lobby">
+
+  <div class="lobby-title">Mission: LUU</div>
+  <h1 class="lobby-heading">Multiplayer</h1>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('create')">Create Game</button>
+    <button class="tab-btn"        onclick="switchTab('join')">Join Game</button>
+  </div>
+
+  <!-- -- Create Game panel -- -->
+  <div class="panel active" id="panel-create">
+
+    <div class="field">
+      <label class="field-label">Players</label>
+      <div class="player-toggle">
+        <div class="player-opt selected" id="opt-solo" onclick="selectPlayerCount(1)">
+          <span class="player-opt-num">1</span>
+          <span class="player-opt-label">Solo</span>
+        </div>
+        <div class="player-opt" id="opt-multi" onclick="selectPlayerCount(2)">
+          <span class="player-opt-num">2</span>
+          <span class="player-opt-label">Co-op</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="create-password">Game Password</label>
+      <input class="field-input" id="create-password" type="password"
+             placeholder="Choose a password" autocomplete="new-password" />
+      <p class="field-hint">Share this with your partner so they can join.</p>
+    </div>
+
+    <button class="action-btn" id="create-btn" onclick="createGame()">Create Game</button>
+    <div class="error-msg" id="create-error"></div>
+
+    <div class="result-box" id="create-result">
+      <div class="result-label">Your Join Code</div>
+      <div class="result-code" id="create-code">------</div>
+      <div class="result-hint">Share this code and your password with your co-op partner.</div>
+      <div class="waiting-indicator" id="waiting-player2">
+        <div class="waiting-dot"></div>
+        <div class="waiting-dot"></div>
+        <div class="waiting-dot"></div>
+        <span>Waiting for Player 2</span>
+      </div>
+      <button class="action-btn" id="start-solo-btn"
+              style="display:none; margin-top:16px;"
+              onclick="startGame()">Start Game</button>
+    </div>
+
+  </div>
+
+  <!-- -- Join Game panel -- -->
+  <div class="panel" id="panel-join">
+
+    <div class="field">
+      <label class="field-label" for="join-code">Join Code</label>
+      <input class="field-input code-input" id="join-code" type="text"
+             maxlength="6" placeholder="XXXXXX" autocomplete="off"
+             oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" />
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="join-password">Password</label>
+      <input class="field-input" id="join-password" type="password"
+             placeholder="Enter game password" autocomplete="current-password" />
+    </div>
+
+    <button class="action-btn" id="join-btn" onclick="joinGame()">Join Game</button>
+    <div class="error-msg" id="join-error"></div>
+
+  </div>
+
+  <!-- -- Save / Resume divider -- -->
+  <hr class="divider" />
+
+  <div class="solo-section-title">Save &amp; Resume Solo Game</div>
+
+  <div class="field">
+    <label class="field-label" for="resume-code">Save Code</label>
+    <input class="field-input code-input" id="resume-code" type="text"
+           maxlength="6" placeholder="XXXXXX" autocomplete="off"
+           oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" />
+  </div>
+
+  <div class="field">
+    <label class="field-label" for="resume-password">Password</label>
+    <input class="field-input" id="resume-password" type="password"
+           placeholder="Enter save password" autocomplete="current-password" />
+  </div>
+
+  <button class="action-btn"
+          style="background: linear-gradient(135deg, #c8a96e, #a88848);"
+          onclick="resumeGame()">Resume Game</button>
+  <div class="error-msg" id="resume-error"></div>
+
+</div>
+
+<script src="js/luu-session.js"></script>
+<script>
+  let selectedPlayerCount = 1;
+  let createdJoinCode = null;
+  let realtimeUnsub = null;
+
+  // -- Tab switching -------------------------------------------------------
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (i === 0) === (tab === 'create'));
+    });
+    document.getElementById('panel-create').classList.toggle('active', tab === 'create');
+    document.getElementById('panel-join').classList.toggle('active', tab === 'join');
+  }
+
+  // -- Player count --------------------------------------------------------
+  function selectPlayerCount(n) {
+    selectedPlayerCount = n;
+    document.getElementById('opt-solo').classList.toggle('selected', n === 1);
+    document.getElementById('opt-multi').classList.toggle('selected', n === 2);
+  }
+
+  // -- Helper: show error --------------------------------------------------
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  function clearError(id) {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.remove('visible');
+  }
+
+  // -- Create game ---------------------------------------------------------
+  async function createGame() {
+    clearError('create-error');
+    const password = document.getElementById('create-password').value.trim();
+    if (!password) { showError('create-error', 'Please enter a password.'); return; }
+
+    const btn = document.getElementById('create-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creating…';
+
+    try {
+      // Build a minimal initial game state shell.
+      // The real GS is constructed by engine.js on game start —
+      // this just reserves the session so the code can be shared.
+      const initialGS = {
+        meta: { status: 'lobby', playerCount: selectedPlayerCount },
+        position: { currentPlayerIndex: 0 },
+      };
+
+      const { joinCode } = await LuuSession.createGame(
+        password, initialGS, selectedPlayerCount
+      );
+
+      createdJoinCode = joinCode;
+      document.getElementById('create-code').textContent = joinCode;
+      document.getElementById('create-result').classList.add('visible');
+
+      if (selectedPlayerCount === 1) {
+        // Solo — no need to wait, show Start button immediately
+        document.getElementById('waiting-player2').style.display = 'none';
+        document.getElementById('start-solo-btn').style.display = 'block';
+      } else {
+        // Multiplayer — wait for P2 to connect via realtime
+        document.getElementById('waiting-player2').style.display = 'flex';
+        realtimeUnsub = LuuSession.subscribeToSession(joinCode, (newGS) => {
+          // P2 joined — their join increments players_connected.
+          // We detect this by listening for the GS update that happens on join.
+          if (newGS?.meta?.status === 'lobby') {
+            // P2 connected — allow host to start
+            document.getElementById('waiting-player2').textContent = '✓ Player 2 connected!';
+            document.getElementById('waiting-player2').style.color = '#4fc4cf';
+            document.getElementById('start-solo-btn').textContent = 'Start Game';
+            document.getElementById('start-solo-btn').style.display = 'block';
+          }
+        });
+      }
+
+    } catch (e) {
+      showError('create-error', e.message || 'Could not create game. Try again.');
+      btn.disabled = false;
+      btn.textContent = 'Create Game';
+    }
+  }
+
+  // -- Join game -----------------------------------------------------------
+  async function joinGame() {
+    clearError('join-error');
+    const code     = document.getElementById('join-code').value.trim();
+    const password = document.getElementById('join-password').value.trim();
+    if (!code)     { showError('join-error', 'Please enter a join code.'); return; }
+    if (!password) { showError('join-error', 'Please enter the password.'); return; }
+    if (code.length !== 6) { showError('join-error', 'Join code must be 6 characters.'); return; }
+
+    const btn = document.getElementById('join-btn');
+    btn.disabled = true;
+    btn.textContent = 'Joining…';
+
+    try {
+      const { gameState, playerIndex } = await LuuSession.joinGame(code, password);
+      // Hand off to engine
+      sessionStorage.setItem('luu_pending_gs', JSON.stringify(gameState));
+      sessionStorage.setItem('luu_player_index', playerIndex);
+      window.location.href = 'play.html?mode=multiplayer&joined=1';
+    } catch (e) {
+      showError('join-error', e.message || 'Could not join game. Try again.');
+      btn.disabled = false;
+      btn.textContent = 'Join Game';
+    }
+  }
+
+  // -- Start game (after create) ------------------------------------------
+  function startGame() {
+    if (realtimeUnsub) realtimeUnsub();
+    const mode = selectedPlayerCount === 2 ? 'multiplayer' : 'solo';
+    window.location.href = `play.html?mode=${mode}&host=1`;
+  }
+
+  // -- Resume solo game ---------------------------------------------------
+  async function resumeGame() {
+    clearError('resume-error');
+    const code     = document.getElementById('resume-code').value.trim();
+    const password = document.getElementById('resume-password').value.trim();
+    if (!code)     { showError('resume-error', 'Please enter your save code.'); return; }
+    if (!password) { showError('resume-error', 'Please enter your password.'); return; }
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+
+    try {
+      const { gameState } = await LuuSession.resumeGame(code, password);
+      sessionStorage.setItem('luu_pending_gs', JSON.stringify(gameState));
+      window.location.href = 'play.html?mode=solo&resumed=1';
+    } catch (e) {
+      showError('resume-error', e.message || 'Could not load save. Check your code and password.');
+      btn.disabled = false;
+      btn.textContent = 'Resume Game';
+    }
+  }
+</script>
+
+</body>
+</html>

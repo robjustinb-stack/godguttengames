@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/robju/OneDrive/Desktop/Godgutten games/godguttengames/**)",
+      "Bash(git -C \"c:/Users/robju/OneDrive/Desktop/Godgutten games/godguttengames\" show HEAD:games/mission-luu/index.html)",
+      "Bash(git -C \"c:/Users/robju/OneDrive/Desktop/Godgutten games/godguttengames\" log --oneline -5)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\robju\\OneDrive\\Desktop\\Godgutten games\\godguttengames"
+    ]
+  }
+}

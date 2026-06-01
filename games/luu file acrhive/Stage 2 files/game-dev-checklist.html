@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Game Development Checklist</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1917;
+    --border: #2e2c28;
+    --accent: #d4a84b;
+    --accent-dim: #8a6a28;
+    --text: #e8e4dc;
+    --text-muted: #7a7568;
+    --done: #3a5c3a;
+    --done-text: #7ec87e;
+    --stage-colors: #d4a84b, #c97b4b, #b84b6e, #7b4bb8, #4b7bb8, #4bb89c, #b8b84b, #c97b4b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 40px 24px 80px;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(212,168,75,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212,168,75,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+  }
+
+  .header-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(42px, 7vw, 72px);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* Progress bar */
+  .global-progress {
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .progress-bar-wrap {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* Stages */
+  .stages {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .stage {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .stage.active {
+    border-color: var(--accent-dim);
+  }
+
+  .stage.complete {
+    border-color: var(--done);
+  }
+
+  .stage-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .stage-header:hover {
+    background: rgba(255,255,255,0.02);
+  }
+
+  .stage-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    line-height: 1;
+    min-width: 32px;
+    opacity: 0.25;
+  }
+
+  .stage.active .stage-number { opacity: 1; color: var(--accent); }
+  .stage.complete .stage-number { opacity: 1; color: var(--done-text); }
+
+  .stage-title-wrap {
+    flex: 1;
+  }
+
+  .stage-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+
+  .stage-title {
+    font-family: 'IBM Plex Sans', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .stage-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stage-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .stage-chevron {
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: transform 0.25s ease;
+  }
+
+  .stage.open .stage-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Mini progress ring */
+  .mini-ring {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .mini-ring circle {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+
+  .mini-ring .track { stroke: var(--border); }
+  .mini-ring .fill {
+    stroke: var(--accent);
+    transform: rotate(-90deg);
+    transform-origin: center;
+    transition: stroke-dashoffset 0.4s ease;
+  }
+
+  .stage.complete .mini-ring .fill { stroke: var(--done-text); }
+
+  /* Checklist body */
+  .stage-body {
+    display: none;
+    padding: 4px 20px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .stage.open .stage-body {
+    display: block;
+  }
+
+  .checklist {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 12px;
+  }
+
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .checklist li:hover {
+    background: rgba(255,255,255,0.03);
+  }
+
+  .checklist li.checked {
+    color: var(--text-muted);
+  }
+
+  .checkbox {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-size: 10px;
+  }
+
+  .checklist li:hover .checkbox {
+    border-color: var(--accent-dim);
+  }
+
+  .checklist li.checked .checkbox {
+    background: var(--done);
+    border-color: var(--done);
+    color: var(--done-text);
+  }
+
+  .item-text {
+    flex: 1;
+  }
+
+  .checklist li.checked .item-text {
+    text-decoration: line-through;
+    text-decoration-color: var(--text-muted);
+  }
+
+  /* Status badges */
+  .stage-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 2px;
+    background: var(--border);
+    color: var(--text-muted);
+  }
+
+  .stage.active .stage-status {
+    background: rgba(212,168,75,0.15);
+    color: var(--accent);
+  }
+
+  .stage.complete .stage-status {
+    background: var(--done);
+    color: var(--done-text);
+  }
+
+  /* Save note */
+  .save-note {
+    margin-top: 40px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-label">Project Tracker</div>
+    <h1>CARD GAME<br><span>DEV PLAN</span></h1>
+    <p class="subtitle">Cooperative card game — browser prototype to physical build</p>
+  </header>
+
+  <div class="global-progress">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="globalFill" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="globalLabel">0 / 0 complete</div>
+  </div>
+
+  <div class="stages" id="stages"></div>
+
+  <p class="save-note">✦ Progress is saved automatically in your browser</p>
+</div>
+
+<script>
+const STAGES = [
+  {
+    tag: "Stage 1",
+    title: "Concept & Design",
+    items: [
+      "Define the theme and setting of the game",
+      "Write a one-paragraph player fantasy (what does it feel like to play?)",
+      "Define the win condition(s)",
+      "Define the lose condition(s)",
+      "Outline the core gameplay loop (draw, play, action, enemy attack)",
+      "List all card types needed",
+      "Estimate total card count and rough distribution by type",
+      "Document player count and target play time",
+      "Define five Luu classes with names, counter relationships, and passive abilities",
+      "Define progression system (levels, evolution, XP)",
+      "Define resource economy (persistent pool, cap mechanic)",
+      "Define damage system (base + dice, scaling die size)",
+      "Define sector structure (waves, bosses, randomisation)",
+      "Define deck mechanics (size, draw, reshuffle, card removal)",
+      "Define formation system (queue, damage cascade, move action)",
+      "Define Rogue Luu damage rule (dice scaled by player count, summed and divided by players, round up)",
+      "Write first-draft rules summary and generate rules artifact",
+    ]
+  },
+  {
+    tag: "Stage 2",
+    title: "Mechanics Prototype (Verbal/Paper)",
+    items: [
+      "Define Luu stat framework (health and base attack per level per class)",
+      "Define Rogue Luu stat framework (health and attack for wave tiers and bosses)",
+      "Define resource values (gather amount, card costs)",
+      "Design representative sample card set (15-20 cards across all card types)",
+      "Walk through a full turn verbally — does it make sense?",
+      "Simulate 2-3 turns with real stat values",
+      "Identify any unclear or broken rules",
+      "Check: is there meaningful decision-making each turn?",
+      "Check: does the difficulty curve feel appropriate?",
+      "Check: are all four actions viable choices throughout a wave?",
+      "Check: does the resource economy feel tight but workable?",
+      "Revise rules document based on findings",
+      "Get sign-off on core loop before moving to code",
+    ]
+  },
+  {
+    tag: "Stage 3",
+    title: "Data Architecture",
+    items: [
+      "Define the card data schema (all fields every card needs) ✅",
+      "Define the full game state object (everything the app must track) ✅",
+      "Map out the rules engine: what functions/checks are needed? ✅",
+      "List all game events / triggers (e.g. 'on card played', 'on round end') ✅",
+      "Decide on data format for card definitions (JS objects, JSON, etc.) ✅",
+      "Draft a small sample card dataset (5–10 cards) to validate the schema ✅",
+      "Define deck building and draft logic ✅",
+      "Define base deck (50 cards) for playtesting — bypasses draft ✅",
+      "Define boss card schemas and sector scaling ✅",
+      "Define full action card effect schema with all 16 effect types ✅",
+    ]
+  },
+  {
+    tag: "Stage 4",
+    title: "Core Build — Playable Skeleton",
+    items: [
+      "Set up project file structure in VS Code",
+      "Configure live server for local browser testing",
+      "Initialise game state from base deck (useStarterDeck = true)",
+      "Display game board: sector, wave, round, phase, Luutex",
+      "Display Luu queue: name, HP, level, XP, active effects per Luu",
+      "Display active enemies: name, HP, tier, position",
+      "Display player hand: card names, costs, clickable",
+      "Implement card play (deduct Luutex, resolve immediate effects)",
+      "Implement Attack action with dice button (playerRollsDice = true)",
+      "Implement Defend action",
+      "Implement Gather action (including Bisluu adjacency bonus)",
+      "Implement Move action",
+      "Implement enemy attack phase with dice button",
+      "Implement end of round cleanup (reset flags, expire effects)",
+      "Implement end of wave (draw 1, discard to limit, next wave)",
+      "Implement end of sector (draw to limit, boss selection, new sector)",
+      "Implement win and lose conditions",
+      "Confirm end-to-end: play a full sector start to finish",
+    ]
+  },
+  {
+    tag: "Stage 5",
+    title: "Full Mechanics Implementation",
+    items: [
+      "Implement all card effect types",
+      "Implement special rules and edge cases",
+      "Implement card interactions (cards that affect other cards)",
+      "Implement win condition check",
+      "Implement lose condition check",
+      "Implement all player actions available on their turn",
+      "Implement enemy/threat behaviour if applicable",
+      "Playtest each card type individually to confirm it works",
+    ]
+  },
+  {
+    tag: "Stage 6",
+    title: "UI & UX Pass",
+    items: [
+      "Ensure full game state is visible at a glance",
+      "Add visual feedback for card plays and effects",
+      "Add turn / phase indicators",
+      "Add player feedback for illegal moves",
+      "Add win/lose screen",
+      "Improve card layout and readability",
+      "Optional: add basic animations for card actions",
+    ]
+  },
+  {
+    tag: "Stage 7",
+    title: "Playtesting & Iteration",
+    items: [
+      "Play a full game end-to-end — log all issues",
+      "Check balance: is the game too easy / too hard?",
+      "Identify any cards that are never useful or always overpowered",
+      "Identify any rules that are confusing in practice",
+      "Make a prioritised list of changes",
+      "Implement changes and re-test",
+      "Repeat until the core loop feels consistently fun",
+    ]
+  },
+  {
+    tag: "Stage 8",
+    title: "Physical Prototype Readiness",
+    items: [
+      "Export final card list with all text and values",
+      "Write a clean final rules document",
+      "Create component count summary (cards, tokens, dice, etc.)",
+      "Design simple print-and-play card template",
+      "Identify any components that need custom creation",
+      "Review for any final digital-only mechanics that need physical equivalents",
+    ]
+  }
+];
+
+const STORAGE_KEY = 'cardgame_checklist_v1';
+
+function loadState() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  } catch { return {}; }
+}
+
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let checkState = loadState();
+
+function getItemKey(stageIdx, itemIdx) {
+  return `s${stageIdx}_i${itemIdx}`;
+}
+
+function renderAll() {
+  const container = document.getElementById('stages');
+  container.innerHTML = '';
+
+  let totalItems = 0, totalChecked = 0;
+
+  STAGES.forEach((stage, si) => {
+    const stageChecked = stage.items.filter((_, ii) => checkState[getItemKey(si, ii)]).length;
+    const stageTotal = stage.items.length;
+    totalItems += stageTotal;
+    totalChecked += stageChecked;
+
+    const isComplete = stageChecked === stageTotal;
+    const isActive = stageChecked > 0 && !isComplete;
+    const isOpen = checkState[`stage_open_${si}`] !== false && (isActive || si === 0);
+
+    const pct = stageTotal > 0 ? stageChecked / stageTotal : 0;
+    const circumference = 2 * Math.PI * 12; // r=12
+    const offset = circumference * (1 - pct);
+
+    const statusText = isComplete ? 'Done' : isActive ? 'In Progress' : 'Pending';
+
+    const el = document.createElement('div');
+    el.className = `stage${isComplete ? ' complete' : ''}${isActive ? ' active' : ''}${isOpen ? ' open' : ''}`;
+    el.dataset.si = si;
+
+    el.innerHTML = `
+      <div class="stage-header">
+        <div class="stage-number">${String(si + 1).padStart(2,'0')}</div>
+        <div class="stage-title-wrap">
+          <div class="stage-tag">${stage.tag}</div>
+          <div class="stage-title">${stage.title}</div>
+        </div>
+        <div class="stage-meta">
+          <span class="stage-status">${statusText}</span>
+          <span class="stage-count">${stageChecked}/${stageTotal}</span>
+          <svg class="mini-ring" viewBox="0 0 30 30">
+            <circle class="track" cx="15" cy="15" r="12"/>
+            <circle class="fill" cx="15" cy="15" r="12"
+              stroke-dasharray="${circumference}"
+              stroke-dashoffset="${offset}"/>
+          </svg>
+          <span class="stage-chevron">▼</span>
+        </div>
+      </div>
+      <div class="stage-body">
+        <ul class="checklist">
+          ${stage.items.map((item, ii) => {
+            const key = getItemKey(si, ii);
+            const checked = !!checkState[key];
+            return `<li class="${checked ? 'checked' : ''}" data-si="${si}" data-ii="${ii}">
+              <div class="checkbox">${checked ? '✓' : ''}</div>
+              <span class="item-text">${item}</span>
+            </li>`;
+          }).join('')}
+        </ul>
+      </div>
+    `;
+
+    el.querySelector('.stage-header').addEventListener('click', () => {
+      const open = el.classList.toggle('open');
+      checkState[`stage_open_${si}`] = open;
+      saveState(checkState);
+    });
+
+    el.querySelectorAll('.checklist li').forEach(li => {
+      li.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const s = parseInt(li.dataset.si);
+        const i = parseInt(li.dataset.ii);
+        const key = getItemKey(s, i);
+        checkState[key] = !checkState[key];
+        saveState(checkState);
+        renderAll();
+      });
+    });
+
+    container.appendChild(el);
+  });
+
+  // Global progress
+  const pct = totalItems > 0 ? (totalChecked / totalItems) * 100 : 0;
+  document.getElementById('globalFill').style.width = pct + '%';
+  document.getElementById('globalLabel').textContent = `${totalChecked} / ${totalItems} complete`;
+}
+
+renderAll();
+</script>
+</body>
+</html>

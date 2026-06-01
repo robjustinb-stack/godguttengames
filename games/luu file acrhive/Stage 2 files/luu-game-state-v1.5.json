@@ -1,0 +1,408 @@
+{
+  "meta": {
+    "version": "1.0",
+    "stage": "Stage 3 \u2014 Data Architecture",
+    "description": "Game state schema for LUU cooperative card game. This defines every value the app must track during a live game. All IDs reference cards defined in luu-cards.json and luu-action-cards.json.",
+    "notes": [
+      "Designed for solo play first. Multiplayer extends the players array.",
+      "All cardIds reference the id field in the card definition files.",
+      "positions in Luu queue are 1-indexed (position 1 = front, takes damage first).",
+      "Damage counters are tracked separately from maxHp so level-up scaling is clean.",
+      "Active effects are stored globally and reference the Luu or player they are attached to."
+    ]
+  },
+  "gameState": {
+    "config": {
+      "playerCount": 1,
+      "difficultySettings": {
+        "eventCardsEnabled": false,
+        "soloMulliganEnabled": true
+      },
+      "startTime": "2024-01-01T00:00:00Z",
+      "playerRollsDice": true,
+      "playerRollsDiceNote": "When true, app shows clickable dice button \u2014 player clicks to generate random result with correct die probability. When false, app rolls automatically without player interaction. Default true.",
+      "luuQueueLimit": 5,
+      "luuQueueLimitNote": "Max Luu per player queue. Scales with playerCount: 1p=5, 2p=4, 3p=3, 4p=2. Luu cards and Purification cannot be played if queue is at limit.",
+      "luuQueueLimitTable": {
+        "1": 5,
+        "2": 4,
+        "3": 3,
+        "4": 2
+      }
+    },
+    "position": {
+      "sectorNumber": 1,
+      "waveNumber": 1,
+      "roundNumber": 1,
+      "phase": "playerTurns",
+      "currentPlayerIndex": 0
+    },
+    "bosses": {
+      "activeBoss": {
+        "cardId": "boss_tjeluu",
+        "currentHp": 40,
+        "maxHp": 40,
+        "sectorEncountered": 1,
+        "passiveActive": true,
+        "note": "Always Tjeluu in S1. Set programmatically at game start, not drawn from pool.",
+        "bossFirstHitThisRound": true,
+        "bossFirstHitNote": "Fesluu only. True = first hit reduction available this round. Set false after first hit above Impervious threshold lands. Reset to true at startRound."
+      },
+      "pendingBoss": null,
+      "currentChoice": null,
+      "bossPool": [
+        "boss_lynluu",
+        "boss_forluu",
+        "boss_fesluu",
+        "boss_toxluu"
+      ],
+      "clearedBosses": [],
+      "notes": [
+        "Tjeluu (Bisluu boss) always occupies S1. Never enters the random pool.",
+        "bossPool contains the 4 remaining bosses shuffled at game start.",
+        "At sector start two options are revealed: pendingBoss + one drawn from bossPool.",
+        "Exception: if bossPool has one card left, that card is the only new reveal.",
+        "Exception: if bossPool is empty, pendingBoss is the final boss \u2014 no choice offered."
+      ]
+    },
+    "deck": {
+      "drawPile": [
+        "action_shell_guard",
+        "action_luutex_cache",
+        "luu_kjeluu",
+        "action_hardened_instinct"
+      ],
+      "discardPile": [
+        "action_luutex_flare"
+      ],
+      "removedCards": [],
+      "reshuffleCount": 0,
+      "reshuffleRules": {
+        "trigger": "drawPileExhausted",
+        "beforeReshuffle": "removeOneRandomCardFromDiscardPermanently",
+        "removedCardGoesTo": "permanentlyRemovedCards",
+        "thenShuffle": "discardPileBecomesNewDrawPile",
+        "note": "removedCards array tracks all permanently removed cards across all reshuffles"
+      }
+    },
+    "enemyDeck": {
+      "sectorPool": {
+        "cards": [
+          "rogue_rasluu_t1",
+          "rogue_kjeluu_t1",
+          "rogue_bisluu_t2",
+          "rogue_gifluu_t1",
+          "rogue_lagluu_t1",
+          "rogue_rasluu_t2",
+          "rogue_gifluu_t1",
+          "rogue_lagluu_t1",
+          "rogue_kjeluu_t2",
+          "rogue_bisluu_t1"
+        ],
+        "tierComposition": {
+          "S1": {
+            "t1": 0.7,
+            "t2": 0.3
+          },
+          "S2": {
+            "t1": 0.3,
+            "t2": 0.5,
+            "t3": 0.2
+          },
+          "S3": {
+            "t2": 0.3,
+            "t3": 0.5,
+            "t4": 0.2
+          },
+          "S4": {
+            "t3": 0.4,
+            "t4": 0.6
+          },
+          "S5": {
+            "t3": 0.2,
+            "t4": 0.8
+          }
+        }
+      },
+      "preDealtWaves": [
+        [
+          "rogue_rasluu_t1",
+          "rogue_kjeluu_t2"
+        ],
+        [
+          "rogue_gifluu_t1",
+          "rogue_lagluu_t1"
+        ],
+        [
+          "rogue_bisluu_t1",
+          "rogue_rasluu_t2"
+        ]
+      ]
+    },
+    "players": [
+      {
+        "playerId": "player_1",
+        "luutex": {
+          "current": 5,
+          "note": "No cap \u2014 Luutex accumulates freely"
+        },
+        "hand": [
+          "luu_rasluu",
+          "action_shell_guard",
+          "action_luutex_flare",
+          "action_hardened_instinct",
+          "action_core_surge"
+        ],
+        "luuQueue": [
+          {
+            "queuePosition": 1,
+            "cardId": "luu_rasluu",
+            "class": "Rasluu",
+            "level": 2,
+            "xp": 3,
+            "evolved": false,
+            "currentHp": 15,
+            "maxHp": 20,
+            "damageCounters": 5,
+            "defendStatus": false,
+            "actedThisTurn": false,
+            "bisluuBondTarget": null,
+            "activeEffects": []
+          },
+          {
+            "queuePosition": 2,
+            "cardId": "luu_kjeluu",
+            "class": "Kjeluu",
+            "level": 1,
+            "xp": 0,
+            "evolved": false,
+            "currentHp": 20,
+            "maxHp": 20,
+            "damageCounters": 0,
+            "defendStatus": false,
+            "actedThisTurn": false,
+            "bisluuBondTarget": null,
+            "activeEffects": []
+          }
+        ],
+        "turnState": {
+          "cardsPlayedThisTurn": [],
+          "actionTakenThisTurn": false,
+          "luutexSpentThisTurn": 0,
+          "overrideActive": false,
+          "note_overrideActive": "Set true when Override card is played. Allows Luu to act in any order this round. Reset to false at startRound."
+        }
+      }
+    ],
+    "activeEnemies": [
+      {
+        "instanceId": "enemy_1",
+        "cardId": "rogue_rasluu_t2",
+        "class": "Rasluu",
+        "tier": 2,
+        "wavePosition": 1,
+        "currentHp": 12,
+        "maxHp": 12,
+        "damageCounters": 0,
+        "sectorBonusActive": false,
+        "hitThisRound": false,
+        "attackedThisRound": false
+      },
+      {
+        "instanceId": "enemy_2",
+        "cardId": "rogue_kjeluu_t1",
+        "class": "Kjeluu",
+        "tier": 1,
+        "wavePosition": 2,
+        "currentHp": 16,
+        "maxHp": 16,
+        "damageCounters": 0,
+        "sectorBonusActive": false,
+        "hitThisRound": false,
+        "attackedThisRound": false
+      }
+    ],
+    "globalActiveEffects": [
+      {
+        "instanceId": "effect_1",
+        "cardId": "action_combat_harvest",
+        "playedByPlayer": "player_1",
+        "attachedTo": null,
+        "trigger": "onKill",
+        "discardCondition": "manual",
+        "expiresAt": null,
+        "activationCount": 0,
+        "usesPerRound": null
+      }
+    ],
+    "roundTracking": {
+      "damageDealtToEnemiesThisRound": {
+        "enemy_1": 0,
+        "enemy_2": 0
+      },
+      "luutexGainedThisRound": 0,
+      "cardsDrawnThisRound": 0,
+      "roguesDefeatedThisRound": []
+    },
+    "history": {
+      "sectorsCleared": 0,
+      "wavesCleared": 0,
+      "totalRoguesDefeated": 0,
+      "totalDamageDealt": 0,
+      "totalDamageTaken": 0,
+      "luuLost": []
+    },
+    "gameStatus": {
+      "status": "active",
+      "wonAt": null,
+      "lostAt": null,
+      "loseReason": null
+    },
+    "turnLog": [
+      {
+        "logId": 1,
+        "sector": 1,
+        "wave": 1,
+        "round": 1,
+        "phase": "playerTurns",
+        "player": "player_1",
+        "action": "playCard",
+        "detail": {
+          "cardId": "action_luutex_flare",
+          "attachedTo": "luu_rasluu",
+          "luutexSpent": 1
+        }
+      },
+      {
+        "logId": 2,
+        "sector": 1,
+        "wave": 1,
+        "round": 1,
+        "phase": "playerTurns",
+        "player": "player_1",
+        "action": "attack",
+        "detail": {
+          "attackingLuu": "luu_rasluu",
+          "targetEnemy": "enemy_1",
+          "diceRoll": 3,
+          "baseAttack": 1,
+          "totalDamage": 5,
+          "predatoryStrikeTriggered": false,
+          "enemyHpAfter": 7
+        }
+      },
+      {
+        "logId": 3,
+        "sector": 1,
+        "wave": 1,
+        "round": 1,
+        "phase": "enemyAttack",
+        "player": null,
+        "action": "rogueAttack",
+        "detail": {
+          "attackingEnemy": "enemy_1",
+          "targetLuu": "luu_rasluu",
+          "diceRoll": 2,
+          "baseAttack": 2,
+          "totalDamage": 4,
+          "phaseShiftRoll": null,
+          "phaseShiftEvaded": false,
+          "luuHpAfter": 11
+        }
+      }
+    ],
+    "undraftedLuuPool": {
+      "description": "Base Luu cards not picked during draft. Reserved for Purification card use only.",
+      "cards": [],
+      "note": "Populated at end of draft phase with any unpicked base Luu cards from the Luu draft deck"
+    },
+    "draftState": {
+      "phase": "complete",
+      "currentRound": 10,
+      "totalRounds": 10,
+      "cardsPickedThisDraft": 50,
+      "actionDeckRemaining": 0,
+      "luuDeckRemaining": 0,
+      "unpickedCards": [],
+      "note": "unpickedCards are permanently removed from game except base Luu which go to undraftedLuuPool"
+    },
+    "starterPool": {
+      "description": "One of each base Luu set aside before draft. One drawn randomly as starting Luu, rest go to discard.",
+      "cards": [
+        "luu_rasluu",
+        "luu_lagluu",
+        "luu_kjeluu",
+        "luu_gifluu",
+        "luu_bisluu"
+      ],
+      "startingLuuDrawn": "luu_rasluu",
+      "remainingDiscarded": [
+        "luu_lagluu",
+        "luu_kjeluu",
+        "luu_gifluu",
+        "luu_bisluu"
+      ]
+    },
+    "luuKnockoutRules": {
+      "description": "Rules applied when a friendly Luu is knocked out",
+      "steps": [
+        "1. Apply overflow damage to next Luu in queue",
+        "2. Discard all persistent and untilTriggered action cards attached to knocked-out Luu without triggering effects",
+        "3. Discard any global effects that reference this Luu (e.g. Shell Bond checking adjacency)",
+        "4. Fire onLuuKnockedOut trigger for any active global effects (e.g. Last Lesson)",
+        "5. Remove Luu from queue, shift remaining Luu forward",
+        "7. Add knocked-out Luu card to discard pile",
+        "8. Check lose condition: if all Luu defeated, game over"
+      ]
+    },
+    "baseDeck": {
+      "description": "Recommended starter deck for new players. 50 cards total. One copy of every unique action card plus selected Luu distribution.",
+      "luuCards": [
+        {
+          "cardId": "luu_rasluu",
+          "copies": 3
+        },
+        {
+          "cardId": "luu_lagluu",
+          "copies": 2
+        },
+        {
+          "cardId": "luu_kjeluu",
+          "copies": 3
+        },
+        {
+          "cardId": "luu_gifluu",
+          "copies": 2
+        },
+        {
+          "cardId": "luu_bisluu",
+          "copies": 2
+        },
+        {
+          "cardId": "luu_rasluu_evolved",
+          "copies": 2
+        },
+        {
+          "cardId": "luu_kjeluu_evolved",
+          "copies": 2
+        },
+        {
+          "cardId": "luu_lagluu_evolved",
+          "copies": 1
+        },
+        {
+          "cardId": "luu_gifluu_evolved",
+          "copies": 1
+        },
+        {
+          "cardId": "luu_bisluu_evolved",
+          "copies": 1
+        }
+      ],
+      "actionCards": "one_copy_of_each_unique_action_card",
+      "totalLuuCards": 19,
+      "totalActionCards": 37,
+      "note": "Action card list to be finalised when full 70-card action pool is complete. Base deck uses all current unique cards."
+    }
+  }
+}

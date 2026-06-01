@@ -1,0 +1,1190 @@
+{
+  "meta": {
+    "version": "1.0",
+    "stage": "Stage 3 \u2014 Data Architecture",
+    "description": "Master card definitions for LUU cooperative card game. Contains all Luu cards: 5 base friendly, 5 evolved friendly, 20 rogue (4 tiers x 5 classes). Action cards defined separately.",
+    "classIdentifiers": [
+      "Rasluu",
+      "Lagluu",
+      "Kjeluu",
+      "Gifluu",
+      "Bisluu"
+    ],
+    "counterLoop": {
+      "Rasluu": {
+        "beats": "Gifluu",
+        "losesTo": "Lagluu"
+      },
+      "Lagluu": {
+        "beats": "Rasluu",
+        "losesTo": "Kjeluu"
+      },
+      "Kjeluu": {
+        "beats": "Lagluu",
+        "losesTo": "Gifluu"
+      },
+      "Gifluu": {
+        "beats": "Kjeluu",
+        "losesTo": "Rasluu"
+      },
+      "Bisluu": {
+        "beats": null,
+        "losesTo": null
+      }
+    }
+  },
+  "cards": [
+    {
+      "id": "luu_rasluu",
+      "cardType": "Luu",
+      "name": "Rasluu",
+      "description": "An aggressive predator with a pointed outer shell. Excels at exploiting wounded enemies.",
+      "image": "rasluu.png",
+      "class": "Rasluu",
+      "cost": 2,
+      "stats": {
+        "health": [
+          15,
+          20,
+          25
+        ],
+        "baseAttack": [
+          1,
+          3,
+          5
+        ]
+      },
+      "levelTrack": {
+        "min": 1,
+        "max": 3,
+        "xpPerLevel": 5
+      },
+      "trait": {
+        "name": null,
+        "description": null,
+        "trigger": null,
+        "effect": null
+      },
+      "passive": {
+        "name": "Predatory Strike",
+        "description": "+1 damage when attacking a target already hit by another friendly Luu this round.",
+        "trigger": "onAttack",
+        "effect": {
+          "condition": "targetHitThisRound",
+          "bonusDamage": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Gifluu",
+        "losesTo": "Lagluu"
+      }
+    },
+    {
+      "id": "luu_lagluu",
+      "cardType": "Luu",
+      "name": "Lagluu",
+      "description": "A pack creature with connector nodes on its shell. Grows stronger and recovers faster when others of its kind are nearby.",
+      "image": "lagluu.png",
+      "class": "Lagluu",
+      "cost": 2,
+      "stats": {
+        "health": [
+          12,
+          16,
+          20
+        ],
+        "baseAttack": [
+          0,
+          2,
+          4
+        ]
+      },
+      "levelTrack": {
+        "min": 1,
+        "max": 3,
+        "xpPerLevel": 5
+      },
+      "trait": {
+        "name": "Pack Recovery",
+        "description": "At end of each round, recovers 1 HP per other Lagluu in play. Cannot recover from 0 HP. Cannot exceed base HP for current level.",
+        "trigger": "roundEnd",
+        "effect": {
+          "healPerAlly": 1,
+          "allyClass": "Lagluu",
+          "canRevive": false,
+          "capAtMaxHp": true
+        }
+      },
+      "passive": {
+        "name": "Colony Strength",
+        "description": "+1 defence for each other Lagluu in play.",
+        "trigger": "passive",
+        "effect": {
+          "defencePerAlly": [
+            1,
+            1,
+            1
+          ],
+          "allyClass": "Lagluu"
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Rasluu",
+        "losesTo": "Kjeluu"
+      }
+    },
+    {
+      "id": "luu_kjeluu",
+      "cardType": "Luu",
+      "name": "Kjeluu",
+      "description": "An armoured colossus with a thick double-layered shell. Absorbs punishment that would destroy other Luu.",
+      "image": "kjeluu.png",
+      "class": "Kjeluu",
+      "cost": 2,
+      "stats": {
+        "health": [
+          20,
+          27,
+          34
+        ],
+        "baseAttack": [
+          0,
+          2,
+          4
+        ]
+      },
+      "levelTrack": {
+        "min": 1,
+        "max": 3,
+        "xpPerLevel": 5
+      },
+      "trait": {
+        "name": "Impervious",
+        "description": "Any attack dealing 2 or less damage deals 0 instead.",
+        "trigger": "onDamaged",
+        "effect": {
+          "damageThreshold": 2,
+          "damageIfBelowThreshold": 0
+        }
+      },
+      "passive": {
+        "name": "Hardened Shell",
+        "description": "Reduce all incoming damage by 1.",
+        "trigger": "onDamaged",
+        "effect": {
+          "damageReduction": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Lagluu",
+        "losesTo": "Gifluu"
+      }
+    },
+    {
+      "id": "luu_gifluu",
+      "cardType": "Luu",
+      "name": "Gifluu",
+      "description": "A phantom creature whose shell emits poison spores. Difficult to pin down and dangerous to strike.",
+      "image": "gifluu.png",
+      "class": "Gifluu",
+      "cost": 2,
+      "stats": {
+        "health": [
+          15,
+          20,
+          25
+        ],
+        "baseAttack": [
+          0,
+          2,
+          3
+        ]
+      },
+      "levelTrack": {
+        "min": 1,
+        "max": 3,
+        "xpPerLevel": 5
+      },
+      "trait": {
+        "name": "Phase Shift",
+        "description": "When attacked, roll a d6. On a 6, evade all damage. Rolled per attacker. If evasion succeeds, Toxic Rebound does not trigger.",
+        "trigger": "onDamaged",
+        "effect": {
+          "diceType": "d6",
+          "evadeOn": [
+            6
+          ],
+          "evadeAllDamage": true,
+          "suppressPassiveOnEvade": "Toxic Rebound"
+        }
+      },
+      "passive": {
+        "name": "Toxic Rebound",
+        "description": "When Gifluu takes the Defend action, the attacker takes 1 damage.",
+        "trigger": "onDefend",
+        "effect": {
+          "reboundDamage": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Kjeluu",
+        "losesTo": "Rasluu"
+      }
+    },
+    {
+      "id": "luu_bisluu",
+      "cardType": "Luu",
+      "name": "Bisluu",
+      "description": "A symbiotic creature with a standard outer shell. Amplifies the abilities of the Luu beside it.",
+      "image": "bisluu.png",
+      "class": "Bisluu",
+      "cost": 2,
+      "stats": {
+        "health": [
+          15,
+          20,
+          25
+        ],
+        "baseAttack": [
+          0,
+          2,
+          4
+        ]
+      },
+      "levelTrack": {
+        "min": 1,
+        "max": 3,
+        "xpPerLevel": 5
+      },
+      "trait": {
+        "name": null,
+        "description": null,
+        "trigger": null,
+        "effect": null
+      },
+      "passive": {
+        "name": "Bonded Boost",
+        "description": "All Luu immediately adjacent to Bisluu in the queue gain +1 attack, +1 defence, and +1 Luutex when they take the Gather action this turn.",
+        "trigger": "adjacentTurnStart",
+        "effect": {
+          "target": "adjacentFriendly",
+          "attackBonus": [
+            1,
+            1,
+            1
+          ],
+          "defenceBonus": [
+            1,
+            1,
+            1
+          ],
+          "gatherBonus": [
+            1,
+            1,
+            1
+          ]
+        },
+        "triggerNote": "Fires at the start of each adjacent Luu turn via resolveBisluuAdjacencyBonus. Dynamic \u2014 rechecks adjacency each time. Applies to Luu entering play mid-round."
+      },
+      "typeAdvantage": {
+        "beats": null,
+        "losesTo": null
+      }
+    },
+    {
+      "id": "luu_rasluu_evolved",
+      "cardType": "LuuEvolved",
+      "name": "Rasluu",
+      "description": "Rasluu at its apex form. Deadlier, tougher, and more precise in exploiting enemy weaknesses.",
+      "image": "rasluu_evolved.png",
+      "class": "Rasluu",
+      "cost": 0,
+      "evolved": true,
+      "playCondition": {
+        "targetCardType": "Luu",
+        "targetClass": "Rasluu",
+        "targetMinLevel": 3
+      },
+      "stats": {
+        "health": [
+          27,
+          30,
+          35
+        ],
+        "baseAttack": [
+          6,
+          7,
+          9
+        ]
+      },
+      "levelTrack": {
+        "min": 3,
+        "max": 5,
+        "xpPerLevel": 5,
+        "xpSpillover": true
+      },
+      "trait": {
+        "name": null,
+        "description": null,
+        "trigger": null,
+        "effect": null
+      },
+      "passive": {
+        "name": "Apex Predator",
+        "description": "+2 damage when attacking a target already hit by another friendly Luu this round.",
+        "trigger": "onAttack",
+        "effect": {
+          "condition": "targetHitThisRound",
+          "bonusDamage": [
+            2,
+            2,
+            2
+          ]
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Gifluu",
+        "losesTo": "Lagluu"
+      }
+    },
+    {
+      "id": "luu_lagluu_evolved",
+      "cardType": "LuuEvolved",
+      "name": "Lagluu",
+      "description": "Lagluu at its most connected form. The colony moves and heals as one.",
+      "image": "lagluu_evolved.png",
+      "class": "Lagluu",
+      "cost": 0,
+      "evolved": true,
+      "playCondition": {
+        "targetCardType": "Luu",
+        "targetClass": "Lagluu",
+        "targetMinLevel": 3
+      },
+      "stats": {
+        "health": [
+          22,
+          26,
+          30
+        ],
+        "baseAttack": [
+          5,
+          6,
+          7
+        ]
+      },
+      "levelTrack": {
+        "min": 3,
+        "max": 5,
+        "xpPerLevel": 5,
+        "xpSpillover": true
+      },
+      "trait": {
+        "name": "Pack Recovery",
+        "description": "At end of each round, recovers 1 HP per other Lagluu in play. Cannot recover from 0 HP. Cannot exceed base HP for current level.",
+        "trigger": "roundEnd",
+        "effect": {
+          "healPerAlly": 1,
+          "allyClass": "Lagluu",
+          "canRevive": false,
+          "capAtMaxHp": true
+        }
+      },
+      "passive": {
+        "name": "Swarm Mind",
+        "description": "+2 defence and +1 attack for each other Lagluu in play.",
+        "trigger": "passive",
+        "effect": {
+          "defencePerAlly": [
+            2,
+            2,
+            2
+          ],
+          "attackPerAlly": [
+            1,
+            1,
+            1
+          ],
+          "allyClass": "Lagluu"
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Rasluu",
+        "losesTo": "Kjeluu"
+      }
+    },
+    {
+      "id": "luu_kjeluu_evolved",
+      "cardType": "LuuEvolved",
+      "name": "Kjeluu",
+      "description": "Kjeluu in its fortress form. Its shell now protects not just itself but those beside it.",
+      "image": "kjeluu_evolved.png",
+      "class": "Kjeluu",
+      "cost": 0,
+      "evolved": true,
+      "playCondition": {
+        "targetCardType": "Luu",
+        "targetClass": "Kjeluu",
+        "targetMinLevel": 3
+      },
+      "stats": {
+        "health": [
+          36,
+          40,
+          46
+        ],
+        "baseAttack": [
+          5,
+          6,
+          8
+        ]
+      },
+      "levelTrack": {
+        "min": 3,
+        "max": 5,
+        "xpPerLevel": 5,
+        "xpSpillover": true
+      },
+      "trait": {
+        "name": "Impervious",
+        "description": "Any attack dealing 2 or less damage deals 0 instead.",
+        "trigger": "onDamaged",
+        "effect": {
+          "damageThreshold": 2,
+          "damageIfBelowThreshold": 0
+        }
+      },
+      "passive": {
+        "name": "Fortress Form",
+        "description": "Reduce incoming damage to Kjeluu by 2, and to adjacent friendly Luu by 1.",
+        "trigger": "onDamaged",
+        "effect": {
+          "selfDamageReduction": [
+            2,
+            2,
+            2
+          ],
+          "adjacentDamageReduction": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Lagluu",
+        "losesTo": "Gifluu"
+      }
+    },
+    {
+      "id": "luu_gifluu_evolved",
+      "cardType": "LuuEvolved",
+      "name": "Gifluu",
+      "description": "Gifluu at peak toxicity. Its poison surges with lethal intensity on every strike.",
+      "image": "gifluu_evolved.png",
+      "class": "Gifluu",
+      "cost": 0,
+      "evolved": true,
+      "playCondition": {
+        "targetCardType": "Luu",
+        "targetClass": "Gifluu",
+        "targetMinLevel": 3
+      },
+      "stats": {
+        "health": [
+          27,
+          30,
+          35
+        ],
+        "baseAttack": [
+          4,
+          5,
+          6
+        ]
+      },
+      "levelTrack": {
+        "min": 3,
+        "max": 5,
+        "xpPerLevel": 5,
+        "xpSpillover": true
+      },
+      "trait": {
+        "name": "Phase Shift",
+        "description": "When attacked, roll a d6. On a 6, evade all damage. Rolled per attacker. If evasion succeeds, Venom Surge does not trigger.",
+        "trigger": "onDamaged",
+        "effect": {
+          "diceType": "d6",
+          "evadeOn": [
+            6
+          ],
+          "evadeAllDamage": true,
+          "suppressPassiveOnEvade": "Venom Surge"
+        }
+      },
+      "passive": {
+        "name": "Venom Surge",
+        "description": "When Gifluu takes the Defend action, the attacker takes 2 damage.",
+        "trigger": "onDefend",
+        "effect": {
+          "reboundDamage": [
+            2,
+            2,
+            2
+          ]
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Kjeluu",
+        "losesTo": "Rasluu"
+      }
+    },
+    {
+      "id": "luu_bisluu_evolved",
+      "cardType": "LuuEvolved",
+      "name": "Bisluu",
+      "description": "Bisluu in deep bond with the colony. Its amplifying presence now accelerates the growth of those beside it.",
+      "image": "bisluu_evolved.png",
+      "class": "Bisluu",
+      "cost": 0,
+      "evolved": true,
+      "playCondition": {
+        "targetCardType": "Luu",
+        "targetClass": "Bisluu",
+        "targetMinLevel": 3
+      },
+      "stats": {
+        "health": [
+          27,
+          30,
+          35
+        ],
+        "baseAttack": [
+          5,
+          6,
+          8
+        ]
+      },
+      "levelTrack": {
+        "min": 3,
+        "max": 5,
+        "xpPerLevel": 5,
+        "xpSpillover": true
+      },
+      "trait": {
+        "name": null,
+        "description": null,
+        "trigger": null,
+        "effect": null
+      },
+      "passive": {
+        "name": "Deep Bond",
+        "description": "All Luu immediately adjacent to Bisluu gain +2 attack, +2 defence, +1 XP, and +1 Luutex when they take the Gather action this turn.",
+        "trigger": "adjacentTurnStart",
+        "effect": {
+          "target": "adjacentFriendly",
+          "attackBonus": [
+            2,
+            2,
+            2
+          ],
+          "defenceBonus": [
+            2,
+            2,
+            2
+          ],
+          "xpBonus": [
+            1,
+            1,
+            1
+          ],
+          "gatherBonus": [
+            1,
+            1,
+            1
+          ]
+        },
+        "triggerNote": "Fires at the start of each adjacent Luu turn via resolveBisluuAdjacencyBonus. Dynamic \u2014 rechecks adjacency each time. Applies to Luu entering play mid-round."
+      },
+      "typeAdvantage": {
+        "beats": null,
+        "losesTo": null
+      }
+    },
+    {
+      "id": "rogue_rasluu_t1",
+      "cardType": "RogueLuu",
+      "name": "Rogue Rasluu",
+      "description": "A newly infected Rasluu. Aggressive but manageable in early sectors.",
+      "image": "rogue_rasluu_t1.png",
+      "class": "Rasluu",
+      "tier": 1,
+      "stats": {
+        "health": 10,
+        "baseAttack": 1
+      },
+      "xpOnDefeat": 1,
+      "trait": {
+        "name": "Predatory Strike",
+        "description": "Deals +1 damage when attacking a Luu that was hit earlier this round.",
+        "trigger": "onAttack",
+        "effect": {
+          "condition": "targetHitThisRound",
+          "bonusDamage": 1
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Gifluu",
+        "losesTo": "Lagluu"
+      }
+    },
+    {
+      "id": "rogue_rasluu_t2",
+      "cardType": "RogueLuu",
+      "name": "Rogue Rasluu",
+      "description": "Further infected. Hits harder and exploits weakness more aggressively.",
+      "image": "rogue_rasluu_t2.png",
+      "class": "Rasluu",
+      "tier": 2,
+      "stats": {
+        "health": 12,
+        "baseAttack": 2
+      },
+      "xpOnDefeat": 2,
+      "trait": {
+        "name": "Predatory Strike",
+        "description": "Deals +1 damage when attacking a Luu that was hit earlier this round.",
+        "trigger": "onAttack",
+        "effect": {
+          "condition": "targetHitThisRound",
+          "bonusDamage": 1
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Gifluu",
+        "losesTo": "Lagluu"
+      }
+    },
+    {
+      "id": "rogue_rasluu_t3",
+      "cardType": "RogueLuu",
+      "name": "Rogue Rasluu",
+      "description": "Deeply infected. Dangerous in mid-sectors \u2014 Predatory Strike hits significantly harder.",
+      "image": "rogue_rasluu_t3.png",
+      "class": "Rasluu",
+      "tier": 3,
+      "stats": {
+        "health": 20,
+        "baseAttack": 5
+      },
+      "xpOnDefeat": 3,
+      "trait": {
+        "name": "Predatory Strike",
+        "description": "Deals +2 damage when attacking a Luu that was hit earlier this round.",
+        "trigger": "onAttack",
+        "effect": {
+          "condition": "targetHitThisRound",
+          "bonusDamage": 2
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Gifluu",
+        "losesTo": "Lagluu"
+      }
+    },
+    {
+      "id": "rogue_rasluu_t4",
+      "cardType": "RogueLuu",
+      "name": "Rogue Rasluu",
+      "description": "Fully consumed by the parasite. A formidable threat in late sectors.",
+      "image": "rogue_rasluu_t4.png",
+      "class": "Rasluu",
+      "tier": 4,
+      "stats": {
+        "health": 30,
+        "baseAttack": 7
+      },
+      "xpOnDefeat": 4,
+      "trait": {
+        "name": "Predatory Strike",
+        "description": "Deals +3 damage when attacking a Luu that was hit earlier this round.",
+        "trigger": "onAttack",
+        "effect": {
+          "condition": "targetHitThisRound",
+          "bonusDamage": 3
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Gifluu",
+        "losesTo": "Lagluu"
+      }
+    },
+    {
+      "id": "rogue_lagluu_t1",
+      "cardType": "RogueLuu",
+      "name": "Rogue Lagluu",
+      "description": "A newly infected Lagluu. Weak alone but recovers quickly when others are nearby.",
+      "image": "rogue_lagluu_t1.png",
+      "class": "Lagluu",
+      "tier": 1,
+      "stats": {
+        "health": 12,
+        "baseAttack": 1
+      },
+      "xpOnDefeat": 1,
+      "trait": {
+        "name": "Pack Recovery",
+        "description": "At end of each round, recovers 1 HP per other Rogue Lagluu in the wave. Cannot exceed base HP.",
+        "trigger": "roundEnd",
+        "effect": {
+          "healPerAlly": 1,
+          "allyClass": "Lagluu",
+          "allyCardType": "RogueLuu",
+          "capAtMaxHp": true
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Rasluu",
+        "losesTo": "Kjeluu"
+      }
+    },
+    {
+      "id": "rogue_lagluu_t2",
+      "cardType": "RogueLuu",
+      "name": "Rogue Lagluu",
+      "description": "Further infected. Harder to kill when it has company in the wave.",
+      "image": "rogue_lagluu_t2.png",
+      "class": "Lagluu",
+      "tier": 2,
+      "stats": {
+        "health": 15,
+        "baseAttack": 1
+      },
+      "xpOnDefeat": 2,
+      "trait": {
+        "name": "Pack Recovery",
+        "description": "At end of each round, recovers 1 HP per other Rogue Lagluu in the wave. Cannot exceed base HP.",
+        "trigger": "roundEnd",
+        "effect": {
+          "healPerAlly": 1,
+          "allyClass": "Lagluu",
+          "allyCardType": "RogueLuu",
+          "capAtMaxHp": true
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Rasluu",
+        "losesTo": "Kjeluu"
+      }
+    },
+    {
+      "id": "rogue_lagluu_t3",
+      "cardType": "RogueLuu",
+      "name": "Rogue Lagluu",
+      "description": "Deeply infected. Pack Recovery heals more aggressively \u2014 kill it fast or it becomes a sustained threat.",
+      "image": "rogue_lagluu_t3.png",
+      "class": "Lagluu",
+      "tier": 3,
+      "stats": {
+        "health": 20,
+        "baseAttack": 3
+      },
+      "xpOnDefeat": 3,
+      "trait": {
+        "name": "Pack Recovery",
+        "description": "At end of each round, recovers 2 HP per other Rogue Lagluu in the wave. Cannot exceed base HP.",
+        "trigger": "roundEnd",
+        "effect": {
+          "healPerAlly": 2,
+          "allyClass": "Lagluu",
+          "allyCardType": "RogueLuu",
+          "capAtMaxHp": true
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Rasluu",
+        "losesTo": "Kjeluu"
+      }
+    },
+    {
+      "id": "rogue_lagluu_t4",
+      "cardType": "RogueLuu",
+      "name": "Rogue Lagluu",
+      "description": "Fully consumed. Sustained healing makes it extremely difficult to eliminate without focused fire.",
+      "image": "rogue_lagluu_t4.png",
+      "class": "Lagluu",
+      "tier": 4,
+      "stats": {
+        "health": 26,
+        "baseAttack": 5
+      },
+      "xpOnDefeat": 4,
+      "trait": {
+        "name": "Pack Recovery",
+        "description": "At end of each round, recovers 3 HP per other Rogue Lagluu in the wave. Cannot exceed base HP.",
+        "trigger": "roundEnd",
+        "effect": {
+          "healPerAlly": 3,
+          "allyClass": "Lagluu",
+          "allyCardType": "RogueLuu",
+          "capAtMaxHp": true
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Rasluu",
+        "losesTo": "Kjeluu"
+      }
+    },
+    {
+      "id": "rogue_kjeluu_t1",
+      "cardType": "RogueLuu",
+      "name": "Rogue Kjeluu",
+      "description": "A newly infected Kjeluu. Its shell makes weak attacks useless \u2014 build attack power before engaging.",
+      "image": "rogue_kjeluu_t1.png",
+      "class": "Kjeluu",
+      "tier": 1,
+      "stats": {
+        "health": 16,
+        "baseAttack": 1
+      },
+      "xpOnDefeat": 1,
+      "trait": {
+        "name": "Impervious",
+        "description": "Attacks of 2 or less deal 0 damage.",
+        "trigger": "onDamaged",
+        "effect": {
+          "damageThreshold": 2,
+          "damageIfBelowThreshold": 0
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Lagluu",
+        "losesTo": "Gifluu"
+      }
+    },
+    {
+      "id": "rogue_kjeluu_t2",
+      "cardType": "RogueLuu",
+      "name": "Rogue Kjeluu",
+      "description": "Further infected. Still requires meaningful attack power to penetrate its shell.",
+      "image": "rogue_kjeluu_t2.png",
+      "class": "Kjeluu",
+      "tier": 2,
+      "stats": {
+        "health": 20,
+        "baseAttack": 2
+      },
+      "xpOnDefeat": 2,
+      "trait": {
+        "name": "Impervious",
+        "description": "Attacks of 2 or less deal 0 damage.",
+        "trigger": "onDamaged",
+        "effect": {
+          "damageThreshold": 2,
+          "damageIfBelowThreshold": 0
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Lagluu",
+        "losesTo": "Gifluu"
+      }
+    },
+    {
+      "id": "rogue_kjeluu_t3",
+      "cardType": "RogueLuu",
+      "name": "Rogue Kjeluu",
+      "description": "Deeply infected. Its Impervious threshold has grown \u2014 only strong attacks break through.",
+      "image": "rogue_kjeluu_t3.png",
+      "class": "Kjeluu",
+      "tier": 3,
+      "stats": {
+        "health": 28,
+        "baseAttack": 4
+      },
+      "xpOnDefeat": 3,
+      "trait": {
+        "name": "Impervious",
+        "description": "Attacks of 3 or less deal 0 damage.",
+        "trigger": "onDamaged",
+        "effect": {
+          "damageThreshold": 3,
+          "damageIfBelowThreshold": 0
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Lagluu",
+        "losesTo": "Gifluu"
+      }
+    },
+    {
+      "id": "rogue_kjeluu_t4",
+      "cardType": "RogueLuu",
+      "name": "Rogue Kjeluu",
+      "description": "Fully consumed. A near-impenetrable wall requiring coordinated high-damage attacks.",
+      "image": "rogue_kjeluu_t4.png",
+      "class": "Kjeluu",
+      "tier": 4,
+      "stats": {
+        "health": 38,
+        "baseAttack": 6
+      },
+      "xpOnDefeat": 4,
+      "trait": {
+        "name": "Impervious",
+        "description": "Attacks of 4 or less deal 0 damage.",
+        "trigger": "onDamaged",
+        "effect": {
+          "damageThreshold": 4,
+          "damageIfBelowThreshold": 0
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Lagluu",
+        "losesTo": "Gifluu"
+      }
+    },
+    {
+      "id": "rogue_gifluu_t1",
+      "cardType": "RogueLuu",
+      "name": "Rogue Gifluu",
+      "description": "A newly infected Gifluu. Low HP but attacks that land trigger poison rebound.",
+      "image": "rogue_gifluu_t1.png",
+      "class": "Gifluu",
+      "tier": 1,
+      "stats": {
+        "health": 12,
+        "baseAttack": 1
+      },
+      "xpOnDefeat": 1,
+      "trait": {
+        "name": "Phase Shift",
+        "description": "When attacked, roll a d6. On a 6, evade all damage and deal 1 rebound damage to the attacker.",
+        "trigger": "onDamaged",
+        "effect": {
+          "diceType": "d6",
+          "evadeOn": [
+            6
+          ],
+          "evadeAllDamage": true,
+          "reboundOnEvade": 1
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Kjeluu",
+        "losesTo": "Rasluu"
+      }
+    },
+    {
+      "id": "rogue_gifluu_t2",
+      "cardType": "RogueLuu",
+      "name": "Rogue Gifluu",
+      "description": "Further infected. Still fragile but evasion makes it frustrating to eliminate.",
+      "image": "rogue_gifluu_t2.png",
+      "class": "Gifluu",
+      "tier": 2,
+      "stats": {
+        "health": 15,
+        "baseAttack": 2
+      },
+      "xpOnDefeat": 2,
+      "trait": {
+        "name": "Phase Shift",
+        "description": "When attacked, roll a d6. On a 6, evade all damage and deal 1 rebound damage to the attacker.",
+        "trigger": "onDamaged",
+        "effect": {
+          "diceType": "d6",
+          "evadeOn": [
+            6
+          ],
+          "evadeAllDamage": true,
+          "reboundOnEvade": 1
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Kjeluu",
+        "losesTo": "Rasluu"
+      }
+    },
+    {
+      "id": "rogue_gifluu_t3",
+      "cardType": "RogueLuu",
+      "name": "Rogue Gifluu",
+      "description": "Deeply infected. Rebound damage intensifies \u2014 every hit that lands costs you.",
+      "image": "rogue_gifluu_t3.png",
+      "class": "Gifluu",
+      "tier": 3,
+      "stats": {
+        "health": 20,
+        "baseAttack": 3
+      },
+      "xpOnDefeat": 3,
+      "trait": {
+        "name": "Phase Shift",
+        "description": "When attacked, roll a d6. On a 6, evade all damage and deal 2 rebound damage to the attacker.",
+        "trigger": "onDamaged",
+        "effect": {
+          "diceType": "d6",
+          "evadeOn": [
+            6
+          ],
+          "evadeAllDamage": true,
+          "reboundOnEvade": 2
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Kjeluu",
+        "losesTo": "Rasluu"
+      }
+    },
+    {
+      "id": "rogue_gifluu_t4",
+      "cardType": "RogueLuu",
+      "name": "Rogue Gifluu",
+      "description": "Fully consumed. Heavy rebound on evasion punishes powerful attacks severely.",
+      "image": "rogue_gifluu_t4.png",
+      "class": "Gifluu",
+      "tier": 4,
+      "stats": {
+        "health": 26,
+        "baseAttack": 4
+      },
+      "xpOnDefeat": 4,
+      "trait": {
+        "name": "Phase Shift",
+        "description": "When attacked, roll a d6. On a 6, evade all damage and deal 3 rebound damage to the attacker.",
+        "trigger": "onDamaged",
+        "effect": {
+          "diceType": "d6",
+          "evadeOn": [
+            6
+          ],
+          "evadeAllDamage": true,
+          "reboundOnEvade": 3
+        }
+      },
+      "typeAdvantage": {
+        "beats": "Kjeluu",
+        "losesTo": "Rasluu"
+      }
+    },
+    {
+      "id": "rogue_bisluu_t1",
+      "cardType": "RogueLuu",
+      "name": "Rogue Bisluu",
+      "description": "A newly infected Bisluu. Unremarkable alone \u2014 its danger is the boost it gives adjacent Rogues.",
+      "image": "rogue_bisluu_t1.png",
+      "class": "Bisluu",
+      "tier": 1,
+      "stats": {
+        "health": 10,
+        "baseAttack": 1
+      },
+      "xpOnDefeat": 1,
+      "trait": {
+        "name": "Bonded Boost",
+        "description": "All Rogue Luu immediately adjacent to this Bisluu gain +1 attack this round.",
+        "trigger": "roundStart",
+        "effect": {
+          "target": "adjacentRogue",
+          "attackBonus": 1
+        }
+      },
+      "typeAdvantage": {
+        "beats": null,
+        "losesTo": null
+      }
+    },
+    {
+      "id": "rogue_bisluu_t2",
+      "cardType": "RogueLuu",
+      "name": "Rogue Bisluu",
+      "description": "Further infected. Still a priority target \u2014 its boost makes the whole wave more dangerous.",
+      "image": "rogue_bisluu_t2.png",
+      "class": "Bisluu",
+      "tier": 2,
+      "stats": {
+        "health": 12,
+        "baseAttack": 2
+      },
+      "xpOnDefeat": 2,
+      "trait": {
+        "name": "Bonded Boost",
+        "description": "All Rogue Luu immediately adjacent to this Bisluu gain +1 attack this round.",
+        "trigger": "roundStart",
+        "effect": {
+          "target": "adjacentRogue",
+          "attackBonus": 1
+        }
+      },
+      "typeAdvantage": {
+        "beats": null,
+        "losesTo": null
+      }
+    },
+    {
+      "id": "rogue_bisluu_t3",
+      "cardType": "RogueLuu",
+      "name": "Rogue Bisluu",
+      "description": "Deeply infected. Its boost intensifies \u2014 adjacent Rogues become significantly more threatening.",
+      "image": "rogue_bisluu_t3.png",
+      "class": "Bisluu",
+      "tier": 3,
+      "stats": {
+        "health": 18,
+        "baseAttack": 3
+      },
+      "xpOnDefeat": 3,
+      "trait": {
+        "name": "Bonded Boost",
+        "description": "All Rogue Luu immediately adjacent to this Bisluu gain +2 attack this round.",
+        "trigger": "roundStart",
+        "effect": {
+          "target": "adjacentRogue",
+          "attackBonus": 2
+        }
+      },
+      "typeAdvantage": {
+        "beats": null,
+        "losesTo": null
+      }
+    },
+    {
+      "id": "rogue_bisluu_t4",
+      "cardType": "RogueLuu",
+      "name": "Rogue Bisluu",
+      "description": "Fully consumed. A T4 Bisluu next to a T4 Rasluu is among the most dangerous wave combinations.",
+      "image": "rogue_bisluu_t4.png",
+      "class": "Bisluu",
+      "tier": 4,
+      "stats": {
+        "health": 24,
+        "baseAttack": 5
+      },
+      "xpOnDefeat": 4,
+      "trait": {
+        "name": "Bonded Boost",
+        "description": "All Rogue Luu immediately adjacent to this Bisluu gain +3 attack this round.",
+        "trigger": "roundStart",
+        "effect": {
+          "target": "adjacentRogue",
+          "attackBonus": 3
+        }
+      },
+      "typeAdvantage": {
+        "beats": null,
+        "losesTo": null
+      }
+    }
+  ]
+}

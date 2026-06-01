@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mission: LUU &ndash; Godguttengames</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0a1a1e;
+      --surface:   #0f2228;
+      --surface2:  #132a32;
+      --border:    rgba(79,196,207,0.12);
+      --border-light: rgba(79,196,207,0.22);
+      --accent:    #4fc4cf;
+      --accent2:   #7dd8e0;
+      --gold:      #c8a96e;
+      --danger:    #cf4f6a;
+      --text:      #e8f4f6;
+      --text-dim:  #8ab4bc;
+      --text-muted:#4a7a84;
+      --glow:      rgba(79,196,207,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Crimson Pro', serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* -- Background particle field -- */
+    .bg-particles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .bg-particles::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 30%, rgba(79,196,207,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 80% 70%, rgba(200,169,110,0.04) 0%, transparent 50%);
+    }
+
+    /* -- Layout -- */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* -- Back link -- */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 20px 0 0;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover { color: var(--accent); }
+    .back-link::before { content: '\2190'; font-size: 12px; }
+
+    /* -- Masthead -- */
+    .masthead {
+      text-align: center;
+      padding: 60px 0 56px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 56px;
+      position: relative;
+    }
+
+    .masthead::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 1px;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+    }
+
+    .mission-label {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .game-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(56px, 12vw, 96px);
+      font-weight: 900;
+      letter-spacing: 0.25em;
+      line-height: 1;
+      color: var(--text);
+      text-shadow:
+        0 0 40px rgba(79,196,207,0.25),
+        0 0 80px rgba(79,196,207,0.08);
+      margin-bottom: 20px;
+    }
+
+    .game-title span { color: var(--accent); }
+
+    .tagline {
+      font-style: italic;
+      font-size: 19px;
+      color: var(--text-dim);
+      font-weight: 300;
+      margin-bottom: 28px;
+    }
+
+    .meta-pills {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .meta-pill {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border: 1px solid var(--border-light);
+      padding: 5px 14px;
+      border-radius: 20px;
+    }
+
+    .meta-pill span { color: var(--accent); }
+
+    /* -- Nav grid -- */
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    @media (max-width: 560px) {
+      .nav-grid { grid-template-columns: 1fr; }
+    }
+
+    .nav-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 28px 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s, background 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--glow);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .nav-card:hover {
+      border-color: var(--border-light);
+      background: var(--surface2);
+      transform: translateY(-3px);
+    }
+
+    .nav-card:hover::before { opacity: 1; }
+
+    .nav-card.featured {
+      grid-column: span 2;
+      flex-direction: row;
+      align-items: center;
+      gap: 20px;
+      border-color: rgba(79,196,207,0.3);
+      background: linear-gradient(135deg, var(--surface) 0%, rgba(15,42,50,0.95) 100%);
+    }
+
+    @media (max-width: 560px) {
+      .nav-card.featured { grid-column: span 1; flex-direction: column; }
+    }
+
+    .nav-card.featured:hover { border-color: var(--accent); }
+
+    .nav-icon {
+      font-size: 28px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .nav-card.featured .nav-icon { font-size: 36px; }
+
+    .nav-label {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .nav-title {
+      font-family: 'Cinzel', serif;
+      font-size: 15px;
+      letter-spacing: 0.08em;
+      color: var(--text);
+    }
+
+    .nav-card.featured .nav-title {
+      font-size: 18px;
+      color: var(--accent);
+    }
+
+    .nav-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-top: 2px;
+    }
+
+    .nav-arrow {
+      margin-left: auto;
+      font-size: 18px;
+      color: var(--text-muted);
+      transition: color 0.2s, transform 0.2s;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    .nav-card:hover .nav-arrow {
+      color: var(--accent);
+      transform: translateX(4px);
+    }
+
+    /* -- Summary section -- */
+    .section {
+      margin-bottom: 48px;
+    }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .summary-text {
+      font-size: 17px;
+      line-height: 1.7;
+      color: var(--text-dim);
+    }
+
+    .summary-text strong { color: var(--text); font-weight: 400; }
+
+    /* -- Class grid -- */
+    .class-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 560px) {
+      .class-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .class-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .class-name {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .class-trait {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* -- Footer -- */
+    footer {
+      margin-top: 80px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    footer a:hover { color: var(--accent); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .masthead  { animation: fadeUp 0.6s ease both; }
+    .nav-grid  { animation: fadeUp 0.6s 0.1s ease both; }
+    .section   { animation: fadeUp 0.6s 0.2s ease both; }
+  </style>
+</head>
+<body>
+
+<div class="bg-particles"></div>
+
+<div class="page">
+
+  <a class="back-link" href="../../index.html">Godguttengames</a>
+
+  <div class="masthead">
+    <span class="mission-label">Mission</span>
+    <h1 class="game-title">L<span>U</span>U</h1>
+    <p class="tagline">Cultivate. Evolve. Survive.</p>
+    <div class="meta-pills">
+      <span class="meta-pill"><span>1&ndash;2</span> Players</span>
+      <span class="meta-pill">Cooperative</span>
+      <span class="meta-pill">Card Game</span>
+      <span class="meta-pill"><span>5</span> Sectors</span>
+      <span class="meta-pill">Draft &amp; Build</span>
+    </div>
+  </div>
+
+  <!-- Navigation cards -->
+  <div class="nav-grid">
+
+    <a class="nav-card featured" href="play.html">
+      <div class="nav-icon">&#x1F3AE;</div>
+      <div style="flex:1">
+        <div class="nav-label">Singleplayer</div>
+        <div class="nav-title">Solo Play</div>
+        <div class="nav-desc">Play alone or save and resume your session anytime.</div>
+      </div>
+      <div class="nav-arrow">&#x2192;</div>
+    </a>
+
+    <a class="nav-card" href="multiplayer.html">
+      <div class="nav-icon">&#x1F465;</div>
+      <div>
+        <div class="nav-label">Cooperative</div>
+        <div class="nav-title">Multiplayer</div>
+        <div class="nav-desc">Create a game or join with a code.</div>
+      </div>
+      <div class="nav-arrow">&#x2192;</div>
+    </a>
+
+    <a class="nav-card" href="rules.html">
+      <div class="nav-icon">&#x1F4D6;</div>
+      <div>
+        <div class="nav-label">Learn</div>
+        <div class="nav-title">Rules</div>
+        <div class="nav-desc">Full rules reference.</div>
+      </div>
+      <div class="nav-arrow">&#x2192;</div>
+    </a>
+
+    <a class="nav-card" href="cards.html">
+      <div class="nav-icon">&#x1F0CF;</div>
+      <div>
+        <div class="nav-label">Reference</div>
+        <div class="nav-title">Card Library</div>
+        <div class="nav-desc">Browse every card in the game.</div>
+      </div>
+      <div class="nav-arrow">&#x2192;</div>
+    </a>
+
+  </div>
+
+  <!-- About summary -->
+  <div class="section">
+    <div class="section-title">About the Game</div>
+    <p class="summary-text">
+      Mission: LUU is a <strong>cooperative card game</strong> for 1&ndash;2 players. You are astronaut scientists on an alien planet, cultivating single-cell <strong>Luu creatures</strong> and harvesting their clean energy secretion &mdash; Luutex &mdash; as your resource. Parasite-infected <strong>Rogue Luu</strong> have overrun five sectors. Fight through each one, defeat the sector boss, and win.
+    </p>
+    <br/>
+    <p class="summary-text">
+      Before each game, draft your <strong>40-card shared deck</strong> collaboratively from a pool of Core and Power cards. Add up to 5 <strong>Chaos Cards</strong> to raise the difficulty. Luu level up, evolve, and gain passive traits. Every run is different.
+    </p>
+  </div>
+
+  <!-- Luu classes -->
+  <div class="section">
+    <div class="section-title">The Five Luu Classes</div>
+    <div class="class-grid">
+      <div class="class-chip">
+        <span class="class-name">Rasluu</span>
+        <span class="class-trait">Predatory Strike</span>
+      </div>
+      <div class="class-chip">
+        <span class="class-name">Lagluu</span>
+        <span class="class-trait">Colony Strength</span>
+      </div>
+      <div class="class-chip">
+        <span class="class-name">Kjeluu</span>
+        <span class="class-trait">Impervious</span>
+      </div>
+      <div class="class-chip">
+        <span class="class-name">Gifluu</span>
+        <span class="class-trait">Phase Shift</span>
+      </div>
+      <div class="class-chip">
+        <span class="class-name">Bisluu</span>
+        <span class="class-trait">Shell Bond</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <a href="../../index.html">&larr; Godguttengames</a>
+    &nbsp;&middot;&nbsp;
+    Mission: LUU &nbsp;&middot;&nbsp; Cooperative Card Game
+    &nbsp;&middot;&nbsp;
+    All content &copy; Godguttengames
+  </footer>
+
+</div>
+
+</body>
+</html>

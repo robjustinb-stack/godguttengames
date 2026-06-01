@@ -1,0 +1,10 @@
+cards.js:60 [CardRegistry] Loaded: 30 Luu cards, 37 action cards
+gameState.js:137 [loadStarterDeck] 13 Luu + 37 action = 50 total cards
+gameState.js:172 [drawStartingLuu] Remainders removed from play: luu_rasluu, luu_kjeluu, luu_gifluu, luu_bisluu
+gameState.js:188 [dealOpeningHand] No base Luu in opening hand — mulligan available
+gameState.js:194 [dealOpeningHand] player_1 hand: action_shield_resonance, action_pack_call, action_apex_focus, action_override, luu_kjeluu_evolved
+gameState.js:256 [initEnemyDeck] S1 waves: (3) [Array(2), Array(3), Array(3)]
+gameState.js:349 [initGameState] Complete: {config: {…}, position: {…}, turnLog: Array(3), history: {…}, bosses: {…}, …}
+engine.js:83 [initWave] Wave 1 initialised: (2) [{…}, {…}]
+engine.js:153 [startRound] Round 1 started
+engine.js:200 [startPlayerTurn] Active Luu: luu_lagluu at position 1

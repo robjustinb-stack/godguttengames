@@ -1,0 +1,704 @@
+{
+  "meta": {
+    "version": "1.0",
+    "stage": "Stage 3 \u2014 Data Architecture",
+    "description": "Action card definitions for LUU cooperative card game. This file documents the schema and provides one example card per major effect type combination. Full card library to be populated in Stage 4.",
+    "effectTypes": [
+      "statModifier",
+      "resourceGain",
+      "healing",
+      "damageRedistribution",
+      "cardDraw",
+      "deckSearch",
+      "queueManipulation",
+      "turnOrderOverride",
+      "attackDistribution",
+      "xpModifier",
+      "damagePrevention",
+      "passiveCopy",
+      "discard",
+      "xpShare",
+      "luuRecovery",
+      "conversion"
+    ],
+    "targetTypes": [
+      "oneLuu",
+      "allLuu",
+      "leadLuu",
+      "adjacentLuu",
+      "oneRogue",
+      "allRogues",
+      "deck",
+      "hand",
+      "self"
+    ],
+    "timingTypes": [
+      "immediate",
+      "thisRound",
+      "thisWave",
+      "thisSector",
+      "untilTriggered",
+      "permanent"
+    ],
+    "discardConditions": [
+      "immediate",
+      "endOfRound",
+      "endOfWave",
+      "endOfSector",
+      "onTrigger",
+      "onKill",
+      "manual",
+      "endOfTurn"
+    ],
+    "triggerTypes": [
+      "onPlay",
+      "onDamaged",
+      "onAttack",
+      "onDefend",
+      "onKill",
+      "onGather",
+      "roundStart",
+      "roundEnd",
+      "waveEnd",
+      "sectorEnd",
+      "onDraw",
+      "onEvasion",
+      "manual",
+      "onLuuKnockedOut",
+      "adjacentTurnStart"
+    ],
+    "consumesAction": "Boolean field on each card. Default true. Set false for cards that can be played without consuming the Luu action slot (e.g. Formation Override, Passive Harvest, Synaptic Override).",
+    "noActionCards": [
+      "action_formation_override",
+      "action_passive_harvest",
+      "action_override",
+      "action_tactical_shift"
+    ],
+    "noActionCardsNote": "These cards do not consume the Luu action slot when played. When remaining cards are added to schema, set consumesAction=false for these IDs."
+  },
+  "cards": [
+    {
+      "id": "action_luutex_flare",
+      "cardType": "ActionCard",
+      "name": "Luutex Flare",
+      "description": "One chosen Luu channels a burst of combat energy. Deals +1 damage on their next attack this turn.",
+      "image": "action_luutex_flare.png",
+      "cost": 1,
+      "tags": [
+        "Attack Enhancement"
+      ],
+      "stackable": false,
+      "attachedTo": "playerChoosesAtPlay",
+      "effects": [
+        {
+          "type": "statModifier",
+          "stat": "attack",
+          "value": 1,
+          "target": "oneLuu",
+          "timing": "thisRound",
+          "trigger": "onAttack",
+          "discardCondition": "endOfRound",
+          "activationCost": null,
+          "condition": null,
+          "diceCheck": null
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_combat_harvest",
+      "cardType": "ActionCard",
+      "name": "Combat Harvest",
+      "description": "Each Rogue defeated releases knowledge for the colony. Draw one card every time a Rogue Luu is knocked out. Multiple copies stack. Lasts rest of game.",
+      "image": "action_combat_harvest.png",
+      "cost": 4,
+      "tags": [
+        "Card Draw"
+      ],
+      "stackable": true,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "cardDraw",
+          "value": 1,
+          "target": "hand",
+          "timing": "permanent",
+          "trigger": "onKill",
+          "discardCondition": "manual",
+          "activationCost": null,
+          "condition": null,
+          "diceCheck": null
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_luutex_reclaim",
+      "cardType": "ActionCard",
+      "name": "Luutex Reclaim",
+      "description": "Discard one card from your hand. Reclaim its latent Luutex energy \u2014 gain 3 Luutex immediately.",
+      "image": "action_luutex_reclaim.png",
+      "cost": 0,
+      "tags": [
+        "Resource Generation"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "discard",
+          "value": 1,
+          "target": "hand",
+          "timing": "immediate",
+          "trigger": "onPlay",
+          "discardCondition": "immediate",
+          "activationCost": null,
+          "condition": "playerMustHaveCardInHand",
+          "diceCheck": null
+        },
+        {
+          "type": "resourceGain",
+          "stat": "luutex",
+          "value": 3,
+          "target": "self",
+          "timing": "immediate",
+          "trigger": "onPlay",
+          "discardCondition": "immediate",
+          "activationCost": null,
+          "condition": null,
+          "diceCheck": null
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_shell_reflex",
+      "cardType": "ActionCard",
+      "name": "Shell Reflex",
+      "description": "A Luu's shell reacts instinctively to incoming strikes. For the rest of this wave, when this Luu would take damage, roll a d6. On a 1, prevent all damage. Stacks with Gifluu's Phase Shift \u2014 roll separately.",
+      "image": "action_shell_reflex.png",
+      "cost": 2,
+      "tags": [
+        "Defence Enhancement"
+      ],
+      "stackable": true,
+      "attachedTo": "playerChoosesAtPlay",
+      "effects": [
+        {
+          "type": "damagePrevention",
+          "value": "all",
+          "target": "oneLuu",
+          "timing": "thisWave",
+          "trigger": "onDamaged",
+          "discardCondition": "endOfWave",
+          "activationCost": null,
+          "condition": "diceCheckPass",
+          "diceCheck": {
+            "diceType": "d6",
+            "rollOn": "onDamaged",
+            "passOn": [
+              1
+            ],
+            "onPass": "preventAllDamage",
+            "onFail": "applyDamageNormally",
+            "stacksWithPhaseShift": true
+          }
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_pack_call",
+      "cardType": "ActionCard",
+      "name": "Pack Call",
+      "description": "The colony calls for Lagluu backup. Search the deck for a Lagluu card. If a Lagluu is already in play, the found Lagluu may be played this turn at no Luutex cost. Shuffle the deck.",
+      "image": "action_pack_call.png",
+      "cost": 2,
+      "tags": [
+        "Card Draw",
+        "Class Synergy"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "deckSearch",
+          "searchFor": {
+            "cardType": "Luu",
+            "class": "Lagluu"
+          },
+          "target": "hand",
+          "timing": "immediate",
+          "trigger": "onPlay",
+          "discardCondition": "immediate",
+          "activationCost": null,
+          "condition": null,
+          "diceCheck": null,
+          "shuffleAfter": true
+        },
+        {
+          "type": "statModifier",
+          "stat": "playCost",
+          "value": 0,
+          "target": "oneLuu",
+          "timing": "immediate",
+          "trigger": "onPlay",
+          "discardCondition": "immediate",
+          "activationCost": null,
+          "condition": {
+            "type": "luuInPlay",
+            "class": "Lagluu",
+            "minCount": 1
+          },
+          "diceCheck": null,
+          "note": "Overrides normal play cost for the Lagluu just drawn. Only applies this turn."
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_luutex_pulse",
+      "cardType": "ActionCard",
+      "name": "Luutex Pulse",
+      "description": "Once per round, pay 1 Luutex to send a signal through the colony. Roll a d4 \u2014 on a 1 or 2, draw one card. Multiple copies stack. Lasts rest of game.",
+      "image": "action_luutex_pulse.png",
+      "cost": 3,
+      "tags": [
+        "Card Draw"
+      ],
+      "stackable": true,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "cardDraw",
+          "value": 1,
+          "target": "hand",
+          "timing": "permanent",
+          "trigger": "manual",
+          "usesPerRound": 1,
+          "discardCondition": "manual",
+          "activationCost": {
+            "type": "luutex",
+            "value": 1
+          },
+          "condition": "diceCheckPass",
+          "diceCheck": {
+            "diceType": "d4",
+            "rollOn": "activation",
+            "passOn": [
+              1,
+              2
+            ],
+            "onPass": "drawCard",
+            "onFail": "nothing"
+          }
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_pack_mending",
+      "cardType": "ActionCard",
+      "name": "Pack Mending",
+      "description": "A wave of restorative energy passes through the colony. At end of this round, remove 1 damage counter from every friendly Luu in play. Cannot restore a Luu at 0 HP.",
+      "image": "action_pack_mending.png",
+      "cost": 4,
+      "tags": [
+        "Healing"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "healing",
+          "value": 1,
+          "target": "allLuu",
+          "timing": "thisRound",
+          "trigger": "roundEnd",
+          "discardCondition": "endOfRound",
+          "activationCost": null,
+          "condition": {
+            "type": "targetHpAbove",
+            "value": 0
+          },
+          "diceCheck": null
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_override",
+      "cardType": "ActionCard",
+      "name": "Override",
+      "description": "Tactical instinct overrides normal formation protocol. This turn, your Luu may take their actions in any order you choose. Queue positions do not change.",
+      "image": "action_override.png",
+      "cost": 3,
+      "tags": [
+        "Movement"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "turnOrderOverride",
+          "value": "playerChoosesOrder",
+          "target": "allLuu",
+          "timing": "thisRound",
+          "trigger": "onPlay",
+          "discardCondition": "endOfRound",
+          "activationCost": null,
+          "condition": null,
+          "diceCheck": null,
+          "note": "Does not move Luu in queue \u2014 only changes action order for this round."
+        }
+      ],
+      "consumesAction": false
+    },
+    {
+      "id": "action_evolution_drive",
+      "cardType": "ActionCard",
+      "name": "Evolution Drive",
+      "description": "Intense pressure accelerates a Luu's development. The next Rogue this Luu eliminates awards double XP. Discarded immediately after the kill.",
+      "image": "action_evolution_drive.png",
+      "cost": 2,
+      "tags": [
+        "XP Boost"
+      ],
+      "stackable": false,
+      "attachedTo": "playerChoosesAtPlay",
+      "effects": [
+        {
+          "type": "xpModifier",
+          "stat": "xpMultiplier",
+          "value": 2,
+          "target": "oneLuu",
+          "timing": "untilTriggered",
+          "trigger": "onKill",
+          "discardCondition": "onKill",
+          "activationCost": null,
+          "condition": {
+            "type": "killedByAttachedLuu"
+          },
+          "diceCheck": null
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_emergency_mend",
+      "cardType": "ActionCard",
+      "name": "Emergency Mend",
+      "description": "Rapid triage redistributes damage across the colony. Reallocate any damage already dealt this turn among your Luu in any combination. Damage may be fully moved off one Luu. Kjeluu Impervious applies to reallocated damage.",
+      "image": "action_emergency_mend.png",
+      "cost": 3,
+      "tags": [
+        "Damage Control"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "damageRedistribution",
+          "value": "playerAllocates",
+          "target": "allLuu",
+          "timing": "immediate",
+          "trigger": "onPlay",
+          "discardCondition": "immediate",
+          "activationCost": null,
+          "condition": {
+            "type": "damageDealtThisTurn",
+            "minDamage": 1
+          },
+          "diceCheck": null,
+          "rules": {
+            "canFullyRemoveFromOneLuu": true,
+            "imperiousApplies": true,
+            "mustKeepTotalDamageConstant": true
+          }
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_shield_spread",
+      "cardType": "ActionCard",
+      "name": "Shield Spread",
+      "description": "Incoming damage to the leading Luu may be distributed among all friendly Luu. Resolved after each individual Rogue attack. Leading Luu must take at least 1 damage. Kjeluu Impervious applies to allocated damage. Lasts rest of wave.",
+      "image": "action_shield_spread.png",
+      "cost": 4,
+      "tags": [
+        "Defence Enhancement"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "damageRedistribution",
+          "value": "playerAllocates",
+          "target": "allLuu",
+          "timing": "thisWave",
+          "trigger": "onDamaged",
+          "discardCondition": "endOfWave",
+          "activationCost": null,
+          "condition": null,
+          "diceCheck": null,
+          "rules": {
+            "resolvedAfterEachRogueAttack": true,
+            "leadLuuMinimumDamage": 1,
+            "imperiousApplies": true,
+            "mustKeepTotalDamageConstant": true
+          }
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_shell_bond",
+      "cardType": "ActionCard",
+      "name": "Shell Bond",
+      "description": "While a Kjeluu is adjacent to the leading Luu, that Luu benefits from Kjeluu's damage reduction passive. Effect ends if Kjeluu moves or is knocked out. Lasts rest of wave.",
+      "image": "action_shell_bond.png",
+      "cost": 3,
+      "tags": [
+        "Defence Enhancement",
+        "Class Synergy"
+      ],
+      "stackable": false,
+      "attachedTo": "playerChoosesAtPlay",
+      "effects": [
+        {
+          "type": "passiveCopy",
+          "copyFrom": {
+            "class": "Kjeluu",
+            "passive": "Hardened Shell or Fortress Form",
+            "requirement": "adjacentToLeadLuu"
+          },
+          "target": "leadLuu",
+          "timing": "thisWave",
+          "trigger": "onDamaged",
+          "discardCondition": "endOfWave",
+          "activationCost": null,
+          "condition": {
+            "type": "luuInPlay",
+            "class": "Kjeluu",
+            "position": "adjacentToTarget"
+          },
+          "diceCheck": null,
+          "rules": {
+            "endsIfKjeluuMoves": true,
+            "endsIfKjeluuKnockedOut": true,
+            "usesKjeluuCurrentPassiveLevel": true,
+            "attachedToSpecificLuu": true,
+            "doesNotFollowQueuePosition": true,
+            "note": "Attaches to chosen Luu at play time. If that Luu moves back in queue, effect stays with it. If Kjeluu is no longer adjacent to THAT Luu (not the lead Luu), effect ends."
+          }
+        }
+      ],
+      "consumesAction": true,
+      "attachedToNote": "Attached to the specific Luu chosen at play time \u2014 not always the lead Luu. Effect follows that Luu regardless of queue position changes."
+    },
+    {
+      "id": "action_shared_hunt",
+      "cardType": "ActionCard",
+      "name": "Shared Hunt",
+      "description": "One chosen Luu absorbs the lessons of every battle this wave. For the rest of this wave, this Luu gains XP equal to any defeated Rogue XP value, regardless of who lands the killing blow. The killing Luu also receives XP as normal.",
+      "image": "action_shared_hunt.png",
+      "cost": 4,
+      "tags": [
+        "XP Boost"
+      ],
+      "stackable": false,
+      "attachedTo": "playerChoosesAtPlay",
+      "effects": [
+        {
+          "type": "xpShare",
+          "value": "rogueXpValue",
+          "target": "oneLuu",
+          "timing": "thisWave",
+          "trigger": "onKill",
+          "discardCondition": "endOfWave",
+          "activationCost": null,
+          "condition": null,
+          "diceCheck": null,
+          "rules": {
+            "xpSource": "defeatedRogueXpValue",
+            "killingLuuAlsoReceivesXp": true,
+            "doesNotRequireKillingBlow": true
+          }
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_colony_triumph",
+      "cardType": "ActionCard",
+      "name": "Colony Triumph",
+      "description": "The next Rogue defeated this wave grants 1 XP to every friendly Luu in play, in addition to the normal kill XP. Discarded immediately after triggering.",
+      "image": "action_colony_triumph.png",
+      "cost": 2,
+      "tags": [
+        "XP Boost"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "xpShare",
+          "value": 1,
+          "target": "allLuu",
+          "timing": "untilTriggered",
+          "trigger": "onKill",
+          "discardCondition": "onTrigger",
+          "activationCost": null,
+          "condition": null,
+          "diceCheck": null,
+          "rules": {
+            "xpSource": "flat",
+            "killingLuuAlsoReceivesXp": true,
+            "doesNotRequireKillingBlow": true
+          }
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_reawakening",
+      "cardType": "ActionCard",
+      "name": "Reawakening",
+      "description": "Search the discard pile for any base or evolved Luu card and add it to your hand.",
+      "image": "action_reawakening.png",
+      "cost": 3,
+      "tags": [
+        "Card Draw",
+        "Luu Recovery"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "luuRecovery",
+          "searchIn": "discardPile",
+          "searchFor": {
+            "cardType": [
+              "Luu",
+              "LuuEvolved"
+            ]
+          },
+          "target": "hand",
+          "timing": "immediate",
+          "trigger": "onPlay",
+          "discardCondition": "immediate",
+          "activationCost": null,
+          "condition": {
+            "type": "discardPileContainsLuu"
+          },
+          "diceCheck": null
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_salvage_protocol",
+      "cardType": "ActionCard",
+      "name": "Salvage Protocol",
+      "description": "Search the discard pile for any card of your choice and add it to your hand.",
+      "image": "action_salvage_protocol.png",
+      "cost": 4,
+      "tags": [
+        "Card Draw"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "cardDraw",
+          "searchIn": "discardPile",
+          "searchFor": {
+            "cardType": "any"
+          },
+          "target": "hand",
+          "timing": "immediate",
+          "trigger": "onPlay",
+          "discardCondition": "immediate",
+          "activationCost": null,
+          "condition": {
+            "type": "discardPileNotEmpty"
+          },
+          "diceCheck": null
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_last_lesson",
+      "cardType": "ActionCard",
+      "name": "Last Lesson",
+      "description": "Persistent whole game. When a friendly Luu is knocked out, immediately select one card from the discard pile (not including the knocked-out Luu) and add it to your hand.",
+      "image": "action_last_lesson.png",
+      "cost": 3,
+      "tags": [
+        "Card Draw"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "cardDraw",
+          "searchIn": "discardPile",
+          "searchFor": {
+            "cardType": "any",
+            "exclude": "knockedOutLuu"
+          },
+          "target": "hand",
+          "timing": "permanent",
+          "trigger": "onLuuKnockedOut",
+          "discardCondition": "manual",
+          "activationCost": null,
+          "condition": {
+            "type": "discardPileNotEmpty"
+          },
+          "diceCheck": null
+        }
+      ],
+      "consumesAction": true
+    },
+    {
+      "id": "action_purification",
+      "cardType": "ActionCard",
+      "name": "Purification",
+      "description": "Remove a Rogue Luu from the current wave. Take one undrafted base Luu card of the same class from the removed cards pool and place it at the back of your queue as a L1 friendly Luu. Cannot be played if no undrafted Luu of that class exists.",
+      "image": "action_purification.png",
+      "cost": 5,
+      "tags": [
+        "Conversion"
+      ],
+      "stackable": false,
+      "attachedTo": null,
+      "effects": [
+        {
+          "type": "conversion",
+          "removeTarget": "oneRogue",
+          "target": "playerQueue",
+          "timing": "immediate",
+          "trigger": "onPlay",
+          "discardCondition": "immediate",
+          "activationCost": null,
+          "condition": {
+            "type": "undraftedLuuExists",
+            "matchClass": true,
+            "sourcePool": "undraftedLuuPool"
+          },
+          "diceCheck": null,
+          "rules": {
+            "convertedLuuLevel": 1,
+            "convertedLuuHp": "fullHpAtL1",
+            "convertedLuuXp": 0,
+            "placedAt": "backOfQueue",
+            "sourceCard": "undraftedLuuPool"
+          }
+        }
+      ],
+      "consumesAction": true
+    }
+  ]
+}
