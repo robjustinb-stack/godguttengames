@@ -202,14 +202,14 @@ function revealDraftCards(state) {
   ds.cascadeSelection = 0;
 
   if (ds.phase === 'concurrent') {
-    const drawn = [];
+    let drawn = [];
     for (let i = 0; i < 4 && ds.corePool.length > 0; i++) {
       drawn.push({ cardId: ds.corePool.shift(), pool: 'core' });
     }
     if (ds.powerPool.length > 0) {
       drawn.push({ cardId: ds.powerPool.shift(), pool: 'power' });
     }
-    shuffle(drawn);
+    drawn = shuffle(drawn);
     drawn.forEach((card, idx) => {
       ds.currentReveal.push({ ...card, position: idx + 1 });
     });
