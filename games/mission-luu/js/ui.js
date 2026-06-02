@@ -827,7 +827,7 @@ const UI = (() => {
         let poolTag = '';
         if (isPower) poolTag = '<span style="font-size:9px;color:var(--gold);letter-spacing:0.06em">POWER</span>';
         else if (isLuu) poolTag = '<span style="font-size:9px;color:#4caf7d;letter-spacing:0.06em">' + (cardType === 'LuuEvolved' ? 'EVOLVED' : 'LUU') + '</span>';
-        else poolTag = '<span style="font-size:9px;color:var(--accent2);letter-spacing:0.06em">CORE</span>';
+        else poolTag = '<span style="font-size:9px;color:var(--accent);letter-spacing:0.06em">CORE</span>';
 
         // Position number
         const posLabel = '<span style="font-size:9px;color:var(--text-muted)">' + pos + '</span>';

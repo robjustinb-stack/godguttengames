@@ -327,7 +327,13 @@ function handleChaosDifficultySelect(level) {
   cs.pendingChaosDifficultySelect = false;
   GS.turnLog.push({
     logId: nextLogId(GS), action: 'chaosSetup',
-    detail: { difficulty: level, cards: cs.selectedCards }
+    detail: {
+      difficulty:    level,
+      cards:         cs.selectedCards,
+      drawPileAfter: GS.deck.drawPile.length,
+      powerPileSize: GS.deck.powerPile ? GS.deck.powerPile.length : 0,
+      note:          'Chaos cards in core draw pile only'
+    }
   });
   console.log(`[handleChaosDifficultySelect] Difficulty ${level} — ${cs.selectedCards.length} chaos cards shuffled in:`, cs.selectedCards);
   startRound(GS);
@@ -542,11 +548,10 @@ function completeDraft(state) {
     logId:  nextLogId(state),
     action: 'draftComplete',
     detail: {
-      totalCards:  coreDrafted.length + ds.keptPower.length,
-      core:        coreDrafted.length,
-      power:       ds.keptPower.length,
+      coreCards:   coreDrafted.length,
+      powerCards:  state.deck.powerPile.length,
       powerHeld:   true,
-      note:        'Power cards held in powerPile — enter draw pile at Sector 3 start'
+      note:        'Power cards held in powerPile — enter draw pile at S3 start'
     }
   });
   console.log(`[completeDraft] Core deck: ${coreDrafted.length} cards. Power pile: ${state.deck.powerPile.length} cards held until S3.`);
@@ -1599,18 +1604,14 @@ function completeSectorStart(state) {
 
   // Power cards enter the draw pile at the start of Sector 3
   if (state.position.sectorNumber === 3 && state.deck.powerPile && state.deck.powerPile.length > 0) {
-    state.deck.drawPile = shuffle([...state.deck.drawPile, ...state.deck.powerPile]);
+    state.deck.drawPile  = shuffle([...state.deck.drawPile, ...state.deck.powerPile]);
+    state.deck.powerPile = [];
     state.turnLog.push({
       logId:  nextLogId(state),
       action: 'powerCardsEntered',
-      detail: {
-        count:         state.deck.powerPile.length,
-        newDrawPile:   state.deck.drawPile.length,
-        sector:        3
-      }
+      detail: { sector: 3, newDrawPileSize: state.deck.drawPile.length }
     });
-    console.log(`[completeSectorStart] S3 — ${state.deck.powerPile.length} Power cards shuffled into draw pile. New draw pile: ${state.deck.drawPile.length} cards.`);
-    state.deck.powerPile = [];
+    console.log(`[completeSectorStart] S3 — Power cards shuffled into draw pile. Draw pile now: ${state.deck.drawPile.length} cards.`);
   }
 
   // Refill hand up to hand limit
