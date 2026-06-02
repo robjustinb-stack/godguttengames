@@ -257,7 +257,8 @@ function handleDraftCascadeConfirm() {
   GS.draftState.inspectCard = null;
   const ds    = GS.draftState;
   const count = ds.cascadeSelection;
-  const taken = ds.currentReveal.slice(0, count);
+  const taken    = ds.currentReveal.filter(c => c.position <= count);
+  const notTaken = ds.currentReveal.filter(c => c.position > count);
 
   for (const card of taken) {
     if (card.pool === 'core') {
@@ -272,7 +273,7 @@ function handleDraftCascadeConfirm() {
     action: 'draftPick',
     detail: {
       taken:     taken.map(c => c.cardId),
-      discarded: ds.currentReveal.slice(count).map(c => c.cardId),
+      discarded: notTaken.map(c => c.cardId),
       keptCore:  ds.keptCore.length,
       keptPower: ds.keptPower.length
     }
