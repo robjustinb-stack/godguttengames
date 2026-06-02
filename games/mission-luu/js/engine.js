@@ -533,16 +533,23 @@ function completeDraft(state) {
   const ds = state.draftState;
   ds.phase = 'complete';
 
-  const allDrafted = shuffle([...ds.keptCore, ...ds.keptPower]);
-  state.deck.drawPile    = allDrafted;
+  const coreDrafted = shuffle([...ds.keptCore]);
+  state.deck.drawPile     = coreDrafted;
+  state.deck.powerPile    = [...ds.keptPower];
   state.deck.removedCards = [];
 
   state.turnLog.push({
     logId:  nextLogId(state),
     action: 'draftComplete',
-    detail: { totalCards: allDrafted.length, core: ds.keptCore.length, power: ds.keptPower.length }
+    detail: {
+      totalCards:  coreDrafted.length + ds.keptPower.length,
+      core:        coreDrafted.length,
+      power:       ds.keptPower.length,
+      powerHeld:   true,
+      note:        'Power cards held in powerPile — enter draw pile at Sector 3 start'
+    }
   });
-  console.log(`[completeDraft] Deck assembled: ${allDrafted.length} cards (${ds.keptCore.length} core + ${ds.keptPower.length} power)`);
+  console.log(`[completeDraft] Core deck: ${coreDrafted.length} cards. Power pile: ${state.deck.powerPile.length} cards held until S3.`);
 
   // Deal opening hand (5 cards per player)
   for (const player of state.players) {
@@ -1589,6 +1596,22 @@ function triggerBossChoice(state) {
 
 function completeSectorStart(state) {
   const player = state.players[state.position.currentPlayerIndex];
+
+  // Power cards enter the draw pile at the start of Sector 3
+  if (state.position.sectorNumber === 3 && state.deck.powerPile && state.deck.powerPile.length > 0) {
+    state.deck.drawPile = shuffle([...state.deck.drawPile, ...state.deck.powerPile]);
+    state.turnLog.push({
+      logId:  nextLogId(state),
+      action: 'powerCardsEntered',
+      detail: {
+        count:         state.deck.powerPile.length,
+        newDrawPile:   state.deck.drawPile.length,
+        sector:        3
+      }
+    });
+    console.log(`[completeSectorStart] S3 — ${state.deck.powerPile.length} Power cards shuffled into draw pile. New draw pile: ${state.deck.drawPile.length} cards.`);
+    state.deck.powerPile = [];
+  }
 
   // Refill hand up to hand limit
   const handLimit   = HAND_LIMIT[state.config.playerCount];
@@ -4191,6 +4214,7 @@ function loadGame() {
     if (GS.chaosState.pendingChaosDifficultySelect === undefined) GS.chaosState.pendingChaosDifficultySelect = false;
     if (GS.config.useDraft        === undefined) GS.config.useDraft        = false;
     if (GS.config.chaosDifficulty === undefined) GS.config.chaosDifficulty = 0;
+    if (GS.deck.powerPile === undefined) GS.deck.powerPile = [];
     UI.render(GS);
     return true;
   } catch (err) {
