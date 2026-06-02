@@ -319,6 +319,7 @@ function handleChaosDifficultySelect(level) {
     GS.turnLog.push({ logId: nextLogId(GS), action: 'chaosSetup', detail: { difficulty: 0, cards: [] } });
     console.log('[handleChaosDifficultySelect] No chaos cards — starting game');
     startRound(GS);
+    startPlayerTurn(GS);
     UI.render(GS);
     return;
   }
@@ -338,6 +339,7 @@ function handleChaosDifficultySelect(level) {
   });
   console.log(`[handleChaosDifficultySelect] Difficulty ${level} — ${cs.selectedCards.length} chaos cards shuffled in:`, cs.selectedCards);
   startRound(GS);
+  startPlayerTurn(GS);
   UI.render(GS);
 }
 
