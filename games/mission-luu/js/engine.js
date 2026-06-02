@@ -570,7 +570,7 @@ function completeDraft(state) {
     const player = state.players[0];
     const hasLuu = player.hand.some(cardId => {
       const card = CardRegistry.getCard(cardId);
-      return card && (card.cardType === 'Luu' || card.cardType === 'LuuEvolved');
+      return card && card.cardType === 'Luu';
     });
     if (!hasLuu) {
       ds.pendingMulligan = true;
