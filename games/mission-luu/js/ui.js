@@ -647,6 +647,81 @@ const UI = (() => {
     return overlay;
   }
 
+  window._openDraftViewer = function() {
+    const ds = (typeof GS !== 'undefined' && GS && GS.draftState) ? GS.draftState : null;
+    if (!ds) return;
+
+    let modal = document.getElementById('draftViewerModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      window._draftViewerOpen = true;
+      // Refresh card list in case more cards were drafted since last open
+      const listEl = document.getElementById('dvCardList');
+      if (listEl) listEl.innerHTML = window._buildDvCardRows(ds);
+      return;
+    }
+
+    window._buildDvCardRows = function(ds) {
+      const allCards = [
+        ...(ds.keptCore  || []).map(id => ({ id, pool: 'core'  })),
+        ...(ds.keptPower || []).map(id => ({ id, pool: 'power' }))
+      ];
+      let rows = '';
+      for (const { id, pool } of allCards) {
+        const cardDef = (typeof CardRegistry !== 'undefined') ? CardRegistry.getCard(id) : null;
+        const name    = cardDef ? cardDef.name : id.replace(/action_|luu_/g, '').replace(/_/g, ' ');
+        const type    = cardDef ? (cardDef.cardType || '') : '';
+        const cost    = (cardDef && cardDef.cost !== undefined) ? cardDef.cost + ' LTX' : '';
+        let typeLabel = pool === 'power' ? 'Power' : 'Action';
+        let typeColor = pool === 'power' ? 'var(--gold)' : 'var(--accent2)';
+        let filterKey = pool === 'power' ? 'action' : 'action';
+        if (type === 'Luu')        { typeLabel = 'Base Luu';    typeColor = '#4caf7d'; filterKey = 'luu';     }
+        if (type === 'LuuEvolved') { typeLabel = 'Evolved Luu'; typeColor = '#4caf7d'; filterKey = 'evolved'; }
+        rows += '<div class="dv-card" data-filter="' + filterKey + '" style="display:flex;align-items:center;gap:10px;padding:6px 10px;border-bottom:1px solid var(--border)">';
+        rows += '<span style="flex:1;font-size:12px;color:var(--text)">' + name + '</span>';
+        rows += '<span style="font-size:10px;color:' + typeColor + ';letter-spacing:0.06em;text-transform:uppercase;min-width:70px;text-align:right">' + typeLabel + '</span>';
+        if (cost) rows += '<span style="font-size:11px;color:var(--gold);min-width:52px;text-align:right">' + cost + '</span>';
+        rows += '</div>';
+      }
+      if (!rows) rows = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center">No cards drafted yet.</div>';
+      return rows;
+    };
+
+    window._dvFilter = function(key) {
+      const modal = document.getElementById('draftViewerModal');
+      if (!modal) return;
+      modal.querySelectorAll('.dv-card').forEach(c => {
+        c.style.display = (key === 'all' || c.dataset.filter === key) ? 'flex' : 'none';
+      });
+      modal.querySelectorAll('#dvFilters button').forEach(b => {
+        const active = b.dataset.fkey === key;
+        b.style.background   = active ? 'var(--accent)' : 'transparent';
+        b.style.borderColor  = active ? 'var(--accent)' : 'var(--border)';
+        b.style.color        = active ? 'var(--bg)'     : 'var(--text-muted)';
+      });
+    };
+
+    modal = document.createElement('div');
+    modal.id = 'draftViewerModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;';
+    modal.innerHTML =
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;width:400px;max-height:80vh;display:flex;flex-direction:column;position:relative">' +
+        '<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">' +
+          '<span style="font-family:\'Cinzel\',serif;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold)">Drafted Cards</span>' +
+          '<button onclick="document.getElementById(\'draftViewerModal\').style.display=\'none\';window._draftViewerOpen=false;" style="background:transparent;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;padding:2px 6px;line-height:1">✕</button>' +
+        '</div>' +
+        '<div id="dvFilters" style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">' +
+          '<button data-fkey="all"     onclick="window._dvFilter(\'all\')"     style="padding:4px 10px;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);border:1px solid var(--accent);color:var(--bg);border-radius:3px;cursor:pointer;">All</button>' +
+          '<button data-fkey="action"  onclick="window._dvFilter(\'action\')"  style="padding:4px 10px;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:3px;cursor:pointer;">Action Cards</button>' +
+          '<button data-fkey="luu"     onclick="window._dvFilter(\'luu\')"     style="padding:4px 10px;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:3px;cursor:pointer;">Base Luu</button>' +
+          '<button data-fkey="evolved" onclick="window._dvFilter(\'evolved\')" style="padding:4px 10px;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:3px;cursor:pointer;">Evolved Luu</button>' +
+        '</div>' +
+        '<div id="dvCardList" style="overflow-y:auto;flex:1">' + window._buildDvCardRows(ds) + '</div>' +
+      '</div>';
+    document.body.appendChild(modal);
+    window._draftViewerOpen = true;
+  };
+
   function renderModal(state) {
     const player = state.players[0];
 
@@ -689,9 +764,13 @@ const UI = (() => {
       let html = '<div style="padding:20px;min-width:340px;max-width:480px">';
 
       // Header
-      html += '<div style="font-family:\'Cinzel\',serif;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:2px">';
-      html += 'Mission LUU — Deck Draft</div>';
-      html += '<div style="font-size:10px;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px">' + phaseLabel + '</div>';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">';
+      html += '<div>';
+      html += '<div style="font-family:\'Cinzel\',serif;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:2px">Mission LUU — Deck Draft</div>';
+      html += '<div style="font-size:10px;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase">' + phaseLabel + '</div>';
+      html += '</div>';
+      html += '<button onclick="window._openDraftViewer && window._openDraftViewer()" style="padding:5px 10px;font-family:\'Cinzel\',serif;font-size:10px;letter-spacing:0.06em;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);border-radius:4px;cursor:pointer;white-space:nowrap">🃏 Drafted Cards</button>';
+      html += '</div>';
 
       // Progress bars
       html += '<div style="display:flex;gap:12px;margin-bottom:16px">';
