@@ -111,7 +111,7 @@ const STARTER_DECK = {
     'luu_kjeluu_evolved',
     'luu_gifluu_evolved',
     'luu_bisluu_evolved',
-    // Core action cards — 15
+    // Core action cards — 10
     'action_luutex_tap',
     'action_luutex_flare',
     'action_quick_mend',
@@ -119,7 +119,6 @@ const STARTER_DECK = {
     'action_evolution_drive',
     'action_formation_override',
     'action_luu_search',
-    'action_core_surge',
     'action_shell_bond',
     'action_pack_call',
     'action_last_lesson',
