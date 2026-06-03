@@ -230,16 +230,31 @@ function executeMulligan(state) {
 function initEnemyDeck(state) {
   const sector = state.position.sectorNumber;
   const waveComposition = state.config.playerCount === 1
-    ? [3, 3, 3]
+    ? [2, 2, 2]
     : [4, 4, 4];
 
   // Exact tier counts per sector — keyed by [sectorNumber][playerCount]
   const TIER_COUNTS = {
-    1: { 1: { t1:6, t2:3, t3:0, t4:0 }, 2: { t1:8, t2:4, t3:0, t4:0 } },
-    2: { 1: { t1:3, t2:4, t3:2, t4:0 }, 2: { t1:4, t2:6, t3:2, t4:0 } },
-    3: { 1: { t1:0, t2:3, t3:4, t4:2 }, 2: { t1:0, t2:4, t3:6, t4:2 } },
-    4: { 1: { t1:0, t2:0, t3:4, t4:5 }, 2: { t1:0, t2:0, t3:5, t4:7 } },
-    5: { 1: { t1:0, t2:0, t3:2, t4:7 }, 2: { t1:0, t2:0, t3:2, t4:10 } }
+    1: {
+      1: { t1:4, t2:2, t3:0, t4:0 },
+      2: { t1:8, t2:4, t3:0, t4:0 }
+    },
+    2: {
+      1: { t1:2, t2:2, t3:2, t4:0 },
+      2: { t1:4, t2:4, t3:4, t4:0 }
+    },
+    3: {
+      1: { t1:0, t2:2, t3:2, t4:2 },
+      2: { t1:0, t2:4, t3:4, t4:4 }
+    },
+    4: {
+      1: { t1:0, t2:0, t3:3, t4:3 },
+      2: { t1:0, t2:0, t3:6, t4:6 }
+    },
+    5: {
+      1: { t1:0, t2:0, t3:2, t4:4 },
+      2: { t1:0, t2:0, t3:4, t4:8 }
+    }
   };
 
   const counts = TIER_COUNTS[sector]?.[state.config.playerCount]
@@ -258,16 +273,18 @@ function initEnemyDeck(state) {
     }
   }
 
-  // Split into pre-dealt waves using wave composition array
+  // Shuffle the full sector pool so tier distribution is random across waves
+  const shuffledPool = shuffle(sectorPool);
+
   const preDealtWaves = [];
   let poolIndex = 0;
   for (let w = 0; w < WAVES_PER_SECTOR; w++) {
     const count = waveComposition[w];
-    preDealtWaves.push(sectorPool.slice(poolIndex, poolIndex + count));
+    preDealtWaves.push(shuffledPool.slice(poolIndex, poolIndex + count));
     poolIndex += count;
   }
 
-  state.enemyDeck = { sectorPool: { cards: sectorPool }, preDealtWaves };
+  state.enemyDeck = { sectorPool: { cards: shuffledPool }, preDealtWaves };
   console.log(`[initEnemyDeck] S${sector} waves:`, preDealtWaves);
 }
 
