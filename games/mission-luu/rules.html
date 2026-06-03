@@ -887,7 +887,7 @@
       <h2>Sector Structure</h2>
     </div>
     <p>Each sector consists of <strong>3 waves</strong> of Rogue Luu followed by <strong>1 boss</strong>. Enemy difficulty increases across waves within a sector.</p>
-    <p>The number of Rogue Luu per wave is always <strong>two more than the number of players</strong> — 3 Rogues in solo, 4 in a 2-player game, and so on. All three waves within a sector have the same enemy count. Rogue Luu have random class typing but receive <strong>+1 base attack</strong> if their class matches the sector boss.</p>
+    <p>The number of Rogue Luu per wave is always <strong>two more than the number of players</strong> — 2 Rogues in solo, 4 in a 2-player game. All three waves within a sector have the same enemy count. Rogue Luu have random class typing but receive <strong>+1 base attack</strong> if their class matches the sector boss.</p>
 
     <h3>Dice Scaling by Sector</h3>
     <p>The dice rolled for both Rogue and friendly Luu attacks escalate with each sector. The same die type applies to all attacks in that sector — friendly and enemy alike — increasing both average damage and variance as the game progresses.</p>
@@ -1077,15 +1077,15 @@
           <tr><th>Sector</th><th>T1</th><th>T2</th><th>T3</th><th>T4</th><th>Total (Solo)</th><th>Total (2P)</th></tr>
         </thead>
         <tbody>
-          <tr><td class="accent">S1</td><td class="num">6 / 8</td><td class="num">3 / 4</td><td class="num">—</td><td class="num">—</td><td class="num">9</td><td class="num">12</td></tr>
-          <tr><td class="accent">S2</td><td class="num">3 / 4</td><td class="num">4 / 6</td><td class="num">2 / 2</td><td class="num">—</td><td class="num">9</td><td class="num">12</td></tr>
-          <tr><td class="accent">S3</td><td class="num">—</td><td class="num">3 / 4</td><td class="num">4 / 6</td><td class="num">2 / 2</td><td class="num">9</td><td class="num">12</td></tr>
-          <tr><td class="accent">S4</td><td class="num">—</td><td class="num">—</td><td class="num">4 / 5</td><td class="num">5 / 7</td><td class="num">9</td><td class="num">12</td></tr>
-          <tr><td class="accent">S5</td><td class="num">—</td><td class="num">—</td><td class="num">2 / 2</td><td class="num">7 / 10</td><td class="num">9</td><td class="num">12</td></tr>
+          <tr><td class="accent">S1</td><td class="num">4 / 8</td><td class="num">2 / 4</td><td class="num">—</td><td class="num">—</td><td class="num">6</td><td class="num">12</td></tr>
+          <tr><td class="accent">S2</td><td class="num">2 / 4</td><td class="num">2 / 4</td><td class="num">2 / 4</td><td class="num">—</td><td class="num">6</td><td class="num">12</td></tr>
+          <tr><td class="accent">S3</td><td class="num">—</td><td class="num">2 / 4</td><td class="num">2 / 4</td><td class="num">2 / 4</td><td class="num">6</td><td class="num">12</td></tr>
+          <tr><td class="accent">S4</td><td class="num">—</td><td class="num">—</td><td class="num">3 / 6</td><td class="num">3 / 6</td><td class="num">6</td><td class="num">12</td></tr>
+          <tr><td class="accent">S5</td><td class="num">—</td><td class="num">—</td><td class="num">2 / 4</td><td class="num">4 / 8</td><td class="num">6</td><td class="num">12</td></tr>
         </tbody>
       </table>
     </div>
-    <p style="font-size:13px;color:var(--text-muted);margin-top:-8px">Each cell shows Solo / 2-Player counts. Wave piles each contain 3 Rogues (solo) or 4 Rogues (2-player).</p>
+    <p style="font-size:13px;color:var(--text-muted);margin-top:-8px">Each cell shows Solo / 2-Player counts. Wave piles each contain 2 Rogues (solo) or 4 Rogues (2-player). Tier distribution is randomised — higher-tier Rogues can appear in any wave.</p>
 
     <p>When a Rogue Luu is knocked out during a wave, it returns to its tier deck face-down after the wave ends. Tier decks are reused across all five sectors.</p>
     <div class="callout"><strong>Class selection is random:</strong> The class of each Rogue drawn is determined by the shuffle — players have no control over which classes appear in a wave. Rogues of the same class as the active sector boss gain +1 base attack. The class mix each wave is genuinely unknown until the wave pile is revealed.</div>
