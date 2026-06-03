@@ -200,22 +200,31 @@ function dealOpeningHand(state) {
 function executeMulligan(state) {
   if (!state.mulliganAvailable) return;
   const player = state.players[0];
-  const limit = HAND_LIMIT[state.config.playerCount];
+  const limit  = HAND_LIMIT[state.config.playerCount];
 
-  // Return hand to deck and reshuffle
-  state.deck.drawPile.push(...player.hand);
-  state.deck.drawPile = shuffle(state.deck.drawPile);
-
-  // Redraw
+  // Return hand to deck and reshuffle — never discard
+  state.deck.drawPile = shuffle([...player.hand, ...state.deck.drawPile]);
+  player.hand = [];
   player.hand = drawFromDeck(state, limit);
-  state.mulliganAvailable = false;
 
   state.turnLog.push({
-    logId: nextLogId(state),
+    logId:  nextLogId(state),
     action: 'mulligan',
     detail: { newHand: player.hand }
   });
   console.log('[executeMulligan] Mulligan taken — new hand:', player.hand);
+
+  const hasBaseLuu = player.hand.some(cardId => {
+    const card = CardRegistry.getCard(cardId);
+    return card && card.cardType === 'Luu';
+  });
+
+  if (!hasBaseLuu) {
+    console.log('[executeMulligan] No base Luu — mulligan still available');
+  } else {
+    state.mulliganAvailable = false;
+    console.log('[executeMulligan] Base Luu found — mulligan closed');
+  }
 }
 
 function initEnemyDeck(state) {

@@ -28,7 +28,7 @@ const CHAOS_CARDS = {
     description: 'The lead Luu of the player who drew this card is immediately knocked out. If this is their only remaining Luu, it survives at 1 HP instead.'
   },
   'chaos_surge_protocol': {
-    id: 'chaos_surge_protocol', name: 'Surge Protocol', trigger: 'immediate',
+    id: 'chaos_surge_protocol', name: 'Enemy Surge', trigger: 'immediate',
     description: 'In the next enemy attack phase, all enemies roll the highest possible dice value for the current sector (S1: 4, S2: 6, S3: 8, S4: 10, S5: 12).'
   },
   'chaos_rogue_resurgence': {
@@ -98,6 +98,53 @@ const POWER_ACTION_CARD_IDS = [
   'action_tactical_command', 'action_resonance_surge'
 ]; // 20 Power action cards
 
+const STARTER_DECK = {
+  core: [
+    // Luu cards — 15
+    'luu_rasluu',         'luu_rasluu',
+    'luu_lagluu',         'luu_lagluu',
+    'luu_kjeluu',         'luu_kjeluu',
+    'luu_gifluu',         'luu_gifluu',
+    'luu_bisluu',         'luu_bisluu',
+    'luu_rasluu_evolved',
+    'luu_lagluu_evolved',
+    'luu_kjeluu_evolved',
+    'luu_gifluu_evolved',
+    'luu_bisluu_evolved',
+    // Core action cards — 15
+    'action_luutex_tap',
+    'action_luutex_flare',
+    'action_quick_mend',
+    'action_pack_mending',
+    'action_evolution_drive',
+    'action_formation_override',
+    'action_luu_search',
+    'action_core_surge',
+    'action_shell_bond',
+    'action_pack_call',
+    'action_last_lesson',
+    // Class synergy cards — 5
+    'action_hunters_edge',
+    'action_colony_bond',
+    'action_hardened_core',
+    'action_double_phase',
+    'action_shell_regrowth',
+  ],
+  power: [
+    'action_full_restore',
+    'action_rebirth',
+    'action_tenacity',
+    'action_forced_evolution',
+    'action_shield_spread',
+    'action_purification',
+    'action_overdrive',
+    'action_neural_cascade',
+    'action_tactical_command',
+    'action_rising_tide',
+  ]
+};
+// Total: 15 Luu + 15 Core + 5 Synergy + 10 Power = 40 cards (+ 10 power enter at S3)
+
 const LUU_DRAFT_POOL = [
   { cardId: 'luu_rasluu',         copies: 3 },
   { cardId: 'luu_lagluu',         copies: 3 },
@@ -110,6 +157,27 @@ const LUU_DRAFT_POOL = [
   { cardId: 'luu_gifluu_evolved', copies: 2 },
   { cardId: 'luu_bisluu_evolved', copies: 2 },
 ]; // 15 base + 10 evolved = 25 Luu cards in draft
+
+function loadStarterDeck(state) {
+  const coreDrafted = shuffle([...STARTER_DECK.core]);
+  state.deck             = { drawPile: coreDrafted, discardPile: [], removedCards: [], reshuffleCount: 0 };
+  state.deck.powerPile   = [...STARTER_DECK.power];
+  state.draftState       = {
+    phase:            'complete',
+    corePool:         [],
+    powerPool:        [],
+    currentReveal:    [],
+    keptCore:         [...STARTER_DECK.core],
+    keptPower:        [...STARTER_DECK.power],
+    coreTarget:       30,
+    powerTarget:      10,
+    pendingMulligan:  false,
+    cascadeSelection: 0,
+    inspectCard:      null,
+    usedStarterDeck:  true,
+  };
+  console.log(`[loadStarterDeck] Starter deck loaded: ${coreDrafted.length} core cards in draw pile, ${state.deck.powerPile.length} power cards held until S3.`);
+}
 
 async function startGame(forceNew = false) {
   await CardRegistry.load();
@@ -126,38 +194,45 @@ async function startGame(forceNew = false) {
   }
 
   GS = await initGameState();
-  // Multiplayer / resume — load GS from sessionStorage if present
+  UI.render(GS);
+
+  // Check for pending GS from multiplayer/resume session
   const pendingGs = sessionStorage.getItem('luu_pending_gs');
   if (pendingGs) {
     try {
       GS = JSON.parse(pendingGs);
       sessionStorage.removeItem('luu_pending_gs');
       console.log('[startGame] Loaded GS from session (multiplayer/resume)');
+      initWave(GS);
+      startRound(GS);
+      startPlayerTurn(GS);
+      UI.render(GS);
+      return;
     } catch(e) {
       console.warn('[startGame] Failed to parse pending GS — using fresh state');
     }
   }
-  UI.render(GS);
-  initWave(GS);
-  startRound(GS);
-  startPlayerTurn(GS);
-  UI.render(GS);
 
-  // Subscribe to Realtime updates if in a multiplayer/resume session
-  if (typeof LuuSession !== 'undefined') {
-    const identity = LuuSession.getIdentity();
-    if (identity && identity.joinCode) {
-      LuuSession.subscribeToSession(identity.joinCode, (newGS) => {
-        // Only apply remote GS if it's not our own turn
-        if (!LuuSession.isMyTurn(newGS)) {
-          GS = newGS;
-          UI.render(GS);
-          console.log('[LUU] Remote GS applied via Realtime');
-        }
-      });
-      console.log('[LUU] Realtime subscription active for', identity.joinCode);
-    }
+  // Present deck choice — draft or starter
+  GS.pendingDeckChoice = true;
+  UI.render(GS);
+  return;
+  // Game continues in handleDeckChoice() below
+}
+
+function handleDeckChoice(useStarter) {
+  GS.pendingDeckChoice = false;
+  if (useStarter) {
+    GS.config.useStarterDeck = true;
+    GS.config.useDraft       = false;
+    loadStarterDeck(GS);
+    dealOpeningHand(GS);
+  } else {
+    GS.config.useStarterDeck = false;
+    GS.config.useDraft       = true;
+    initDraftState(GS);
   }
+  UI.render(GS);
 }
 
 // ─────────────────────────────────────────────
@@ -586,19 +661,48 @@ function completeDraft(state) {
 
 function handleMulliganAccept() {
   const player = GS.players[0];
+  const limit  = HAND_LIMIT[GS.config.playerCount];
+
+  // Return entire hand to draw pile and reshuffle — never discard
   GS.deck.drawPile = shuffle([...player.hand, ...GS.deck.drawPile]);
   player.hand = [];
-  const drawn = drawFromDeck(GS, 5);
+
+  const drawn = drawFromDeck(GS, limit);
   player.hand.push(...drawn);
-  GS.draftState.pendingMulligan = false;
-  console.log('[handleMulliganAccept] Mulligan taken — second hand dealt');
-  GS.chaosState.pendingChaosDifficultySelect = true;
+
+  GS.turnLog.push({
+    logId:  nextLogId(GS),
+    action: 'mulligan',
+    detail: { newHand: player.hand }
+  });
+  console.log('[handleMulliganAccept] Mulligan taken — new hand:', player.hand.join(', '));
+
+  // Check if new hand contains a base Luu
+  const hasBaseLuu = player.hand.some(cardId => {
+    const card = CardRegistry.getCard(cardId);
+    return card && card.cardType === 'Luu';
+  });
+
+  if (hasBaseLuu) {
+    GS.draftState.pendingMulligan = false;
+    GS.chaosState.pendingChaosDifficultySelect = true;
+    console.log('[handleMulliganAccept] Base Luu found — mulligan closed');
+  } else {
+    GS.draftState.pendingMulligan = true;
+    console.log('[handleMulliganAccept] No base Luu — mulligan still available');
+  }
+
   UI.render(GS);
 }
 
 function handleMulliganDecline() {
   GS.draftState.pendingMulligan = false;
-  console.log('[handleMulliganDecline] Mulligan declined — keeping opening hand');
+  GS.turnLog.push({
+    logId:  nextLogId(GS),
+    action: 'mulliganDeclined',
+    detail: { hand: GS.players[0].hand }
+  });
+  console.log('[handleMulliganDecline] Mulligan declined — keeping hand:', GS.players[0].hand.join(', '));
   GS.chaosState.pendingChaosDifficultySelect = true;
   UI.render(GS);
 }
@@ -1783,6 +1887,7 @@ function buildBossState(state, bossCardId) {
 
 function isTurnFlowBlocked(state) {
   // Any of these conditions means turn flow must pause
+  if (state.pendingDeckChoice) return true;
   if (state.gameStatus.status !== 'active') return true;
   if (state.pendingXpDistribution != null) return true;
   if (state.pendingDiscard != null) return true;
@@ -4219,6 +4324,7 @@ function loadGame() {
     if (GS.config.useDraft        === undefined) GS.config.useDraft        = false;
     if (GS.config.chaosDifficulty === undefined) GS.config.chaosDifficulty = 0;
     if (GS.deck.powerPile === undefined) GS.deck.powerPile = [];
+    if (GS.pendingDeckChoice === undefined) GS.pendingDeckChoice = false;
     UI.render(GS);
     return true;
   } catch (err) {

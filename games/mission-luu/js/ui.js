@@ -800,6 +800,12 @@ const UI = (() => {
         html += '</div>';
       }
 
+      // Pool status
+      html += `<div style="display:flex;gap:20px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">`;
+      html += `<div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);">Core: <span style="color:var(--accent)">${ds.keptCore.length}/${ds.coreTarget}</span> kept &nbsp;·&nbsp; <span style="color:${ds.corePool.length <= 5 ? '#cf4f6a' : 'var(--text-muted)'}">${ds.corePool.length} remaining in pool</span></div>`;
+      html += `<div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);">Power: <span style="color:var(--gold)">${ds.keptPower.length}/${ds.powerTarget}</span> kept &nbsp;·&nbsp; <span style="color:${ds.powerPool.length <= 3 ? '#cf4f6a' : 'var(--text-muted)'}">${ds.powerPool.length} remaining in pool</span></div>`;
+      html += `</div>`;
+
       // Card row
       html += '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">';
 
@@ -1572,6 +1578,34 @@ const UI = (() => {
   }
 
   function _buildDOM(state) {
+    // Deck choice screen
+    if (state.pendingDeckChoice) {
+      document.body.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:24px;padding:40px;">
+          <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Mission: LUU</div>
+          <div style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:var(--text);margin-bottom:8px;">Choose Your Deck</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:600px;width:100%;">
+            <div onclick="handleDeckChoice(true)"
+                 style="background:var(--surface);border:1px solid var(--border-light);border-radius:12px;padding:28px 24px;cursor:pointer;transition:all 0.2s;"
+                 onmouseover="this.style.borderColor='var(--gold)';this.style.background='var(--surface2)'"
+                 onmouseout="this.style.borderColor='var(--border-light)';this.style.background='var(--surface)'">
+              <div style="font-size:28px;margin-bottom:12px;">📋</div>
+              <div style="font-family:'Cinzel',serif;font-size:15px;color:var(--gold);margin-bottom:8px;">Starter Deck</div>
+              <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">Pre-built 40-card deck covering all five Luu classes. Recommended for new players.</div>
+            </div>
+            <div onclick="handleDeckChoice(false)"
+                 style="background:var(--surface);border:1px solid var(--border-light);border-radius:12px;padding:28px 24px;cursor:pointer;transition:all 0.2s;"
+                 onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--surface2)'"
+                 onmouseout="this.style.borderColor='var(--border-light)';this.style.background='var(--surface)'">
+              <div style="font-size:28px;margin-bottom:12px;">🃏</div>
+              <div style="font-family:'Cinzel',serif;font-size:15px;color:var(--accent);margin-bottom:8px;">Draft</div>
+              <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">Build your own 40-card deck from the full card pool. For experienced players.</div>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
     document.body.innerHTML = '';
 
     const board      = document.createElement('div');
@@ -2038,7 +2072,7 @@ const UI = (() => {
         case 'chaosEffect': {
           const chaosEffectLabels = {
             colony_fracture:          'Colony Fracture — lead Luu ' + (d.survived ? 'survived at 1 HP' : 'knocked out'),
-            surge_protocol:           'Surge Protocol — next enemy attack uses max dice',
+            surge_protocol:           'Enemy Surge — next enemy attack uses max dice',
             rogue_resurgence:         'Rogue Resurgence — ' + d.count + ' rogue(s) restored to full HP',
             corrupted_vanguard:       'Corrupted Vanguard — ' + (d.immediate ? 'vanguard spawned immediately' : 'vanguard queued for boss wave'),
             corrupted_vanguard_spawned: 'Corrupted Vanguard — ' + d.cardId + ' spawned',
