@@ -226,6 +226,7 @@ function handleDeckChoice(useStarter) {
     GS.config.useDraft       = false;
     loadStarterDeck(GS);
     dealOpeningHand(GS);
+    GS.chaosState.pendingChaosDifficultySelect = true;
   } else {
     GS.config.useStarterDeck = false;
     GS.config.useDraft       = true;
@@ -392,6 +393,7 @@ function handleChaosDifficultySelect(level) {
     cs.pendingChaosDifficultySelect = false;
     GS.turnLog.push({ logId: nextLogId(GS), action: 'chaosSetup', detail: { difficulty: 0, cards: [] } });
     console.log('[handleChaosDifficultySelect] No chaos cards — starting game');
+    initWave(GS);
     startRound(GS);
     startPlayerTurn(GS);
     UI.render(GS);
@@ -412,6 +414,7 @@ function handleChaosDifficultySelect(level) {
     }
   });
   console.log(`[handleChaosDifficultySelect] Difficulty ${level} — ${cs.selectedCards.length} chaos cards shuffled in:`, cs.selectedCards);
+  initWave(GS);
   startRound(GS);
   startPlayerTurn(GS);
   UI.render(GS);
