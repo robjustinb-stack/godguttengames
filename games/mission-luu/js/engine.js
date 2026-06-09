@@ -1418,9 +1418,84 @@ function checkEnemyDefeated(state, targetEnemy, attackingLuu) {
 function checkWaveCleared(state) {
   if (state.activeEnemies.length > 0) return false;
 
-  state.chaosState.cardPlayBannedThisWave = false;
+  // ── Synthetic round-end ──────────────────────────────────────────
+  // Wave was cleared during player turn phase — enemy attack phase
+  // never ran, so endRound was never called. Fire all round-end
+  // effects here so nothing is silently skipped.
 
   const player = state.players[state.position.currentPlayerIndex];
+
+  // 1. Pack Bond — friendly Lagluu passive
+  const activeLagluus = player.luuQueue.filter(l => l.class === 'Lagluu' && l.currentHp > 0);
+  if (activeLagluus.length > 0) {
+    const totalHeal = activeLagluus.reduce((sum, l) => sum + (l.evolved ? 2 : 1), 0);
+    for (const luu of player.luuQueue) {
+      if (luu.currentHp <= 0) continue;
+      const hpBefore = luu.currentHp;
+      luu.currentHp = Math.min(luu.currentHp + totalHeal, luu.maxHp);
+      luu.damageCounters = luu.maxHp - luu.currentHp;
+      if (luu.currentHp > hpBefore) {
+        state.turnLog.push({
+          logId:      nextLogId(state),
+          action:     'packBond',
+          luuId:      luu.cardId,
+          healAmount: luu.currentHp - hpBefore,
+          hpAfter:    luu.currentHp,
+          source:     'waveClearRoundEnd'
+        });
+      }
+    }
+    console.log(`[checkWaveCleared] Synthetic round-end — Pack Bond fired: ${totalHeal} heal`);
+  }
+
+  // 2. Forluu Resilient Core — boss passive (only relevant in boss wave,
+  //    but safe to check here regardless)
+  if (state.bosses.activeBoss.cardId === 'boss_forluu' &&
+      state.bosses.activeBoss.passiveActive) {
+    const leadLuu    = player.luuQueue.find(l => l.queuePosition === 1);
+    const healAmount = leadLuu ? Math.min(leadLuu.damageCounters, 3) : 0;
+    if (healAmount > 0) {
+      state.bosses.activeBoss.currentHp = Math.min(
+        state.bosses.activeBoss.currentHp + healAmount,
+        state.bosses.activeBoss.maxHp
+      );
+      state.turnLog.push({
+        logId:       nextLogId(state),
+        action:      'forluuResillientCore',
+        healAmount,
+        bossHpAfter: state.bosses.activeBoss.currentHp,
+        source:      'waveClearRoundEnd'
+      });
+    }
+  }
+
+  // 3. Round-end triggered effects (Pack Mending, Vital Drain)
+  fireTriggeredEffects(state, 'roundEnd', {});
+
+  // 4. Expire all endOfRound effects (Override, Dampening Wave,
+  //    Suppression Field, Shell Shift, Blackout state, etc.)
+  expireEffects(state, 'endOfRound');
+
+  // 5. Reset turn order override
+  state.turnOrderOverride = null;
+
+  // 6. Reset Blackout if it was set for this round
+  if (state.chaosState?.attackBannedRound !== null &&
+      state.position.roundNumber === state.chaosState?.attackBannedRound) {
+    state.chaosState.attackBannedRound = null;
+    console.log('[checkWaveCleared] Synthetic round-end — Blackout expired');
+  }
+
+  state.turnLog.push({
+    logId:  nextLogId(state),
+    action: 'syntheticRoundEnd',
+    detail: { round: state.position.roundNumber, reason: 'waveClearedDuringPlayerTurn' }
+  });
+  console.log(`[checkWaveCleared] Synthetic round-end complete — wave clear was mid-player-turn`);
+  // ── End synthetic round-end ──────────────────────────────────────
+
+  state.chaosState.cardPlayBannedThisWave = false;
+
   expireEffects(state, 'endOfWave');
   state.history.wavesCleared++;
 
